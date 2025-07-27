@@ -18,9 +18,9 @@ class MedicalBase(BaseModel):
 
 @router.get("/", status_code=status.HTTP_200_OK)  # , dependencies=[Depends(authenticate_application)]
 async def read_data(db: Session = Depends(get_db)):
-    # return "******"
-    device = db.query(MedicalBase)
-    return device
+    return {"name": "dummy_data"}
+    # device = db.query(MedicalBase)
+    # return device
 
 
 @router.put("/items/{item_id}", status_code=status.HTTP_200_OK)  # , dependencies=[Depends(authenticate_application)]
