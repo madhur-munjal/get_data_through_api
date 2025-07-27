@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import sys
 import os
 
-sys.path.append(os.path.join(os.getcwd(), ".."))g
+sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
 
 app = FastAPI(title="api_to_get_data",
