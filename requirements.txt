@@ -3,4 +3,3 @@ sqlalchemy
 pydantic
 mysql-connector-python
 uvicorn
-mysqlclient
