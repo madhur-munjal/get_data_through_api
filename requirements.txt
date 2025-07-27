@@ -2,3 +2,4 @@ fastapi
 sqlalchemy
 pydantic
 mysql-connector-python
+uvicorn
