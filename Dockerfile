@@ -10,4 +10,6 @@ RUN apt-get update && apt-get install -y \
 RUN pip install -r requirements.txt
 
 COPY ./src /src
+RUN ls -la /src
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+#CMD ["fastapi", "dev", "main.py", "--host", "0.0.0.0", "--port", "8000"]

@@ -8,12 +8,12 @@ hostname = ""
 database = ""
 
 # SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{mysql_username}:{mysql_password}@{hostname}/{database}"
-# DATABASE_URL = "mysql+mysqlconnector://root:root@localhost:3306/mydb"
-DATABASE_URL = "mysql+mysqlconnector://root:hMexqxGfkWVcteODYFoQtWZfrzBFkKwn@mainline.proxy.rlwy.net:28684/railway"
+DATABASE_URL = "mysql+mysqlconnector://root:root@db:3306/my_db"
+# DATABASE_URL = "mysql+mysqlconnector://root:hMexqxGfkWVcteODYFoQtWZfrzBFkKwn@mainline.proxy.rlwy.net:28684/railway"
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args={"connect_timeout": 10})
 
 # engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True, connect_args={"connect_timeout": 10})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 Base1 = declarative_base()
 
