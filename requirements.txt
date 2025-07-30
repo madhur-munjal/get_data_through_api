@@ -4,5 +4,5 @@ pydantic
 mysql-connector-python
 uvicorn
 fastapi[standard]
-passlib
-jose
+python-jose[cryptography]
+passlib[bcrypt]
