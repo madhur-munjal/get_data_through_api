@@ -5,7 +5,7 @@ from typing import Union, Optional
 class UserCreate(BaseModel):
     username: str
     password: str
-    # email: EmailStr #TODO: add email field
+    email: EmailStr
     address: str
     contact_number: str
 

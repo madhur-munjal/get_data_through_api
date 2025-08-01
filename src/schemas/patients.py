@@ -26,6 +26,7 @@ class PatentBase(BaseModel):
     email: Optional[EmailStr] = None
     description: Optional[str] = None
 
+# TODO: verify the fields data type
 class PatentCreate(PatentBase):
     pass  # Same as PatentBase, used for incoming creation requests
 

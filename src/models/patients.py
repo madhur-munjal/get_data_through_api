@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+from src.database import Base
+# Base = declarative_base()
 
 
 class Patient(Base):
@@ -11,5 +12,5 @@ class Patient(Base):
     name = Column(String(100), nullable=False)
     address = Column(Text, nullable=True)
     phone = Column(String(20), nullable=True)
-    # email = Column(String(100), nullable=True)#TODO: add email column
+    email = Column(String(255), nullable=False, unique=True)
     description = Column(Text, nullable=True)
