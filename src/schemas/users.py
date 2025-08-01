@@ -1,6 +1,14 @@
 from pydantic import BaseModel
 
+
 class UserCreate(BaseModel):
+    username: str
+    password: str
+    address: str
+    contact_number: str
+
+
+class UserLogin(BaseModel):
     username: str
     password: str
 
@@ -10,6 +18,7 @@ class UserOut(BaseModel):
 
     class Config:
         orm_mode = True
+
 
 class Token(BaseModel):
     access_token: str

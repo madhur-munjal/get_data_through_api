@@ -2,6 +2,7 @@ import os
 import sys
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
@@ -29,13 +30,12 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
     print("Database tables created successfully.")
 
-from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Or specify your frontend URL
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],  #["*"],  # Or ["GET", "POST", "OPTIONS"]
+    allow_methods=["GET", "POST", "OPTIONS"],  # ["*"],  # Or ["GET", "POST", "OPTIONS"]
     allow_headers=["*"],  # Or ["Authorization", "Content-Type"]
 )
 
