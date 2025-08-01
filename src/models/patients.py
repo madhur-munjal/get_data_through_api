@@ -11,5 +11,5 @@ class Patient(Base):
     name = Column(String(100), nullable=False)
     address = Column(Text, nullable=True)
     phone = Column(String(20), nullable=True)
-    email = Column(String(100), nullable=True)
+    # email = Column(String(100), nullable=True)#TODO: add email column
     description = Column(Text, nullable=True)

@@ -1,9 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+from typing import Union, Optional
 
 
 class UserCreate(BaseModel):
     username: str
     password: str
+    # email: EmailStr #TODO: add email field
     address: str
     contact_number: str
 
@@ -11,6 +13,7 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+
 
 class UserOut(BaseModel):
     id: int
@@ -20,6 +23,22 @@ class UserOut(BaseModel):
         orm_mode = True
 
 
-class Token(BaseModel):
+class TokenData(BaseModel):
     access_token: str
     token_type: str
+
+
+class Token(BaseModel):
+    """Model used to return from the login or register endpoint."""
+    status_code: int = 200
+    status: str = "Success"
+    message: str = "User logged in successfully"
+    data: Optional[Union[dict, TokenData]] = None
+
+
+# class Sign_Up_details(BaseModel):
+#     """Model used to return from the login or register endpoint."""
+#     status_code: int = 200
+#     status: str = "Success"
+#     message: str = "User logged in successfully"
+#     data: Optional[Union[dict, TokenData]] = None
