@@ -1,5 +1,6 @@
-from pydantic import BaseModel, EmailStr
 from typing import Union, Optional
+
+from pydantic import BaseModel, EmailStr
 
 
 class UserCreate(BaseModel):
@@ -42,3 +43,11 @@ class Token(BaseModel):
 #     status: str = "Success"
 #     message: str = "User logged in successfully"
 #     data: Optional[Union[dict, TokenData]] = None
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
