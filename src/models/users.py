@@ -1,12 +1,10 @@
-from sqlalchemy import Column, Integer, Text, String, ForeignKey, DateTime
-from src.database import Base
-from sqlalchemy.orm import relationship
-from datetime import datetime, timedelta
 import uuid
+from datetime import datetime, timedelta
 
-# from sqlalchemy.ext.declarative import declarative_base
-#
-# Base = declarative_base()
+from sqlalchemy import Column, Integer, Text, String, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+
+from src.database import Base
 
 
 class User(Base):
@@ -19,12 +17,12 @@ class User(Base):
     address = Column(Text, nullable=True)
     contact_number = Column(Text, nullable=True)
 
+
 class PasswordResetToken(Base):
     __tablename__ = "reset_tokens"
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    token = Column(String(255), unique=True, default=lambda :str(uuid.uuid64()))
+    token = Column(String(255), unique=True, default=lambda: str(uuid.uuid64()))
     expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(minutes=30))
     user = relationship("User")
-

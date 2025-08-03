@@ -37,13 +37,6 @@ class Token(BaseModel):
     data: Optional[Union[dict, TokenData]] = None
 
 
-# class Sign_Up_details(BaseModel):
-#     """Model used to return from the login or register endpoint."""
-#     status_code: int = 200
-#     status: str = "Success"
-#     message: str = "User logged in successfully"
-#     data: Optional[Union[dict, TokenData]] = None
-
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

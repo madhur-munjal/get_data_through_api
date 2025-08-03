@@ -8,6 +8,10 @@ sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
 from src.database import engine, Base
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 app = FastAPI(title="api_to_get_data",
               description="",
               version="0.0.1",
@@ -16,8 +20,7 @@ app = FastAPI(title="api_to_get_data",
                   # "url": "",
                   # "email": ""
               },
-              root_path="/src", )
-
+              root_path="/src")
 app.include_router(api_router.router)
 
 

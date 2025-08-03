@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-
+from src.dependencies import authenticate_application
 from src import auth
 from src.common import send_email_reset_link
 from src.database import get_db
@@ -33,7 +33,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(user: UserLogin, db: Session = Depends(get_db)):
+def login(user: UserLogin, db: Session = Depends(get_db), dependencies=Depends(authenticate_application)):
     db_user = db.query(User).filter_by(username=user.username).first()
     if not db_user or not auth.verify_password(user.password, db_user.password):
         return Token(status_code=200, status="success", message="Invalid credentials", data=None)

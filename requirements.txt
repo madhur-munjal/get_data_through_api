@@ -7,3 +7,4 @@ fastapi[standard]
 python-jose[cryptography]
 passlib[bcrypt]
 alembic
+dotenv
