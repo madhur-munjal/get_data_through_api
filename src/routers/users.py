@@ -1,16 +1,17 @@
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, status
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from src.dependencies import authenticate_application
+
 from src import auth
-from src.common import send_email_reset_link
 from src.database import get_db
+from src.dependencies import authenticate_application
 from src.models.users import User, PasswordResetToken
-from src.schemas.users import ForgotPasswordRequest, ResetPasswordRequest
+from src.schemas.users import ForgotPasswordRequest, ResetPasswordRequest, VerifyOTPRequest
 from src.schemas.users import UserOut, UserCreate, UserLogin, Token
+from src.utility import generate_otp, send_otp_email, otp_store
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(tags=["auth"])
@@ -55,23 +56,55 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     user = db.query(User).filter_by(email=request.email).first()
     if not user:
         return Token(status_code=200, status="success", message="Email not found", data=None)
+    if user.username != request.username:
+        return Token(status_code=200, status="success", message="Username does not match with email", data=None)
     token = str(uuid.uuid4())
-    reset_token = PasswordResetToken(user_id=user.id, token=token)
-    db.add(reset_token)
-    db.commit()
-    background_tasks.add_task(send_email_reset_link, request.email, token)
-    return {"message": "Password reset link sent to your email", "status_code": 200, "status": "success", "data": None}
+
+    otp = generate_otp()
+    otp_store[request.email] = otp  # TODO: Save OTP (with expiry in production)
+
+    try:
+        # print(f"Sending OTP {otp} to {request.email}")
+        send_otp_email(request.email, otp)
+        print(f"otp_store: {otp_store}")  # For debugging purposes
+        return {"message": "OTP sent successfully", "status_code": 200, "status": "success", "data": None}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send OTP: {str(e)}")
+
+    # reset_token = PasswordResetToken(user_id=user.id, token=token)
+    # db.add(reset_token)
+    # db.commit()
+    # background_tasks.add_task(send_email_reset_link, request.email, token)
+    # return {"message": "Password reset link sent to your email", "status_code": 200, "status": "success", "data": None}
 
 
-@router.post("/reset-password", response_model=Token)
+@router.post("/reset-password", response_model=Token, status_code=status.HTTP_200_OK)
 def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
-    reset_token = db.query(PasswordResetToken).filter(PasswordResetToken.token == request.token).first()
-    if not reset_token or reset_token.expires_at < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
-    user = db.query(User).filter(User.id == reset_token.user_id).first()
+    # print(f"otp_store in reset: {otp_store}")  # For debugging purposes
+    # if request.email not in otp_store:
+    #     raise HTTPException(status_code=404, detail="User not found in otp store")
+
+    # Update password in your DB
+    user = db.query(User).filter(User.email == request.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     user.password = pwd_context.hash(request.new_password)
-    db.delete(reset_token)
     db.commit()
     return {"message": "Password reset successful", "status_code": 200, "status": "success", "data": None}
+
+
+@router.post("/verify-otp", response_model=Token, status_code=status.HTTP_200_OK)
+def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
+    print(f"otp_store in verify: {otp_store}")  # For debugging purposes
+    stored_otp = otp_store.get(request.email)
+    if not stored_otp:
+        raise HTTPException(status_code=404, detail="OTP not found or expired")
+    if request.otp != stored_otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    # You can add logic to mark OTP as verified (e.g., setting a flag in DB or cache)
+    # For demo purposes, we delete it from the store
+    del otp_store[request.email]
+
+    return {"message": "OTP verified successfully", "status_code": 200, "status": "success", "data": None}

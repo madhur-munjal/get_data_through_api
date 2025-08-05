@@ -2,6 +2,36 @@ import smtplib
 from email.message import EmailMessage
 
 
+import smtplib
+from email.mime.text import MIMEText
+import random
+import string
+import os
+
+otp_store = {}
+# Simulated temporary OTP store (for demo; use Redis or DB in prod)
+
+
+def generate_otp(length=4):
+    return ''.join(random.choices(string.digits, k=length))
+
+def send_otp_email(email, otp):
+    msg = MIMEText(f"Your OTP is: {otp}")
+    msg['Subject'] = 'Smart-Heal, Password Reset OTP'
+    from_email = os.getenv("from_email_id")
+    msg['From'] = from_email # os.getenv("from_email_id")
+    msg['To'] = email
+    print(f"Sending OTP {otp} to {email}")
+    # server = smtplib.SMTP('smtpout.secureserver.net', 587)
+    # server.set_debuglevel(1)
+    # server.ehlo()
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(from_email, os.getenv("email_password"))
+        server.send_message(msg)
+
+
 def send_email_reset_link(email: str, token: str):
     to_email = email
     sub = "check"
