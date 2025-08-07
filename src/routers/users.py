@@ -2,12 +2,13 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from src import auth
 from src.database import get_db
-from src.dependencies import authenticate_application
+from src.dependencies import get_current_user
 from src.models.users import User, PasswordResetToken
 from src.schemas.users import ForgotPasswordRequest, ResetPasswordRequest, VerifyOTPRequest
 from src.schemas.users import UserOut, UserCreate, UserLogin, Token
@@ -32,14 +33,15 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
-
 @router.post("/login", response_model=Token)
-def login(user: UserLogin, db: Session = Depends(get_db), dependencies=Depends(authenticate_application)):
-    db_user = db.query(User).filter_by(username=user.username).first()
-    if not db_user or not auth.verify_password(user.password, db_user.password):
+def login(user: UserLogin, db: Session = Depends(get_db)):
+    """Login a user and return an access token."""
+    username = user.username
+    password = user.password
+    db_user = db.query(User).filter_by(username=username).first()
+    if not db_user or not auth.verify_password(password, db_user.password):
         return Token(status_code=200, status="success", message="Invalid credentials", data=None)
-        # raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = auth.create_access_token(data={"sub": db_user.username})
+    token = auth.create_access_token(data={"sub": username})
     user_details = {column.name: getattr(db_user, column.name) for column in User.__table__.columns}
     return Token(
         status_code=200,
@@ -49,10 +51,25 @@ def login(user: UserLogin, db: Session = Depends(get_db), dependencies=Depends(a
         # Get Sign_up class and pass all details
     )
 
+# @router.post("/login", response_model=Token)
+# def login(user: UserLogin, db: Session = Depends(get_db), dependencies=Depends(authenticate_application)):
+#     db_user = db.query(User).filter_by(username=user.username).first()
+#     if not db_user or not auth.verify_password(user.password, db_user.password):
+#         return Token(status_code=200, status="success", message="Invalid credentials", data=None)
+#         # raise HTTPException(status_code=401, detail="Invalid credentials")
+#     token = auth.create_access_token(data={"sub": db_user.username})
+#     user_details = {column.name: getattr(db_user, column.name) for column in User.__table__.columns}
+#     return Token(
+#         status_code=200,
+#         status="Success",
+#         message="User logged in successfully",
+#         data={"access_token": token, "token_type": "bearer", "user_details": user_details}
+#         # Get Sign_up class and pass all details
+#     )
+
 
 @router.post("/forgot-password", response_model=Token)
-def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db),
-                    background_tasks: BackgroundTasks = BackgroundTasks()):
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter_by(email=request.email).first()
     if not user:
         return Token(status_code=200, status="success", message="Email not found", data=None)
