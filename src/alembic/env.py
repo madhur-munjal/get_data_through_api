@@ -1,6 +1,6 @@
 from logging.config import fileConfig
 
-from src.alembic import context
+from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -11,7 +11,6 @@ import os
 
 # Set /src as root
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + "/../.."))
-
 from src.database import Base, DATABASE_URL
 
 # this is the Alembic Config object, which provides
