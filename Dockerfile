@@ -11,5 +11,9 @@ RUN pip install -r requirements.txt
 
 COPY ./src /src
 RUN ls -la /src
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-#CMD ["fastapi", "dev", "main.py", "--host", "0.0.0.0", "--port", "8000"]
+
+# Run Alembic migrations, then start Uvicorn
+CMD /bin/bash -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+
+#CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+##CMD ["fastapi", "dev", "main.py", "--host", "0.0.0.0", "--port", "8000"]
