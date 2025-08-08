@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 load_dotenv()  # ✅ This loads .env variables into os.environ
 import sys
 import os
+# Import your DB URL
+from src.database import DATABASE_URL
+
+# Override sqlalchemy.url
 
 # Set /app as root
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + "/../.."))
@@ -25,6 +29,7 @@ config = context.config
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
