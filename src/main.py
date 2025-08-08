@@ -30,7 +30,7 @@ def on_startup():
     Startup event handler to create database tables.
     """
     # Create all tables in the database
-    # Base.metadata.drop_all(engine)  # Don't use this in production, it will drop all tables, use alembic
+    Base.metadata.drop_all(engine)  # Don't use this in production, it will drop all tables, use alembic
     Base.metadata.create_all(bind=engine)
     print(Base.metadata.tables.keys())
     print("Database tables created successfully.")

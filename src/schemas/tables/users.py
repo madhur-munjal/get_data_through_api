@@ -17,7 +17,6 @@ class User(Base):
     firstName = Column(String(15), nullable=False)
     lastName = Column(String(15), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
-    # address = Column(Text, nullable=True)
     country = Column(String(255), nullable=False)
     contact_number = Column(Text, nullable=False)
     username = Column(String(255), nullable=False, unique=True)  # index=True)
