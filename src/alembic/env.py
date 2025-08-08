@@ -1,6 +1,3 @@
-from src.database import Base
-from src.schemas.tables.patients import Patient
-from src.schemas.tables.users import User
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -10,6 +7,15 @@ from alembic import context
 from dotenv import load_dotenv
 
 load_dotenv()  # ✅ This loads .env variables into os.environ
+import sys
+import os
+
+# Set /app as root
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + "/../.."))
+
+from src.database import Base
+from src.schemas.tables.patients import Patient
+from src.schemas.tables.users import User
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
