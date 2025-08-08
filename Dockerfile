@@ -13,7 +13,7 @@ COPY ./src /src
 RUN ls -la /src
 
 # Run Alembic migrations, then start Uvicorn
-CMD /bin/bash -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+CMD /bin/bash -c "uvicorn main:app --host 0.0.0.0 --port 8000 && alembic upgrade head"
 
 #CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ##CMD ["fastapi", "dev", "main.py", "--host", "0.0.0.0", "--port", "8000"]
