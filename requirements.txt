@@ -1,4 +1,5 @@
-fastapi
+fastapi==0.116.1
+
 sqlalchemy
 pydantic
 mysql-connector-python
@@ -8,3 +9,4 @@ python-jose[cryptography]
 passlib[bcrypt]
 alembic
 dotenv
+python-dotenv

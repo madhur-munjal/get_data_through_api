@@ -2,7 +2,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
+from dotenv import load_dotenv
 
+# from src.schemas.tables.users import User
+
+
+load_dotenv()  # ✅ This loads .env variables into os.environ
+# Load environment variables from .env file
 mysql_username = os.getenv("mysql_username")
 mysql_password = os.getenv("mysql_password")
 hostname = os.getenv("hostname")

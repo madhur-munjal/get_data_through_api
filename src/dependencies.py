@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from src.auth import ALGORITHM, SECRET_KEY
 from src.database import get_db
-from src.models.users import User
+from src.schemas.tables.users import User
 
 failed_attempts = defaultdict(int)
 SECRET_TOKEN = "sample"

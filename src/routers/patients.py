@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from typing import List
 
 from pydantic import BaseModel, Field
-from src.models.patients import Patient
-from src.schemas.patients import PatentBase, PatentCreate, PatentUpdate, PatentOut
+from src.schemas.tables.patients import Patient
+from src.models.patients import PatentCreate, PatentUpdate, PatentOut
 # from . import models, schemas
 from src.database import get_db  # assuming you have a get_db dependency
 
