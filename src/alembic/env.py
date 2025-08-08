@@ -1,25 +1,18 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
 from dotenv import load_dotenv
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
 
 load_dotenv()  # ✅ This loads .env variables into os.environ
 import sys
 import os
-# Import your DB URL
-from src.database import DATABASE_URL
 
-# Override sqlalchemy.url
-
-# Set /app as root
+# Set /src as root
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + "/../.."))
 
-from src.database import Base
-from src.schemas.tables.patients import Patient
-from src.schemas.tables.users import User
+from src.database import Base, DATABASE_URL
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -36,6 +29,7 @@ config.set_main_option("sqlalchemy.url", DATABASE_URL)
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
