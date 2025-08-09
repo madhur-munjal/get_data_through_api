@@ -10,6 +10,9 @@ from src.database import engine, Base
 from src.core.exception_handlers import custom_validation_handler
 from dotenv import load_dotenv
 
+from src.schemas.tables.patients import Patient
+from src.schemas.tables.users import User
+
 load_dotenv()
 
 app = FastAPI(title="api_to_get_data",
