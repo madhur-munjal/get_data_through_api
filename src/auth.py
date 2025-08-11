@@ -3,16 +3,17 @@ import uuid
 from datetime import UTC
 from datetime import datetime, timedelta
 
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+# from fastapi import Depends, HTTPException
+# from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+# from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.schemas.tables.users import User
+from src.dependencies import get_current_user
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 SECRET_KEY = os.getenv("SECRET_KEY")  # Load from environment in production!
 
@@ -75,15 +76,15 @@ def revoke_refresh_token(token: str):
         pass
 
 
-def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_signature": False})
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        user = db.query(User).filter(User.username == username).first()
-        if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
-    except JWTError as e:
-        raise HTTPException(status_code=401, detail=f"Token verification failed : {str(e)}")
+# def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+#     try:
+#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_signature": False})
+#         username: str = payload.get("sub")
+#         if username is None:
+#             raise HTTPException(status_code=401, detail="Invalid token")
+#         user = db.query(User).filter(User.username == username).first()
+#         if user is None:
+#             raise HTTPException(status_code=401, detail="User not found")
+#         return user
+#     except JWTError as e:
+#         raise HTTPException(status_code=401, detail=f"Token verification failed : {str(e)}")
