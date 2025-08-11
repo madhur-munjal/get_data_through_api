@@ -1,5 +1,6 @@
 import os
 import sys
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,9 +10,6 @@ from src.routers import api_router
 from src.database import engine, Base
 from src.core.exception_handlers import custom_validation_handler
 from dotenv import load_dotenv
-
-from src.schemas.tables.patients import Patient
-from src.schemas.tables.users import User
 
 load_dotenv()
 
@@ -49,6 +47,7 @@ app.add_middleware(
 
 app.add_exception_handler(RequestValidationError, custom_validation_handler)
 
+
 @app.get("/")
 async def status():
     """
@@ -56,5 +55,3 @@ async def status():
     :return:
     """
     return {"status": "online"}
-
-

@@ -1,11 +1,11 @@
 import uuid
-from sqlalchemy.exc import IntegrityError
-from fastapi.responses import JSONResponse
-from fastapi import APIRouter, HTTPException, Depends, status
+
+from fastapi import APIRouter, HTTPException, Depends, status, Response, Request
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from src import auth
+from src.auth import create_access_token, verify_password, create_refresh_token, verify_refresh_token, \
+    revoke_refresh_token, hash_password
 from src.database import get_db
 from src.models.response import APIResponse
 from src.models.users import ForgotPasswordRequest, ResetPasswordRequest, VerifyOTPRequest, UserCreate, \
@@ -26,8 +26,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         # raise Now username is unique. Need to rethink if duplicate username should be allowed or not
     if db.query(User).filter_by(email=user.email).first():
         return APIResponse(status_code=200, status="success", message="Email already exists", data=None)
-    hashed_pw = auth.hash_password(user.password)
-    # try:
+    hashed_pw = hash_password(user.password)
     db_user = User(firstName=user.firstName, lastName=user.lastName, email=user.email, country=user.country,
                    contact_number=user.contact_number, username=user.username, password=hashed_pw)
     db.add(db_user)
@@ -37,75 +36,64 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
                        status="success",
                        message="successfully added user to DB",
                        data=UserOut.model_validate(db_user))
-    # except IntegrityError as e:
-    #     db.rollback()
-    #
-    #     error_msg = "Duplicate entry"
-    #     if "1062" in str(e.orig):
-    #         error_msg = "Email or username already exists"
-    #
-    #     return JSONResponse(
-    #         status_code=400,
-    #         content=APIResponse(
-    #             status_code=400,
-    #             status="error",
-    #             message=error_msg,
-    #             data={
-    #                 "type": "sql_insertion_error",
-    #                 "loc": ["body", "email"],
-    #                 "msg": str(e.orig),
-    #                 "input": user.email
-    #             }
-    #         ).model_dump()
-
-    # except Exception as ex:
-    #     # return APIResponse(status_code=200,
-    #     #                    status="success",
-    #     #                    message="successfully added user to DB",
-    #     #                    data=ex)
-    #     # except IntegrityError as e:
-    #     # db.rollback()
-    #     return APIResponse(
-    #         status_code=400,
-    #         status="error",
-    #         message="error: Failed to add user to DB",
-    #         data={
-    #             "error": ex
-    #         }
-    #     )
 
 
 @router.post("/login", response_model=APIResponse)
-def login(user: UserLogin, db: Session = Depends(get_db)):
+def login(response: Response, user: UserLogin, db: Session = Depends(get_db)):
     """Login a user and return an access token."""
     username = user.username
     password = user.password
     db_user = db.query(User).filter_by(username=username).first()
-    if not db_user or not auth.verify_password(password, db_user.password):
+    if not db_user or not verify_password(password, db_user.password):
         return Token(status_code=200, status="success", message="Invalid credentials", data=None)
-    token = auth.create_access_token(data={"sub": username})
-    user_details = {column.name: getattr(db_user, column.name) for column in User.__table__.columns if column.name != "password"}
+    access_token = create_access_token({"sub": username})
+    # refresh_token = create_refresh_token(username)
+    # response.set_cookie(
+    #     key="refresh_token",
+    #     value=refresh_token,
+    #     httponly=True,
+    #     secure=True,
+    #     samesite="strict",
+    #     max_age=7 * 24 * 60 * 60
+    # )
+    user_details = {column.name: getattr(db_user, column.name) for column in User.__table__.columns if
+                    column.name != "password"}
     return APIResponse(status_code=200,
                        status="success",
                        message="User logged in successfully",
-                       data={"access_token": token, "token_type": "bearer", "user_details": user_details}
+                       data={"access_token": access_token, "token_type": "bearer", "user_details": user_details}
+                       #  "refresh_token": refresh_token
                        )
 
-    # @router.post("/login", response_model=Token)
-    # def login(user: UserLogin, db: Session = Depends(get_db), dependencies=Depends(authenticate_application)):
-    #     db_user = db.query(User).filter_by(username=user.username).first()
-    #     if not db_user or not auth.verify_password(user.password, db_user.password):
-    #         return Token(status_code=200, status="success", message="Invalid credentials", data=None)
-    #         # raise HTTPException(status_code=401, detail="Invalid credentials")
-    #     token = auth.create_access_token(data={"sub": db_user.username})
-    #     user_details = {column.name: getattr(db_user, column.name) for column in User.__table__.columns}
-    #     return Token(
-    #         status_code=200,
-    #         status="Success",
-    #         message="User logged in successfully",
-    #         data={"access_token": token, "token_type": "bearer", "user_details": user_details}
-    #         # Get Sign_up class and pass all details
-    #     )
+
+@router.post("/refresh")
+def refresh(request: Request, response: Response):
+    token = request.cookies.get("refresh_token")
+    user_id = verify_refresh_token(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    revoke_refresh_token(token)
+    new_refresh = create_refresh_token(user_id)
+    new_access = create_access_token({"sub": user_id})
+
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=7 * 24 * 60 * 60
+    )
+    return {"access_token": new_access}
+
+
+@router.post("/logout")
+def logout(request: Request, response: Response):
+    token = request.cookies.get("refresh_token")
+    revoke_refresh_token(token)
+    response.delete_cookie("refresh_token")
+    return {"message": "Logged out"}
 
 
 @router.post("/forgot-password", response_model=APIResponse)

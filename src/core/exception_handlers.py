@@ -16,15 +16,8 @@ def sanitize_errors(errors: List[dict]) -> List[dict]:
     return errors
 
 
-# @app.exception_handler(RequestValidationError)
 async def custom_validation_handler(request: Request, exc: RequestValidationError):
     sanitized = sanitize_errors(exc.errors())
-    # import json
-    #
-    # from fastapi.exception_handlers import request_validation_exception_handler
-    # response = await request_validation_exception_handler(request, exc)
-    # response_body = response.body.decode()
-    # data=json.loads(response_body)
     return JSONResponse(
         status_code=422,
         content=APIResponse(status_code=422, status="error", message="Validation failed",
