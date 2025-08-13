@@ -18,7 +18,7 @@ from src.dependencies import get_current_user
 SECRET_KEY = os.getenv("SECRET_KEY")  # Load from environment in production!
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 245
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 # In-memory store for refresh tokens (replace with DB or Redis)

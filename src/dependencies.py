@@ -1,5 +1,5 @@
 """
-Recheck the dependency, now using verify_token which is in auth.py
+Recheck the dependency, now using verify_token which is in auth_utils.py
 """
 
 import os

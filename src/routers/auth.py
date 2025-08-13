@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends, status, Response, Request
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from src.auth import create_access_token, verify_password, create_refresh_token, verify_refresh_token, \
+from src.auth_utils import create_access_token, verify_password, create_refresh_token, verify_refresh_token, \
     revoke_refresh_token, hash_password
 from src.database import get_db
 from src.models.response import APIResponse
@@ -47,22 +47,21 @@ def login(response: Response, user: UserLogin, db: Session = Depends(get_db)):
     if not db_user or not verify_password(password, db_user.password):
         return Token(status_code=200, status="success", message="Invalid credentials", data=None)
     access_token = create_access_token({"sub": username})
-    # refresh_token = create_refresh_token(username)
-    # response.set_cookie(
-    #     key="refresh_token",
-    #     value=refresh_token,
-    #     httponly=True,
-    #     secure=True,
-    #     samesite="strict",
-    #     max_age=7 * 24 * 60 * 60
-    # )
+    refresh_token = create_refresh_token(username)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=7 * 24 * 60 * 60
+    )
     user_details = {column.name: getattr(db_user, column.name) for column in User.__table__.columns if
                     column.name != "password"}
     return APIResponse(status_code=200,
                        status="success",
                        message="User logged in successfully",
-                       data={"access_token": access_token, "token_type": "bearer", "user_details": user_details}
-                       #  "refresh_token": refresh_token
+                       data={"access_token": access_token,  "refresh_token": refresh_token, "token_type": "bearer", "user_details": user_details}
                        )
 
 

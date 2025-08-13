@@ -1,58 +1,59 @@
-import smtplib
-from email.message import EmailMessage
-
-
-import smtplib
-from email.mime.text import MIMEText
-import random
-import string
 import os
+import random
+import smtplib
+import string
+from email.mime.text import MIMEText
 
 otp_store = {}
+
+
 # Simulated temporary OTP store (for demo; use Redis or DB in prod)
 
 
 def generate_otp(length=4):
     return ''.join(random.choices(string.digits, k=length))
 
-def send_otp_email(email, otp):
-    msg = MIMEText(f"Your OTP is: {otp}")
-    msg['Subject'] = 'Smart-Heal, Password Reset OTP'
-    from_email = os.getenv("from_email_id")
-    msg['From'] = from_email # os.getenv("from_email_id")
-    msg['To'] = email
-    print(f"Sending OTP {otp} to {email}")
-    # server = smtplib.SMTP('smtpout.secureserver.net', 587)
-    # server.set_debuglevel(1)
-    # server.ehlo()
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login(from_email, os.getenv("email_password"))
-        server.send_message(msg)
+def send_otp_email(to_email, otp):
+    message = MIMEText(f"Your OTP is: {otp}")
+    from_email = os.getenv("from_email_id")  # "support@smarthealapp.com"
+    message["From"] = from_email
+    message["To"] = to_email
+    message["Subject"] = 'Smart-Heal, Password Reset OTP'
+    print(f"Sending OTP {otp} to {to_email}")
+    smtp_server = "smtpout.secureserver.net"  # 'mail.firsttoothclinic.com'
+    server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
+    status_code, response = server.ehlo()
+    print(f"SMTP server response: {status_code} {response.decode()}")
+    # status_code, response = server.starttls()
+    # print(f"Start TLS connection: {status_code} {response.decode()}")
+    status_code, response = server.login(from_email, os.getenv("email_password"))
+    print(f"Login response: {status_code} {response.decode()}")
+    server.sendmail(from_email, to_email, message.as_string())
+    server.quit()
 
 
-def send_email_reset_link(email: str, token: str):
-    to_email = email
-    sub = "check"
-    body = "check"
-    from_email = ""
-    from_password = ""
-
-    msg = EmailMessage()
-    msg['Subject'] = sub
-    msg['From'] = from_email
-    msg['To'] = to_email
-    msg.set_content(body)
-
-    try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(from_email, from_password)
-            server.send_message(msg)
-            print(f"Sending reset link to {email} with token {token}")
-            print(f"Reset link sent to {email}")
-    except Exception as e:
-        print(f"Failed to send email: {e}")
+# def send_email_reset_link(email: str, token: str):
+#     to_email = email
+#     sub = "check"
+#     body = "check"
+#     from_email = ""
+#     from_password = ""
+#
+#     msg = EmailMessage()
+#     msg['Subject'] = sub
+#     msg['From'] = from_email
+#     msg['To'] = to_email
+#     msg.set_content(body)
+#
+#     try:
+#         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+#             server.login(from_email, from_password)
+#             server.send_message(msg)
+#             print(f"Sending reset link to {email} with token {token}")
+#             print(f"Reset link sent to {email}")
+#     except Exception as e:
+#         print(f"Failed to send email: {e}")
 
 
 # import smtplib
