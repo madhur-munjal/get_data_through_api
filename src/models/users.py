@@ -17,12 +17,12 @@ class UserCreate(BaseModel):
     """Model used to create a new user."""
     firstName: constr(min_length=3, max_length=15)
     lastName: constr(min_length=3, max_length=15)
-    email: EmailStr
+    email: str
     country: str
     # address: str
-    contact_number: ContactStr
-    username: str
-    password: str
+    mobile: constr(min_length=5)
+    username: constr(min_length=5, max_length=18)
+    password: constr(min_length=5)
 
     class Config:
         orm_mode = True
@@ -31,11 +31,31 @@ class UserCreate(BaseModel):
     @field_validator("password", mode="after")
     def validate_password(cls, value):
         # At least one lowercase, one uppercase, one digit, one special char, min 8 chars
-        pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$'
+        pattern = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$'
         if not re.fullmatch(pattern, value):
             raise ValueError(
                 "Password must be at least 8 characters long and include "
                 "uppercase, lowercase, digit, and special character"
+            )
+        return value
+
+    @field_validator("username", mode="after")
+    def validate_username(cls, value):
+        # At least one lowercase, one uppercase, one digit, one special char, min 8 chars
+        pattern = '^(?=[a-zA-Z])(?=.[._-])(?!.[.-]{2})[a-zA-Z][a-zA-Z0-9.-]{1,18}[a-zA-Z0-9]$'
+        if not re.fullmatch(pattern, value):
+            raise ValueError(
+                "Invalid Username"
+            )
+        return value
+
+    @field_validator("email", mode="after")
+    def validate_email(cls, value):
+        # At least one lowercase, one uppercase, one digit, one special char, min 8 chars
+        pattern = '^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$'
+        if not re.fullmatch(pattern, value):
+            raise ValueError(
+                "Invalid Email format"
             )
         return value
 
@@ -50,12 +70,10 @@ class UserOut(BaseModel):
     id: int
     firstName: constr(min_length=3, max_length=15)
     lastName: constr(min_length=3, max_length=15)
-    email: EmailStr
+    email: str
     country: str
-    # address: str
-    contact_number: ContactStr
-    username: str
-    # password: str
+    mobile: constr(min_length=5)
+    username: constr(min_length=5, max_length=18)
 
     model_config = {
         "from_attributes": True

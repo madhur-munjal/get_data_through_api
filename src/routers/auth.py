@@ -28,7 +28,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         return APIResponse(status_code=200, status="success", message="Email already exists", data=None)
     hashed_pw = hash_password(user.password)
     db_user = User(firstName=user.firstName, lastName=user.lastName, email=user.email, country=user.country,
-                   contact_number=user.contact_number, username=user.username, password=hashed_pw)
+                   mobile=user.mobile, username=user.username, password=hashed_pw)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
