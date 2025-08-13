@@ -3,7 +3,9 @@ import random
 import smtplib
 import string
 from email.mime.text import MIMEText
+from dotenv import load_dotenv
 
+load_dotenv()
 otp_store = {}
 
 
