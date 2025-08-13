@@ -84,6 +84,18 @@ class ResetPasswordRequest(BaseModel):
     email: EmailStr
     new_password: str
 
+    @field_validator("new_password", mode="after")
+    def validate_password(cls, value):
+        # At least one lowercase, one uppercase, one digit, one special char, min 8 chars
+        pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$'
+        if not re.fullmatch(pattern, value):
+            raise ValueError(
+                "Password must be at least 8 characters long and include "
+                "uppercase, lowercase, digit, and special character"
+            )
+        return value
+
+
 
 class VerifyOTPRequest(BaseModel):
     email: EmailStr

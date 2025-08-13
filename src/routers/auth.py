@@ -61,7 +61,8 @@ def login(response: Response, user: UserLogin, db: Session = Depends(get_db)):
     return APIResponse(status_code=200,
                        status="success",
                        message="User logged in successfully",
-                       data={"access_token": access_token,  "refresh_token": refresh_token, "token_type": "bearer", "user_details": user_details}
+                       data={"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer",
+                             "user_details": user_details}
                        )
 
 
