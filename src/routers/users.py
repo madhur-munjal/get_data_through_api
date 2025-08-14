@@ -19,7 +19,7 @@ def get_users(current_user=Depends(get_current_user), db: Session = Depends(get_
                        status="success",
                        message="successfully fetched users",
                        data=user_dtos
-                       )
+                       ).model_dump()
 
 
 @router.post("/delete-user")
@@ -40,4 +40,4 @@ def delete_user(
                        status="success",
                        message="successfully deleted user",
                        data=f"User {request.user_id} deleted successfully"
-                       )
+                       ).model_dump()

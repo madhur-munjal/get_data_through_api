@@ -22,10 +22,10 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user."""
     db_user = db.query(User).filter_by(username=user.username).first()
     if db_user:
-        return APIResponse(status_code=200, status="success", message="Username already exists", data=None)
+        return APIResponse(status_code=200, status="success", message="Username already exists", data=None).model_dump()
         # raise Now username is unique. Need to rethink if duplicate username should be allowed or not
     if db.query(User).filter_by(email=user.email).first():
-        return APIResponse(status_code=200, status="success", message="Email already exists", data=None)
+        return APIResponse(status_code=200, status="success", message="Email already exists", data=None).model_dump()
     hashed_pw = hash_password(user.password)
     db_user = User(firstName=user.firstName, lastName=user.lastName, email=user.email, country=user.country,
                    mobile=user.mobile, username=user.username, password=hashed_pw)
@@ -34,8 +34,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return APIResponse(status_code=200,
                        status="success",
-                       message="successfully added user to DB",
-                       data=UserOut.model_validate(db_user))
+                       message="User has been register successfully",
+                       data=UserOut.model_validate(db_user)).model_dump()
 
 
 @router.post("/login", response_model=APIResponse)
@@ -63,7 +63,7 @@ def login(response: Response, user: UserLogin, db: Session = Depends(get_db)):
                        message="User logged in successfully",
                        data={"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer",
                              "user_details": user_details}
-                       )
+                       ).model_dump()
 
 
 @router.post("/refresh")
@@ -100,9 +100,9 @@ def logout(request: Request, response: Response):
 def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter_by(email=request.email).first()
     if not user:
-        return APIResponse(status_code=200, status="success", message="Email not found", data=None)
+        return APIResponse(status_code=200, status="success", message="Email not found", data=None).model_dump()
     if user.username != request.username:
-        return APIResponse(status_code=200, status="success", message="Username does not match with email", data=None)
+        return APIResponse(status_code=200, status="success", message="Username does not match with email", data=None).model_dump()
     token = str(uuid.uuid4())
 
     otp = generate_otp()
@@ -112,7 +112,7 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
         # print(f"Sending OTP {otp} to {request.email}")
         send_otp_email(request.email, otp)
         print(f"otp_store: {otp_store}")  # For debugging purposes
-        return APIResponse(status_code=200, status="success", message="OTP sent successfully", data=None)
+        return APIResponse(status_code=200, status="success", message="OTP sent successfully", data=None).model_dump()
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to send OTP: {str(e)}")
@@ -136,7 +136,7 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
         raise HTTPException(status_code=404, detail="User not found")
     user.password = pwd_context.hash(request.new_password)
     db.commit()
-    return APIResponse(status_code=200, message="Password reset successful", status="success", data=None)
+    return APIResponse(status_code=200, message="Password reset successful", status="success", data=None).model_dump()
 
 
 @router.post("/verify-otp", response_model=Token, status_code=status.HTTP_200_OK)
@@ -152,4 +152,4 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     # For demo purposes, we delete it from the store
     del otp_store[request.email]
 
-    return APIResponse(status_code=200, message="OTP verified successfully", status="success", data=None)
+    return APIResponse(status_code=200, message="OTP verified successfully", status="success", data=None).model_dump()

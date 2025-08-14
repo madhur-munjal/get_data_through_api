@@ -4,7 +4,9 @@ import smtplib
 import string
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
-
+import re
+from pydantic import ValidationError
+from pydantic_core import InitErrorDetails, PydanticCustomError
 load_dotenv()
 otp_store = {}
 
@@ -35,90 +37,51 @@ def send_otp_email(to_email, otp):
     server.quit()
 
 
-# def send_email_reset_link(email: str, token: str):
-#     to_email = email
-#     sub = "check"
-#     body = "check"
-#     from_email = ""
-#     from_password = ""
-#
-#     msg = EmailMessage()
-#     msg['Subject'] = sub
-#     msg['From'] = from_email
-#     msg['To'] = to_email
-#     msg.set_content(body)
-#
-#     try:
-#         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-#             server.login(from_email, from_password)
-#             server.send_message(msg)
-#             print(f"Sending reset link to {email} with token {token}")
-#             print(f"Reset link sent to {email}")
-#     except Exception as e:
-#         print(f"Failed to send email: {e}")
+def validate_user_fields(values, cls):
+    """
+    Validate user fields based on the constraints defined in the User model.
+    :param values: Dictionary of field values to validate.
+    :param cls: Class type for which validation is being performed.
+    :return: Validated values or raises ValueError if validation fails.
+    """
+    PASSWORD_REGEX = re.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$")
+    USERNAME_REGEX = re.compile("^(?=[a-zA-Z])(?=.*[._-])(?!.[.-]{2})[a-zA-Z][a-zA-Z0-9.-]{1,18}[a-zA-Z0-9]$")
+    EMAIL_REGEX = re.compile("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$")  # Indian mobile numbers
 
+    errors: list[InitErrorDetails] = []
 
-# import smtplib
-# from email.mime.text import MIMEText
-# from email.mime.multipart import MIMEMultipart
-#
-# # Replace with your SendPulse SMTP credentials
-# smtp_server = "smtp.sendpulse.com"
-# smtp_port = 587
-# smtp_username = "madhur.mj04@gmail.com"  # Usually the email you signed up with
-# smtp_password = "G1@madmun"  # You’ll find this in SMTP settings
-#
-# # Email details
-# sender_email = smtp_username
-# receiver_email = "madhur.munjal@yahoo.in"
-# subject = "Hello from SendPulse and Python"
-# body = "This is a test email sent using SendPulse SMTP server and Python!"
-#
-# # Create the message
-# message = MIMEMultipart()
-# message["From"] = sender_email
-# message["To"] = receiver_email
-# message["Subject"] = subject
-# message.attach(MIMEText(body, "plain"))
-#
-# # Send the email
-# try:
-#     with smtplib.SMTP(smtp_server, smtp_port) as server:
-#         server.starttls()
-#         server.login(smtp_username, smtp_password)
-#         server.sendmail(sender_email, receiver_email, message.as_string())
-#         print("✅ Email sent successfully!")
-# except Exception as e:
-#     print(f"❌ Failed to send email: {e}")
+    # Email validation
+    if "email" in cls.model_fields and not EMAIL_REGEX.fullmatch(values.email):
+        errors.append(
+            InitErrorDetails(
+                type=PydanticCustomError("value_error", "Invalid email format"),
+                loc=("email",),
+                input=values.email
+            )
+        )
 
-# send_email_reset_link("madhur.munjal@yahoo.in", "abc")
+    # Username validation
+    if "username" in cls.model_fields and not USERNAME_REGEX.fullmatch(values.username):
+        errors.append(
+            InitErrorDetails(
+                type=PydanticCustomError("value_error", "Invalid username format"),
+                loc=("username",),
+                input=values.username
+            )
+        )
 
-# def send_email():
-#     import smtplib
-#     from email.mime.text import MIMEText
-#     from email.mime.multipart import MIMEMultipart
-#
-#
-#     # Email credentials
-#     sender_email = "smartheal04@gmail.com"
-#     receiver_email = "madhur.munjal@yahoo.in"
-#     app_password = "your_app_password"  # Use an app password, not your regular Gmail password
-#
-#     # Compose the message
-#     message = MIMEMultipart()
-#     message["From"] = sender_email
-#     message["To"] = receiver_email
-#     message["Subject"] = "Hello from Python"
-#
-#     body = "This is a test email sent from Python!"
-#     message.attach(MIMEText(body, "plain"))
-#
-#     # Send the email
-#     try:
-#         with smtplib.SMTP("smtp.gmail.com", 587) as server:
-#             server.starttls()
-#             server.login(sender_email, app_password)
-#             server.sendmail(sender_email, receiver_email, message.as_string())
-#             print("Email sent successfully!")
-#     except Exception as e:
-#         print(f"Failed to send email: {e}")
+    # Password validation
+    if "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
+        errors.append(
+            InitErrorDetails(
+                type=PydanticCustomError("value_error",
+                                         "Invalid password format, Password must be at least 8 characters long and include uppercase, lowercase, digit, and special character"),
+                loc=("password",),
+                input=values.password
+            )
+        )
+
+    if errors:
+        raise ValidationError.from_exception_data(cls, errors)
+
+    return values
