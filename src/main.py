@@ -30,6 +30,7 @@ def on_startup():
     """
     Startup event handler to create database tables.
     """
+    app.state.ACCESS_TOKEN_EXPIRE_MINUTES = 30
     # Create all tables in the database
     # Base.metadata.drop_all(engine)  # Don't use this in production, it will drop all tables, use alembic
     Base.metadata.create_all(bind=engine)

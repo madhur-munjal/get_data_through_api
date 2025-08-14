@@ -18,6 +18,6 @@ async def custom_validation_handler(request: Request, exc: RequestValidationErro
         })
     return JSONResponse(
         status_code=422,
-        content=APIResponse(status_code=422, status="error", message="Validation failed",
+        content=APIResponse(status_code=422, success=False, message="Validation failed",
                             errors=simplified_errors).model_dump()
     )

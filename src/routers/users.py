@@ -16,7 +16,7 @@ def get_users(current_user=Depends(get_current_user), db: Session = Depends(get_
     users = db.query(User).all()
     user_dtos = [UserOut.model_validate(user) for user in users]
     return APIResponse(status_code=200,
-                       status="success",
+                       success=True,
                        message="successfully fetched users",
                        data=user_dtos
                        ).model_dump()
@@ -37,7 +37,7 @@ def delete_user(
     db.delete(user)
     db.commit()
     return APIResponse(status_code=200,
-                       status="success",
+                       success=True,
                        message="successfully deleted user",
                        data=f"User {request.user_id} deleted successfully"
                        ).model_dump()

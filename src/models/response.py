@@ -20,7 +20,7 @@ class BaseResponse(GenericModel, Generic[T]):
 
 class APIResponse(BaseResponse[T]):
     status_code: int
-    status: str
+    success: bool
     message: str
     data: Optional[Union[T, str]] = None  # Field(default=None, exclude_none=True)
     errors: Optional[List[Any]] = None  # Field(default=None, exclude=True)

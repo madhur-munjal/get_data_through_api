@@ -3,7 +3,7 @@ import uuid
 from datetime import UTC
 from datetime import datetime, timedelta
 
-# from fastapi import Depends, HTTPException
+from fastapi import Request
 # from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -18,7 +18,7 @@ from src.dependencies import get_current_user
 SECRET_KEY = os.getenv("SECRET_KEY")  # Load from environment in production!
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
+# ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 # In-memory store for refresh tokens (replace with DB or Redis)
@@ -36,9 +36,10 @@ def hash_password(password):
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict):
+def create_access_token(data: dict, request: Request):
     to_encode = data.copy()
-    to_encode["exp"] = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire_minutes = request.app.state.ACCESS_TOKEN_EXPIRE_MINUTES
+    to_encode["exp"] = datetime.now(UTC) + timedelta(minutes=expire_minutes)
     s_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return s_token
 
