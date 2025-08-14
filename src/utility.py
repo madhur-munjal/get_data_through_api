@@ -1,17 +1,18 @@
 import os
 import random
+import re
 import smtplib
 import string
 from email.mime.text import MIMEText
+
 from dotenv import load_dotenv
-import re
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
-load_dotenv()
-otp_store = {}
 
+load_dotenv()
 
 # Simulated temporary OTP store (for demo; use Redis or DB in prod)
+otp_store = {}
 
 
 def generate_otp(length=4):
@@ -29,8 +30,6 @@ def send_otp_email(to_email, otp):
     server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
     status_code, response = server.ehlo()
     print(f"SMTP server response: {status_code} {response.decode()}")
-    print(f"from_email: {from_email}")
-    print(f"type of from_email: {type(from_email)}")
     status_code, response = server.login(from_email, os.getenv("email_password"))
     print(f"Login response: {status_code} {response.decode()}")
     server.sendmail(from_email, to_email, message.as_string())
@@ -45,7 +44,7 @@ def validate_user_fields(values, cls):
     :return: Validated values or raises ValueError if validation fails.
     """
     PASSWORD_REGEX = re.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$")
-    USERNAME_REGEX = re.compile("^(?=[a-zA-Z])(?=.*[._-])(?!.[.-]{2})[a-zA-Z][a-zA-Z0-9.-]{1,18}[a-zA-Z0-9]$")
+    USERNAME_REGEX = re.compile("^(?=[a-zA-Z])(?=.*[._-])(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]{1,18}[a-zA-Z0-9]$")
     EMAIL_REGEX = re.compile("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$")  # Indian mobile numbers
 
     errors: list[InitErrorDetails] = []

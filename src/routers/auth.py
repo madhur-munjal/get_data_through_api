@@ -102,7 +102,8 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     if not user:
         return APIResponse(status_code=200, status="success", message="Email not found", data=None).model_dump()
     if user.username != request.username:
-        return APIResponse(status_code=200, status="success", message="Username does not match with email", data=None).model_dump()
+        return APIResponse(status_code=200, status="success", message="Username does not match with email",
+                           data=None).model_dump()
     token = str(uuid.uuid4())
 
     otp = generate_otp()
