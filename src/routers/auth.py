@@ -145,9 +145,9 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     print(f"otp_store in verify: {otp_store}")  # For debugging purposes
     stored_otp = otp_store.get(request.email)
     if not stored_otp:
-        raise APIResponse(status_code=200, success=False, message="OTP not found or expired").model_dump()
+        return APIResponse(status_code=200, success=False, message="OTP not found or expired").model_dump()
     if request.otp != stored_otp:
-        raise APIResponse(status_code=200, success=False, message="Incorrect OTP").model_dump()
+        return APIResponse(status_code=200, success=False, message="Incorrect OTP").model_dump()
 
     # You can add logic to mark OTP as verified (e.g., setting a flag in DB or cache)
     # For demo purposes, we delete it from the store
