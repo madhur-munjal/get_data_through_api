@@ -125,7 +125,7 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     # return {"message": "Password reset link sent to your email", "status_code": 200, "status": "success", "data": None}
 
 
-@router.post("/reset-password", response_model=Token, status_code=status.HTTP_200_OK)
+@router.post("/reset-password", response_model=APIResponse, status_code=status.HTTP_200_OK)
 def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
     # print(f"otp_store in reset: {otp_store}")  # For debugging purposes
     # if request.email not in otp_store:
@@ -140,7 +140,7 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
     return APIResponse(status_code=200, success=True, message="Password reset successful", data=None).model_dump()
 
 
-@router.post("/verify-otp", response_model=Token, status_code=status.HTTP_200_OK)
+@router.post("/verify-otp", response_model=APIResponse, status_code=status.HTTP_200_OK)
 def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     print(f"otp_store in verify: {otp_store}")  # For debugging purposes
     stored_otp = otp_store.get(request.email)
@@ -158,6 +158,6 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
 @router.put("/config/token-expiry")
 def update_token_expiry(minutes: int, request: Request):
     if minutes <= 0 or minutes > 1440:
-        raise HTTPException(status_code=400, detail="Invalid expiry time, it should be greater than 0 and less than 1440")
+        return APIResponse(status_code=200, success=False, message="Invalid expiry time, it should be greater than 0 and less than 1440", data=None)
     request.app.state.ACCESS_TOKEN_EXPIRE_MINUTES = minutes
-    return {"message": "Token expiry updated", "new_expiry": minutes}
+    return APIResponse(status_code=200, success=True, message="Token expiry updated", data={"new_expiry": minutes})
