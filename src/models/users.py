@@ -49,26 +49,23 @@ class UserOut(BaseModel):
         return validate_user_fields(values, cls)
 
 
-class TokenData(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class Token(BaseModel):
-    """Model used to return from the login or register endpoint."""
-    status_code: int = 200
-    status: str = "Success"
-    message: str = "User logged in successfully"
-    data: Optional[Union[dict, TokenData]] = None
+# class TokenData(BaseModel):
+#     access_token: str
+#     token_type: str
+#
+#
+# class Token(BaseModel):
+#     """Model used to return from the login or register endpoint."""
+#     status_code: int = 200
+#     status: str = "Success"
+#     message: str = "User logged in successfully"
+#     data: Optional[Union[dict, TokenData]] = None
 
 
 class ForgotPasswordRequest(BaseModel):
     username: str
     email: str
 
-    # @model_validator(mode="after")
-    # def validate(cls, values):
-    #     return validate_user_fields(values, cls)
 
 
 class ResetPasswordRequest(BaseModel):

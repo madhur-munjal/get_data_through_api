@@ -9,9 +9,9 @@ T = TypeVar("T")
 class BaseResponse(GenericModel, Generic[T]):
     model_config = {"exclude_none": True}
 
-    # def __init__(self, **data):
-    #     filtered = {k:v for k,v in data.items() if v is not None}
-    #     super().__init__(**filtered)
+    def __init__(self, **data):
+        filtered = {k:v for k,v in data.items() if v is not None}
+        super().__init__(**filtered)
 
     def model_dump(self, *args, **kwargs):
         kwargs.setdefault("exclude_none", True)

@@ -9,7 +9,7 @@ from src.auth_utils import create_access_token, verify_password, create_refresh_
 from src.database import get_db
 from src.models.response import APIResponse
 from src.models.users import ForgotPasswordRequest, ResetPasswordRequest, VerifyOTPRequest, UserCreate, \
-    UserLogin, Token, UserOut
+    UserLogin, UserOut
 from src.schemas.tables.users import User
 from src.utility import generate_otp, send_otp_email, otp_store
 
@@ -45,7 +45,7 @@ def login(request: Request, user: UserLogin, db: Session = Depends(get_db)):
     password = user.password
     db_user = db.query(User).filter_by(username=username).first()
     if not db_user or not verify_password(password, db_user.password):
-        return Token(status_code=200, status="success", message="Invalid credentials", data=None)
+        return APIResponse(status_code=200, success=False, message="Invalid credentials", data=None)
     access_token = create_access_token({"sub": username}, request=request)
     # refresh_token = create_refresh_token(username)
     # response.set_cookie(
@@ -125,20 +125,6 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     # return {"message": "Password reset link sent to your email", "status_code": 200, "status": "success", "data": None}
 
 
-@router.post("/reset-password", response_model=APIResponse, status_code=status.HTTP_200_OK)
-def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
-    # print(f"otp_store in reset: {otp_store}")  # For debugging purposes
-    # if request.email not in otp_store:
-    #     raise HTTPException(status_code=404, detail="User not found in otp store")
-
-    # Update password in your DB
-    user = db.query(User).filter(User.email == request.email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    user.password = pwd_context.hash(request.new_password)
-    db.commit()
-    return APIResponse(status_code=200, success=True, message="Password reset successful", data=None).model_dump()
-
 
 @router.post("/verify-otp", response_model=APIResponse, status_code=status.HTTP_200_OK)
 def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
@@ -154,6 +140,22 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     del otp_store[request.email]
 
     return APIResponse(status_code=200, success=True, message="OTP verified successfully", data=None).model_dump()
+
+@router.post("/reset-password", response_model=APIResponse, status_code=status.HTTP_200_OK)
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    # print(f"otp_store in reset: {otp_store}")  # For debugging purposes
+    # if request.email not in otp_store:
+    #     raise HTTPException(status_code=404, detail="User not found in otp store")
+
+    # Update password in your DB
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        return APIResponse(status_code=200, success=False, message="User not found", data=None).model_dump()
+        # raise HTTPException(status_code=404, detail="User not found")
+    user.password = pwd_context.hash(request.new_password)
+    db.commit()
+    return APIResponse(status_code=200, success=True, message="Password reset successful", data=None).model_dump()
+
 
 @router.put("/config/token-expiry")
 def update_token_expiry(minutes: int, request: Request):
