@@ -66,9 +66,9 @@ class ForgotPasswordRequest(BaseModel):
     username: str
     email: str
 
-    @model_validator(mode="after")
-    def validate(cls, values):
-        return validate_user_fields(values, cls)
+    # @model_validator(mode="after")
+    # def validate(cls, values):
+    #     return validate_user_fields(values, cls)
 
 
 class ResetPasswordRequest(BaseModel):

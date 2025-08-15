@@ -34,7 +34,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return APIResponse(status_code=200,
                        success=True,
-                       message="User has been register successfully",
+                       message="User has been registered successfully",
                        data=UserOut.model_validate(db_user)).model_dump()
 
 
@@ -145,9 +145,9 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     print(f"otp_store in verify: {otp_store}")  # For debugging purposes
     stored_otp = otp_store.get(request.email)
     if not stored_otp:
-        raise HTTPException(status_code=404, detail="OTP not found or expired")
+        raise APIResponse(status_code=200, success=False, message="OTP not found or expired").model_dump()
     if request.otp != stored_otp:
-        raise HTTPException(status_code=400, detail="Invalid OTP")
+        raise APIResponse(status_code=200, success=False, message="Incorrect OTP").model_dump()
 
     # You can add logic to mark OTP as verified (e.g., setting a flag in DB or cache)
     # For demo purposes, we delete it from the store
