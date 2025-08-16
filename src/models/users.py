@@ -88,3 +88,8 @@ class VerifyOTPRequest(BaseModel):
 
 class DeleteUserRequest(BaseModel):
     user_id: int
+
+
+# class ItemUpdate(BaseModel):
+#     name: str | None = None
+#     description: str | None = None

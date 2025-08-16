@@ -23,7 +23,6 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter_by(username=user.username).first()
     if db_user:
         return APIResponse(status_code=200, success=False, message="Username already exists", data=None).model_dump()
-        # raise Now username is unique. Need to rethink if duplicate username should be allowed or not
     if db.query(User).filter_by(email=user.email).first():
         return APIResponse(status_code=200, success=False, message="Email already exists", data=None).model_dump()
     hashed_pw = hash_password(user.password)
@@ -34,7 +33,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return APIResponse(status_code=200,
                        success=True,
-                       message="User has been registered successfully",
+                       message="Your account has been created successfully, You can now log in to access your dashboard.",
                        data=UserOut.model_validate(db_user)).model_dump()
 
 
@@ -45,12 +44,13 @@ def login(request: Request, user: UserLogin, db: Session = Depends(get_db)):
     password = user.password
     db_user = db.query(User).filter_by(username=username).first()
     if not db_user or not verify_password(password, db_user.password):
-        return APIResponse(status_code=200, success=False, message="Invalid credentials", data=None)
+        return APIResponse(status_code=200, success=False,
+                           message="Login unsuccessful. Please verify your username and password.", data=None)
     access_token = create_access_token({"sub": username}, request=request)
     # refresh_token = create_refresh_token(username)
     # response.set_cookie(
     #     key="refresh_token",
-        # value=refresh_token,
+    # value=refresh_token,
     #     httponly=True,
     #     secure=True,
     #     samesite="strict",
@@ -63,7 +63,7 @@ def login(request: Request, user: UserLogin, db: Session = Depends(get_db)):
                        message="User logged in successfully",
                        data={"access_token": access_token, "token_type": "bearer",
                              "user_details": user_details}
-                       ).model_dump() # "refresh_token": refresh_token,
+                       ).model_dump()  # "refresh_token": refresh_token,
 
 
 @router.post("/refresh")
@@ -125,7 +125,6 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     # return {"message": "Password reset link sent to your email", "status_code": 200, "status": "success", "data": None}
 
 
-
 @router.post("/verify-otp", response_model=APIResponse, status_code=status.HTTP_200_OK)
 def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     print(f"otp_store in verify: {otp_store}")  # For debugging purposes
@@ -140,6 +139,7 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     del otp_store[request.email]
 
     return APIResponse(status_code=200, success=True, message="OTP verified successfully", data=None).model_dump()
+
 
 @router.post("/reset-password", response_model=APIResponse, status_code=status.HTTP_200_OK)
 def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
@@ -160,6 +160,7 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
 @router.put("/config/token-expiry")
 def update_token_expiry(minutes: int, request: Request):
     if minutes <= 0 or minutes > 1440:
-        return APIResponse(status_code=200, success=False, message="Invalid expiry time, it should be greater than 0 and less than 1440", data=None)
+        return APIResponse(status_code=200, success=False,
+                           message="Invalid expiry time, it should be greater than 0 and less than 1440", data=None)
     request.app.state.ACCESS_TOKEN_EXPIRE_MINUTES = minutes
     return APIResponse(status_code=200, success=True, message="Token expiry updated", data={"new_expiry": minutes})
