@@ -51,7 +51,7 @@ def delete_user(
 
 
 @router.put("/update/{id}", response_model=APIResponse)
-def update_item(id: int, payload: UserCreate, db: Session = Depends(get_db)):
+def update_item(id: str, payload: UserCreate, db: Session = Depends(get_db)):
     user_db = db.query(User).filter(User.id == id).first()
     if not user_db:
         return APIResponse(status_code=200,
