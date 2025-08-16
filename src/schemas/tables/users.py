@@ -13,7 +13,7 @@ class User(Base):
     __table_args__ = (CheckConstraint('length(firstName) >= 3', name='check_first_name_min_length'),
                       CheckConstraint('length(lastName) >= 3', name='check_last_name_min_length'))
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(36), primary_key=True, default=lambda : str(uuid.uuid4()))
     firstName = Column(String(15), nullable=False)
     lastName = Column(String(15), nullable=False)
     email = Column(String(255), unique=True, nullable=False)

@@ -58,6 +58,7 @@ def login(request: Request, user: UserLogin, db: Session = Depends(get_db)):
     # )
     user_details = {column.name: getattr(db_user, column.name) for column in User.__table__.columns if
                     column.name != "password"}
+    print(f"db_user: {db_user}")
     return APIResponse(status_code=200,
                        success=True,
                        message="User logged in successfully",

@@ -1,5 +1,5 @@
 from typing import Union, Optional, Annotated
-
+from uuid import UUID
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, model_validator
 
 from src.utility import validate_user_fields
@@ -32,7 +32,7 @@ class UserLogin(BaseModel):
 
 
 class UserOut(BaseModel):
-    id: int
+    id: UUID
     firstName: constr(min_length=3, max_length=15)
     lastName: constr(min_length=3, max_length=15)
     email: str
