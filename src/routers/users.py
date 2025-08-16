@@ -6,7 +6,7 @@ from mysql.connector.errors import IntegrityError
 from src.dependencies import get_current_user
 from src.database import get_db
 from src.models.response import APIResponse
-from src.models.users import DeleteUserRequest, UserOut, UserCreate
+from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.schemas.tables.users import User
 
 router = APIRouter(tags=["users"])
@@ -24,11 +24,10 @@ def get_users(current_user=Depends(get_current_user), db: Session = Depends(get_
                        ).model_dump()
 
 
-@router.post("/delete-user")
+@router.delete("/delete-user", response_model=APIResponse)
 def delete_user(
-        request: DeleteUserRequest,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
+        request: UserIDRequest,
+        db: Session = Depends(get_db)
 ):
     """Delete a user by ID.
     This endpoint allows an authenticated user to delete another user by their ID.
@@ -37,7 +36,7 @@ def delete_user(
     if not user:
         return APIResponse(status_code=200,
                            success=False,
-                           message="User not found",
+                           message="ID mismatch: the provided ID does not match any existing resource.",
                            data=None
                            ).model_dump()
         # raise HTTPException(status_code=404, detail="User not found")
@@ -45,18 +44,18 @@ def delete_user(
     db.commit()
     return APIResponse(status_code=200,
                        success=True,
-                       message="successfully deleted user",
-                       data=f"User {request.user_id} deleted successfully"
+                       message="The user account was successfully deleted",
+                       data=f"User with ID {request.user_id} has been permanently deleted."
                        ).model_dump()
 
 
-@router.put("/update/{id}", response_model=APIResponse)
-def update_item(id: str, payload: UserCreate, db: Session = Depends(get_db)):
-    user_db = db.query(User).filter(User.id == id).first()
+@router.put("/update-user", response_model=APIResponse)
+def update_item(request: UserIDRequest, payload: UserCreate, db: Session = Depends(get_db)):
+    user_db = db.query(User).filter(User.id == request.user_id).first()
     if not user_db:
         return APIResponse(status_code=200,
                            success=False,
-                           message=f"User not found with the id {id}."
+                           message=f"ID mismatch: the provided ID does not match any existing resource."
                            ).model_dump()
         # raise HTTPException(status_code=404, detail="Item not found")
 
@@ -68,7 +67,7 @@ def update_item(id: str, payload: UserCreate, db: Session = Depends(get_db)):
         db.refresh(user_db)
         return APIResponse(status_code=200,
                            success=True,
-                           message="User details updated successfully.",
+                           message="User profile updated successfully.",
                            data=UserOut.model_validate(user_db)).model_dump()
     # except IntegrityError as e:
     #     msg = str(e.orig) if hasattr(e, "orig") else str(e)

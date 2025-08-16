@@ -86,8 +86,8 @@ class VerifyOTPRequest(BaseModel):
         return validate_user_fields(values, cls)
 
 
-class DeleteUserRequest(BaseModel):
-    user_id: int
+class UserIDRequest(BaseModel):
+    user_id: str
 
 
 # class ItemUpdate(BaseModel):
