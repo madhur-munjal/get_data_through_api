@@ -7,7 +7,8 @@ from src.models.response import APIResponse
 from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.schemas.tables.users import User
 
-router = APIRouter(tags=["users"])
+router = APIRouter(prefix="/users", tags=["users"],
+    responses={404: {"error": "Not found"}})
 
 
 @router.get("/users_list", response_model=APIResponse)
@@ -58,7 +59,6 @@ def update_item(request: UserIDRequest, payload: UserCreate, current_user=Depend
                            message=f"ID mismatch: the provided ID does not match any existing resource."
                            ).model_dump()
         # raise HTTPException(status_code=404, detail="Item not found")
-
     try:
         for field, value in payload.dict(exclude_unset=True).items():
             setattr(user_db, field, value)

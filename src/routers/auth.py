@@ -11,10 +11,13 @@ from src.models.response import APIResponse
 from src.models.users import ForgotPasswordRequest, ResetPasswordRequest, VerifyOTPRequest, UserCreate, \
     UserLogin, UserOut
 from src.schemas.tables.users import User
+from src.schemas.tables.staff import Staff
 from src.utility import generate_otp, send_otp_email, otp_store
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-router = APIRouter(tags=["auth"])
+router = APIRouter(prefix="/auth",
+                   tags=["auth"],
+                   responses={404: {"error": "Not found"}})
 
 
 @router.post("/register", response_model=APIResponse[UserOut])
@@ -42,11 +45,29 @@ def login(request: Request, user: UserLogin, db: Session = Depends(get_db)):
     """Login a user and return an access token."""
     username = user.username
     password = user.password
-    db_user = db.query(User).filter_by(username=username).first()
-    if not db_user or not verify_password(password, db_user.password):
+    doc_db_user = db.query(User).filter_by(username=username).first()
+    if not doc_db_user:
+        # or not verify_password(password, db_user.password):
+        staff_db_user = db.query(Staff).filter_by(username=username).first()
+        if not staff_db_user:
+            return APIResponse(status_code=200, success=False,
+                               message="Login unsuccessful. Please verify your username.", data=None)
+        user_password = staff_db_user.password
+        doc_id = staff_db_user.doc_id
+        user_details = {column.name: getattr(staff_db_user, column.name) for column in Staff.__table__.columns if
+                        column.name != "password"}
+    else:
+        user_password = doc_db_user.password
+        doc_id = doc_db_user.id
+        user_details = {column.name: getattr(doc_db_user, column.name) for column in User.__table__.columns if
+                        column.name != "password"}
+
+    if not verify_password(password, user_password):
         return APIResponse(status_code=200, success=False,
-                           message="Login unsuccessful. Please verify your username and password.", data=None)
-    access_token = create_access_token({"sub": username}, request=request)
+                           message="Login unsuccessful. Please verify your password.", data=None)
+    db_user = doc_db_user or staff_db_user
+    # TODO: add id in below
+    access_token = create_access_token({"sub": username, "doc_id": doc_id}, request=request)
     # refresh_token = create_refresh_token(username)
     # response.set_cookie(
     #     key="refresh_token",
@@ -56,8 +77,6 @@ def login(request: Request, user: UserLogin, db: Session = Depends(get_db)):
     #     samesite="strict",
     #     max_age=7 * 24 * 60 * 60
     # )
-    user_details = {column.name: getattr(db_user, column.name) for column in User.__table__.columns if
-                    column.name != "password"}
     print(f"db_user: {db_user}")
     return APIResponse(status_code=200,
                        success=True,

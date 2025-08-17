@@ -1,11 +1,14 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from pydantic import BaseModel, Field
-from src.schemas.tables.patients import Patient
-from src.models.patients import PatentCreate, PatentUpdate, PatentOut
 # from . import models, schemas
 from src.database import get_db  # assuming you have a get_db dependency
+from src.models.patients import PatentCreate, PatentUpdate, PatentOut
+from src.models.response import APIResponse
+from src.schemas.tables.patients import Patient
+from src.dependencies import get_current_doctor_id
 
 # from . import crud  # assuming you have crud methods for patents
 
@@ -16,21 +19,25 @@ router = APIRouter(
     responses={404: {"error": "Not found"}}
 )
 
-class PatientBase(BaseModel):
-    """Base schema for patient data."""
-    name: str = Field(None, description="Full name of the patient", example="John Doe")
-    address: str = Field(None, description="Address of the patient", example="123 Main St, City, Country")
-    phone: str = Field(None, description="Phone number of the patient", example="+1234567890")
-    email: str = Field(None,description="email")
-    description: str = Field(None, description="Description of the patient", example="Patient with a history of diabetes")
 
-@router.post("/", response_model=PatentOut)
-def create_patient(patent: PatentCreate, db: Session = Depends(get_db)):
-    pass
-    # return crud.create_patent(db, patent)
+@router.post("/", response_model=APIResponse)
+def create_patient(
+        request: PatentCreate,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id)
+):
+    patient = Patient(**request.model_dump(), assigned_doctor_id=doctor_id)
+    db.add(patient)
+    db.commit()
+    db.refresh(patient)
+    return APIResponse(status_code=200,
+                       success=False,
+                       message="Patient created successfully.",
+                       data={"id": patient.id}
+                       ).model_dump()
 
 
-@router.get("/") #, dependencies=Depends()
+@router.get("/")  # , dependencies=Depends()
 def read_patients(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     return db.query(Patient).offset(skip).limit(limit).all()
     # return crud.get_patents(db, skip=skip, limit=limit)

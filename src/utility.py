@@ -6,10 +6,14 @@ import string
 from email.mime.text import MIMEText
 
 from dotenv import load_dotenv
+from fastapi import Depends
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
 
+
+
 load_dotenv()
+from uuid import UUID
 
 # Simulated temporary OTP store (for demo; use Redis or DB in prod)
 otp_store = {}
@@ -84,3 +88,10 @@ def validate_user_fields(values, cls):
         raise ValidationError.from_exception_data(cls, errors)
 
     return values
+
+
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+#
+# SECRET_KEY = "your-secret-key"
+# ALGORITHM = "HS256"
+

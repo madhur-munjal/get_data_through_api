@@ -1,40 +1,45 @@
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from uuid import UUID
+from datetime import date, datetime
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, Literal, Dict
 
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+class PatientDTO(BaseModel):
+    # id: UUID
 
-import datetime
-
-
-# class PatientResource(BaseModel):
-#     """
-#
-#     """
-#     # __tablename__ = "patient"
-#     patient_id: int = Field(None, description="Unique identifier for the patient", example=1)
-#     first_name: str = Field(None, description="First name of the patient", example="John")
-#     last_name: str = Field(None, description="Last name of the patient", example="Doe")
-#     phone_number: str = Field(None, description="Phone number of the patient", example="+1234567890")
-#     address: str = Field(None, description="Address of the patient", example="123 Main St, City, Country")
-
-
-class PatentBase(BaseModel):
-    name: str
-    address: Optional[str] = None
-    phone: Optional[str] = None
+    # Personal Info
+    first_name: str = Field(..., max_length=50)
+    last_name: Optional[str] = Field(None, max_length=50)
+    gender: Optional[Literal["male", "female", "other"]] = None
+    date_of_birth: Optional[date] = None
+    phone: Optional[str] = Field(None, max_length=15)
     email: Optional[EmailStr] = None
-    description: Optional[str] = None
+    address: Optional[str] = None
+
+    # Medical Info
+    blood_group: Optional[
+        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+    ] = None
+    allergies: Optional[str] = None
+    chronic_conditions: Optional[str] = None
+    medications: Optional[str] = None
+    notes: Optional[str] = None
+
+    # Metadata
+    is_active: bool = True
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    # Relationships & Extensibility
+    # assigned_doctor_id: Optional[UUID] = None
+    extra_data: Optional[Dict[str, str]] = None
+
 
 # TODO: verify the fields data type
-class PatentCreate(PatentBase):
+class PatentCreate(PatientDTO):
     pass  # Same as PatentBase, used for incoming creation requests
 
-class PatentUpdate(PatentBase):
+class PatentUpdate(PatientDTO):
     pass  # Optional: Customize fields to allow partial updates
 
-class PatentOut(PatentBase):
+class PatentOut(PatientDTO):
     id: int
-
-    class Config:
-        orm_mode = True
