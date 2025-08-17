@@ -21,7 +21,7 @@ class Patient(Base):
     last_name = Column(String(50), nullable=True)
     gender = Column(Enum("male", "female", "other"), nullable=True)
     date_of_birth = Column(Date, nullable=True)
-    phone = Column(String(15), nullable=True)
+    phone = Column(String(15), nullable=True) # Change this to mobile
     email = Column(String(100), nullable=True)
     address = Column(Text, nullable=True)
 
@@ -38,5 +38,5 @@ class Patient(Base):
     updated_at = Column(DateTime, onupdate=func.now())
 
     # Optional: Link to assigned doctor or clinic
-    assigned_doctor_id = Column(String(36), ForeignKey("doctors.id"), nullable=True)
+    assigned_doctor_id = Column(String(36), ForeignKey("users.id"), nullable=True)
     extra_data = Column(JSON, nullable=True)  # For extensibility (e.g. insurance, emergency contact)

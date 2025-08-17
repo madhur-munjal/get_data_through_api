@@ -10,8 +10,8 @@ from src.database import Base
 class User(Base):
     __tablename__ = "users"
 
-    __table_args__ = (CheckConstraint('length(firstName) >= 3', name='check_first_name_min_length'),
-                      CheckConstraint('length(lastName) >= 3', name='check_last_name_min_length'))
+    __table_args__ = (CheckConstraint('length(firstName) >= 3', name='check_first_name_min_length_v2'),
+                      CheckConstraint('length(lastName) >= 3', name='check_last_name_min_length_v2'))
 
     id = Column(String(36), primary_key=True, default=lambda : str(uuid.uuid4()))
     firstName = Column(String(15), nullable=False)

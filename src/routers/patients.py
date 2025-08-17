@@ -26,6 +26,11 @@ def create_patient(
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id)
 ):
+    if db.query(Patient).filter_by(email=request.email).first():
+        return APIResponse(status_code=200, success=False, message="Email already exists", data=None).model_dump()
+    if db.query(Patient).filter_by(phone=request.phone).first():
+        return APIResponse(status_code=200, success=False, message="Mobile number already exists", data=None).model_dump()
+
     patient = Patient(**request.model_dump(), assigned_doctor_id=doctor_id)
     db.add(patient)
     db.commit()
@@ -33,7 +38,7 @@ def create_patient(
     return APIResponse(status_code=200,
                        success=False,
                        message="Patient created successfully.",
-                       data={"id": patient.id}
+                       data={"id": patient.patient_id}
                        ).model_dump()
 
 

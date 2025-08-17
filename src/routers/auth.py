@@ -1,10 +1,10 @@
 import uuid
-
+from jose import jwt, JWTError
 from fastapi import APIRouter, HTTPException, Depends, status, Response, Request
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-
-from src.auth_utils import create_access_token, verify_password, create_refresh_token, verify_refresh_token, \
+from datetime import timedelta
+from src.auth_utils import create_access_token, verify_password, create_refresh_token, \
     revoke_refresh_token, hash_password
 from src.database import get_db
 from src.models.response import APIResponse
@@ -41,7 +41,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=APIResponse)
-def login(request: Request, user: UserLogin, db: Session = Depends(get_db)):
+def login(request: Request, user: UserLogin, response: Response, db: Session = Depends(get_db)):
     """Login a user and return an access token."""
     username = user.username
     password = user.password
@@ -68,16 +68,16 @@ def login(request: Request, user: UserLogin, db: Session = Depends(get_db)):
     db_user = doc_db_user or staff_db_user
     # TODO: add id in below
     access_token = create_access_token({"sub": username, "doc_id": doc_id}, request=request)
-    # refresh_token = create_refresh_token(username)
-    # response.set_cookie(
-    #     key="refresh_token",
-    # value=refresh_token,
-    #     httponly=True,
-    #     secure=True,
-    #     samesite="strict",
-    #     max_age=7 * 24 * 60 * 60
-    # )
-    print(f"db_user: {db_user}")
+    refresh_token = create_refresh_token(username)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=30 * 24 * 60 * 60
+    )
+    # print(f"db_user: {db_user}")
     return APIResponse(status_code=200,
                        success=True,
                        message="User logged in successfully",
@@ -87,25 +87,36 @@ def login(request: Request, user: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.post("/refresh")
-def refresh(request: Request, response: Response):
-    token = request.cookies.get("refresh_token")
-    user_id = verify_refresh_token(token)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+def refresh(request: Request, response: Response, response_model=APIResponse):
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        return APIResponse(status_code=200, success=False, message="Missing refresh token").model_dump()
+    try:
+        payload = jwt.decode(refresh_token, "refresh_secret", algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        return APIResponse(status_code=200, success=False, message="Refresh token expired").model_dump()
+    new_access_token = create_access_token({"sub": payload["sub"]}, secret="access_secret",
+                                           expires_delta=timedelta(minutes=15))
+    return {"access_token": new_access_token}
 
-    revoke_refresh_token(token)
-    new_refresh = create_refresh_token(user_id)
-    new_access = create_access_token({"sub": user_id}, request=request)
-
-    response.set_cookie(
-        key="refresh_token",
-        value=new_refresh,
-        httponly=True,
-        secure=True,
-        samesite="strict",
-        max_age=7 * 24 * 60 * 60
-    )
-    return {"access_token": new_access}
+    # token = request.cookies.get("refresh_token")
+    # user_id = verify_refresh_token(token)
+    # if not user_id:
+    #     raise HTTPException(status_code=401, detail="Invalid refresh token")
+    #
+    # revoke_refresh_token(token)
+    # new_refresh = create_refresh_token(user_id)
+    # new_access = create_access_token({"sub": user_id}, request=request)
+    #
+    # response.set_cookie(
+    #     key="refresh_token",
+    #     value=new_refresh,
+    #     httponly=True,
+    #     secure=True,
+    #     samesite="strict",
+    #     max_age=7 * 24 * 60 * 60
+    # )
+    # return {"access_token": new_access}
 
 
 @router.post("/logout")

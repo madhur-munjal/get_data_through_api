@@ -19,7 +19,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")  # Load from environment in production!
 
 ALGORITHM = "HS256"
 # ACCESS_TOKEN_EXPIRE_MINUTES = 15
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+REFRESH_TOKEN_EXPIRE_DAYS = 30
 
 # In-memory store for refresh tokens (replace with DB or Redis)
 refresh_token_store = {}
@@ -44,28 +44,29 @@ def create_access_token(data: dict, request: Request):
     return s_token
 
 
-def create_refresh_token(user_id: str):
+def create_refresh_token(username: str):
     token_id = str(uuid.uuid4())
     to_encode = {
-        "sub": user_id,
+        "sub": username,
         "jti": token_id,
         "exp": datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     }
     token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    refresh_token_store[token_id] = user_id  # Store token ID
+    refresh_token_store[token_id] = username  # Store token ID
     return token
 
 
-def verify_refresh_token(token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        token_id = payload.get("jti")
-        user_id = payload.get("sub")
-        if refresh_token_store.get(token_id) != user_id:
-            return None
-        return user_id
-    except Exception:
-        return None
+
+# def verify_refresh_token(token: str):
+#     try:
+#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+#         token_id = payload.get("jti")
+#         user_id = payload.get("sub")
+#         if refresh_token_store.get(token_id) != user_id:
+#             return None
+#         return user_id
+#     except Exception:
+#         return None
 
 
 def revoke_refresh_token(token: str):
@@ -73,8 +74,8 @@ def revoke_refresh_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         token_id = payload.get("jti")
         refresh_token_store.pop(token_id, None)
-    except Exception:
-        pass
+    except Exception as ex:
+        print(f"Getting exception while revoking refresh token as: {ex}")
 
 
 # def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
