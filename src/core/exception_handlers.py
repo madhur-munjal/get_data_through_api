@@ -22,5 +22,3 @@ async def custom_validation_handler(request: Request, exc: RequestValidationErro
             errors=simplified_errors,
         ).model_dump(),
     )
-
-

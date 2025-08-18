@@ -1,14 +1,19 @@
 import uuid
-from jose import jwt, JWTError
-from fastapi import APIRouter, HTTPException, Depends, status, Response, Request
-from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from datetime import datetime, timezone
 from datetime import timedelta
+
+from fastapi import APIRouter, Depends, status, Response, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import jwt
+from passlib.context import CryptContext
+from redis import Redis
+from sqlalchemy.orm import Session
+
+from src.auth_utils import SECRET_KEY, ALGORITHM
 from src.auth_utils import (
     create_access_token,
     verify_password,
     create_refresh_token,
-    revoke_refresh_token,
     hash_password,
 )
 from src.database import get_db
@@ -21,15 +26,12 @@ from src.models.users import (
     UserLogin,
     UserOut,
 )
-from src.schemas.tables.users import User
-from src.schemas.tables.staff import Staff
-from src.utility import generate_otp, send_otp_email, otp_store
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-# import redis
+
 # from src.dependencies import blacklist_token
 from src.redis_client import get_redis_client
-from datetime import datetime, timezone
-from src.auth_utils import SECRET_KEY, ALGORITHM
+from src.schemas.tables.staff import Staff
+from src.schemas.tables.users import User
+from src.utility import generate_otp, send_otp_email, otp_store
 
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -141,7 +143,12 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
             status_code=200, success=False, message="Missing refresh token"
         ).model_dump()
     try:
-        payload = jwt.decode(refresh_token, "refresh_secret", algorithms=["HS256"], options={"verify_signature": False})
+        payload = jwt.decode(
+            refresh_token,
+            "refresh_secret",
+            algorithms=["HS256"],
+            options={"verify_signature": False},
+        )
     except jwt.ExpiredSignatureError:
         return APIResponse(
             status_code=200, success=False, message="Refresh token expired"
@@ -173,14 +180,15 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
     # return {"access_token": new_access}
 
 
-
 @router.post("/logout")
 def logout(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    redis = Depends(get_redis_client)
+    redis=Depends(get_redis_client),
 ):
     token = credentials.credentials
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_signature": False})
+    payload = jwt.decode(
+        token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_signature": False}
+    )
     exp = payload.get("exp")
 
     ttl = exp - int(datetime.now(timezone.utc).timestamp())
@@ -191,7 +199,6 @@ def logout(
     return APIResponse(
         status_code=200, success=True, message="Logged out.", data=None
     ).model_dump()
-
 
 
 # @router.post("/logout")
@@ -293,7 +300,9 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
 
 
 @router.put("/config/token-expiry")
-def update_token_expiry(minutes: int, request: Request):
+def update_token_expiry(
+    minutes: int, request: Request, redis: Redis = Depends(get_redis_client)
+):
     if minutes <= 0 or minutes > 1440:
         return APIResponse(
             status_code=200,
@@ -302,6 +311,7 @@ def update_token_expiry(minutes: int, request: Request):
             data=None,
         )
     request.app.state.ACCESS_TOKEN_EXPIRE_MINUTES = minutes
+    redis.set("config:access_token_expiry", minutes)
     return APIResponse(
         status_code=200,
         success=True,

@@ -27,7 +27,10 @@ class APIResponse(BaseResponse[T]):
 
     @classmethod
     def error(cls, message: str, code: int = 400):
-        return cls(status_code=code, success=False, message=message, data=None, errors=None)
+        return cls(
+            status_code=code, success=False, message=message, data=None, errors=None
+        )
+
 
 class TokenRevoked(Exception):
     def __init__(self, message: str = "Token revoked", code: int = 401):

@@ -4,15 +4,12 @@ import re
 import smtplib
 import string
 from email.mime.text import MIMEText
-# import redis
 from dotenv import load_dotenv
-from fastapi import Depends
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
 
 
 load_dotenv()
-from uuid import UUID
 
 # Simulated temporary OTP store (for demo; use Redis or DB in prod)
 otp_store = {}
