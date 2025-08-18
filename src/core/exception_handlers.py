@@ -1,7 +1,6 @@
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-
 from src.models.response import APIResponse
 
 
@@ -23,3 +22,5 @@ async def custom_validation_handler(request: Request, exc: RequestValidationErro
             errors=simplified_errors,
         ).model_dump(),
     )
+
+

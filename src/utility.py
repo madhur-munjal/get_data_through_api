@@ -4,7 +4,7 @@ import re
 import smtplib
 import string
 from email.mime.text import MIMEText
-
+# import redis
 from dotenv import load_dotenv
 from fastapi import Depends
 from pydantic import ValidationError
@@ -101,3 +101,7 @@ def validate_user_fields(values, cls):
 #
 # SECRET_KEY = "your-secret-key"
 # ALGORITHM = "HS256"
+
+#
+# def store_token(user_id: str, token: str, expiry: int):
+#     redis.setex(f"token:{token}", expiry, user_id)

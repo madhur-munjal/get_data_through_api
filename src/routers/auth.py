@@ -24,7 +24,14 @@ from src.models.users import (
 from src.schemas.tables.users import User
 from src.schemas.tables.staff import Staff
 from src.utility import generate_otp, send_otp_email, otp_store
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+# import redis
+# from src.dependencies import blacklist_token
+from src.redis_client import get_redis_client
+from datetime import datetime, timezone
+from src.auth_utils import SECRET_KEY, ALGORITHM
 
+security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(
     prefix="/auth", tags=["auth"], responses={404: {"error": "Not found"}}
@@ -134,7 +141,7 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
             status_code=200, success=False, message="Missing refresh token"
         ).model_dump()
     try:
-        payload = jwt.decode(refresh_token, "refresh_secret", algorithms=["HS256"])
+        payload = jwt.decode(refresh_token, "refresh_secret", algorithms=["HS256"], options={"verify_signature": False})
     except jwt.ExpiredSignatureError:
         return APIResponse(
             status_code=200, success=False, message="Refresh token expired"
@@ -166,12 +173,38 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
     # return {"access_token": new_access}
 
 
+
 @router.post("/logout")
-def logout(request: Request, response: Response):
-    token = request.cookies.get("refresh_token")
-    revoke_refresh_token(token)
-    response.delete_cookie("refresh_token")
-    return {"message": "Logged out"}
+def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    redis = Depends(get_redis_client)
+):
+    token = credentials.credentials
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_signature": False})
+    exp = payload.get("exp")
+
+    ttl = exp - int(datetime.now(timezone.utc).timestamp())
+
+    redis.setex(f"blacklist:{token}", ttl, "revoked")
+
+    # blacklist_token(redis, token, expiry_seconds=3600)
+    return APIResponse(
+        status_code=200, success=True, message="Logged out.", data=None
+    ).model_dump()
+
+
+
+# @router.post("/logout")
+# def logout(request: Request, response: Response):
+#     response.delete_cookie("access_token")
+#     response.delete_cookie("access_token", path="/", domain="yourdomain.com")
+#
+#     # token = request.cookies.get("refresh_token")
+#     # revoke_refresh_token(token)
+#     # response.delete_cookie("refresh_token")
+#     return APIResponse(
+#         status_code=200, success=True, message="Logged out.", data=None
+#     ).model_dump()
 
 
 @router.post("/forgot-password", response_model=APIResponse)

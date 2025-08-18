@@ -72,7 +72,7 @@ def create_refresh_token(username: str):
 
 def revoke_refresh_token(token: str):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_signature": False})
         token_id = payload.get("jti")
         refresh_token_store.pop(token_id, None)
     except Exception as ex:
