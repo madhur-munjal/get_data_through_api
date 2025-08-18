@@ -1,14 +1,19 @@
 import uuid
-from jose import jwt, JWTError
-from fastapi import APIRouter, HTTPException, Depends, status, Response, Request
-from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from datetime import datetime, timezone
 from datetime import timedelta
+
+from fastapi import APIRouter, Depends, status, Response, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import jwt
+from passlib.context import CryptContext
+from redis import Redis
+from sqlalchemy.orm import Session
+
+from src.auth_utils import SECRET_KEY, ALGORITHM
 from src.auth_utils import (
     create_access_token,
     verify_password,
     create_refresh_token,
-    revoke_refresh_token,
     hash_password,
 )
 from src.database import get_db
@@ -21,10 +26,14 @@ from src.models.users import (
     UserLogin,
     UserOut,
 )
-from src.schemas.tables.users import User
+
+# from src.dependencies import blacklist_token
+from src.redis_client import get_redis_client
 from src.schemas.tables.staff import Staff
+from src.schemas.tables.users import User
 from src.utility import generate_otp, send_otp_email, otp_store
 
+security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(
     prefix="/auth", tags=["auth"], responses={404: {"error": "Not found"}}
@@ -134,7 +143,12 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
             status_code=200, success=False, message="Missing refresh token"
         ).model_dump()
     try:
-        payload = jwt.decode(refresh_token, "refresh_secret", algorithms=["HS256"])
+        payload = jwt.decode(
+            refresh_token,
+            "refresh_secret",
+            algorithms=["HS256"],
+            options={"verify_signature": False},
+        )
     except jwt.ExpiredSignatureError:
         return APIResponse(
             status_code=200, success=False, message="Refresh token expired"
@@ -144,34 +158,33 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
         secret="access_secret",
         expires_delta=timedelta(minutes=15),
     )
-    return {"access_token": new_access_token}
-
-    # token = request.cookies.get("refresh_token")
-    # user_id = verify_refresh_token(token)
-    # if not user_id:
-    #     raise HTTPException(status_code=401, detail="Invalid refresh token")
-    #
-    # revoke_refresh_token(token)
-    # new_refresh = create_refresh_token(user_id)
-    # new_access = create_access_token({"sub": user_id}, request=request)
-    #
-    # response.set_cookie(
-    #     key="refresh_token",
-    #     value=new_refresh,
-    #     httponly=True,
-    #     secure=True,
-    #     samesite="strict",
-    #     max_age=7 * 24 * 60 * 60
-    # )
-    # return {"access_token": new_access}
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="Token refresh successfully",
+        data={"access_token": new_access_token},
+    ).model_dump()
 
 
 @router.post("/logout")
-def logout(request: Request, response: Response):
-    token = request.cookies.get("refresh_token")
-    revoke_refresh_token(token)
-    response.delete_cookie("refresh_token")
-    return {"message": "Logged out"}
+def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    redis=Depends(get_redis_client),
+):
+    token = credentials.credentials
+    payload = jwt.decode(
+        token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_signature": False}
+    )
+    exp = payload.get("exp")
+
+    ttl = exp - int(datetime.now(timezone.utc).timestamp())
+
+    redis.setex(f"blacklist:{token}", ttl, "revoked")
+
+    # blacklist_token(redis, token, expiry_seconds=3600)
+    return APIResponse(
+        status_code=200, success=True, message="Logged out.", data=None
+    ).model_dump()
 
 
 @router.post("/forgot-password", response_model=APIResponse)
@@ -191,7 +204,6 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     otp_store[request.email] = otp  # TODO: Save OTP (with expiry in production)
 
     try:
-        # print(f"Sending OTP {otp} to {request.email}")
         send_otp_email(request.email, otp)
         print(f"otp_store: {otp_store}")  # For debugging purposes
         return APIResponse(
@@ -205,14 +217,6 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
             message="Failed to sent OTP",
             error=f"Failed to send OTP: {str(e)}",
         ).model_dump()
-        # raise HTTPException(status_code=500, detail=f"Failed to send OTP: {str(e)}")
-    # TODO: # Change it to APIResponse
-
-    # reset_token = PasswordResetToken(user_id=user.id, token=token)
-    # db.add(reset_token)
-    # db.commit()
-    # background_tasks.add_task(send_email_reset_link, request.email, token)
-    # return {"message": "Password reset link sent to your email", "status_code": 200, "status": "success", "data": None}
 
 
 @router.post("/verify-otp", response_model=APIResponse, status_code=status.HTTP_200_OK)
@@ -241,17 +245,11 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     "/reset-password", response_model=APIResponse, status_code=status.HTTP_200_OK
 )
 def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
-    # print(f"otp_store in reset: {otp_store}")  # For debugging purposes
-    # if request.email not in otp_store:
-    #     raise HTTPException(status_code=404, detail="User not found in otp store")
-
-    # Update password in your DB
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
         return APIResponse(
             status_code=200, success=False, message="User not found.", data=None
         ).model_dump()
-        # raise HTTPException(status_code=404, detail="User not found")
     user.password = pwd_context.hash(request.new_password)
     db.commit()
     return APIResponse(
@@ -260,7 +258,9 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
 
 
 @router.put("/config/token-expiry")
-def update_token_expiry(minutes: int, request: Request):
+def update_token_expiry(
+    minutes: int, request: Request, redis: Redis = Depends(get_redis_client)
+):
     if minutes <= 0 or minutes > 1440:
         return APIResponse(
             status_code=200,
@@ -269,6 +269,7 @@ def update_token_expiry(minutes: int, request: Request):
             data=None,
         )
     request.app.state.ACCESS_TOKEN_EXPIRE_MINUTES = minutes
+    redis.set("config:access_token_expiry", minutes)
     return APIResponse(
         status_code=200,
         success=True,

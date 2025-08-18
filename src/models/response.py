@@ -24,3 +24,14 @@ class APIResponse(BaseResponse[T]):
     message: str
     data: Optional[Union[T, str]] = None  # Field(default=None, exclude_none=True)
     errors: Optional[List[Any]] = None  # Field(default=None, exclude=True)
+
+    @classmethod
+    def error(cls, message: str, code: int = 400):
+        return cls(
+            status_code=code, success=False, message=message, data=None, errors=None
+        )
+
+
+class TokenRevoked(Exception):
+    def __init__(self, message: str = "Token revoked", code: int = 401):
+        self.response = APIResponse.error(message, code)

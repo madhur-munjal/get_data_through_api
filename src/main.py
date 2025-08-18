@@ -1,15 +1,19 @@
 import os
 import sys
 
-from fastapi import FastAPI
+import redis
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
 from src.database import engine, Base
 from src.core.exception_handlers import custom_validation_handler
 from dotenv import load_dotenv
+from src.models.response import TokenRevoked
+from src.models.response import APIResponse
 
 load_dotenv()
 
@@ -40,6 +44,16 @@ def on_startup():
     print("Database tables created successfully.")
 
 
+@app.on_event("startup")
+def check_redis():
+    r = redis.Redis(host="localhost", port=6379)
+    try:
+        r.ping()
+        print("✅ Redis is up!")
+    except redis.exceptions.ConnectionError:
+        print("❌ Redis is not reachable.")
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Or specify your frontend URL
@@ -49,6 +63,13 @@ app.add_middleware(
 )
 
 app.add_exception_handler(RequestValidationError, custom_validation_handler)
+
+
+@app.exception_handler(TokenRevoked)
+def handle_token_revoked(request: Request, exc: TokenRevoked):
+    return JSONResponse(
+        status_code=exc.response.status_code, content=exc.response.dict()
+    )
 
 
 @app.get("/")
