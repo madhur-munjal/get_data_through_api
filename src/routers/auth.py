@@ -249,13 +249,13 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
         return APIResponse(
-            status_code=200, success=False, message="User not found", data=None
+            status_code=200, success=False, message="User not found.", data=None
         ).model_dump()
         # raise HTTPException(status_code=404, detail="User not found")
     user.password = pwd_context.hash(request.new_password)
     db.commit()
     return APIResponse(
-        status_code=200, success=True, message="Password reset successfully", data=None
+        status_code=200, success=True, message="Password reset successfully.", data=None
     ).model_dump()
 
 
@@ -265,13 +265,13 @@ def update_token_expiry(minutes: int, request: Request):
         return APIResponse(
             status_code=200,
             success=False,
-            message="Invalid expiry time, it should be greater than 0 and less than 1440",
+            message="Invalid expiry time. Must be between 1 and 1440 minutes.",
             data=None,
         )
     request.app.state.ACCESS_TOKEN_EXPIRE_MINUTES = minutes
     return APIResponse(
         status_code=200,
         success=True,
-        message="Token expiry updated",
+        message="Token expiry has been updated.",
         data={"new_expiry": minutes},
     )
