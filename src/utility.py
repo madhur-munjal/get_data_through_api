@@ -92,13 +92,3 @@ def validate_user_fields(values, cls):
         raise ValidationError.from_exception_data(cls, errors)
 
     return values
-
-
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-#
-# SECRET_KEY = "your-secret-key"
-# ALGORITHM = "HS256"
-
-#
-# def store_token(user_id: str, token: str, expiry: int):
-#     redis.setex(f"token:{token}", expiry, user_id)

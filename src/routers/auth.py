@@ -158,26 +158,12 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
         secret="access_secret",
         expires_delta=timedelta(minutes=15),
     )
-    return {"access_token": new_access_token}
-
-    # token = request.cookies.get("refresh_token")
-    # user_id = verify_refresh_token(token)
-    # if not user_id:
-    #     raise HTTPException(status_code=401, detail="Invalid refresh token")
-    #
-    # revoke_refresh_token(token)
-    # new_refresh = create_refresh_token(user_id)
-    # new_access = create_access_token({"sub": user_id}, request=request)
-    #
-    # response.set_cookie(
-    #     key="refresh_token",
-    #     value=new_refresh,
-    #     httponly=True,
-    #     secure=True,
-    #     samesite="strict",
-    #     max_age=7 * 24 * 60 * 60
-    # )
-    # return {"access_token": new_access}
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="Token refresh successfully",
+        data={"access_token": new_access_token},
+    ).model_dump()
 
 
 @router.post("/logout")
@@ -201,19 +187,6 @@ def logout(
     ).model_dump()
 
 
-# @router.post("/logout")
-# def logout(request: Request, response: Response):
-#     response.delete_cookie("access_token")
-#     response.delete_cookie("access_token", path="/", domain="yourdomain.com")
-#
-#     # token = request.cookies.get("refresh_token")
-#     # revoke_refresh_token(token)
-#     # response.delete_cookie("refresh_token")
-#     return APIResponse(
-#         status_code=200, success=True, message="Logged out.", data=None
-#     ).model_dump()
-
-
 @router.post("/forgot-password", response_model=APIResponse)
 def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter_by(email=request.email).first()
@@ -231,7 +204,6 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     otp_store[request.email] = otp  # TODO: Save OTP (with expiry in production)
 
     try:
-        # print(f"Sending OTP {otp} to {request.email}")
         send_otp_email(request.email, otp)
         print(f"otp_store: {otp_store}")  # For debugging purposes
         return APIResponse(
@@ -245,14 +217,6 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
             message="Failed to sent OTP",
             error=f"Failed to send OTP: {str(e)}",
         ).model_dump()
-        # raise HTTPException(status_code=500, detail=f"Failed to send OTP: {str(e)}")
-    # TODO: # Change it to APIResponse
-
-    # reset_token = PasswordResetToken(user_id=user.id, token=token)
-    # db.add(reset_token)
-    # db.commit()
-    # background_tasks.add_task(send_email_reset_link, request.email, token)
-    # return {"message": "Password reset link sent to your email", "status_code": 200, "status": "success", "data": None}
 
 
 @router.post("/verify-otp", response_model=APIResponse, status_code=status.HTTP_200_OK)
@@ -281,17 +245,11 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     "/reset-password", response_model=APIResponse, status_code=status.HTTP_200_OK
 )
 def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
-    # print(f"otp_store in reset: {otp_store}")  # For debugging purposes
-    # if request.email not in otp_store:
-    #     raise HTTPException(status_code=404, detail="User not found in otp store")
-
-    # Update password in your DB
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
         return APIResponse(
             status_code=200, success=False, message="User not found.", data=None
         ).model_dump()
-        # raise HTTPException(status_code=404, detail="User not found")
     user.password = pwd_context.hash(request.new_password)
     db.commit()
     return APIResponse(

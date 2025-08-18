@@ -3,7 +3,7 @@ Recheck the dependency, now using verify_token which is in auth_utils.py
 """
 
 import os
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from uuid import UUID
@@ -16,9 +16,6 @@ security = HTTPBearer()
 
 from src.redis_client import get_redis_client
 
-# def is_token_blacklisted(redis: Redis, token: str) -> bool:
-#     return redis.get(f"blacklist:{token}") == "revoked"
-
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -27,13 +24,6 @@ def get_current_user(
     token = credentials.credentials
     if redis.get(f"blacklist:{token}"):  # is_token_blacklisted(redis, token):
         raise TokenRevoked()
-
-        # return APIResponse(
-        #     status_code=200, success=False, message="Token has been revoked", data=None
-        # ).model_dump()
-        # raise TokenRevoked(token)
-        raise HTTPException(status_code=401, detail="Token has been revoked")
-
     try:
         payload = jwt.decode(
             token,
@@ -43,10 +33,7 @@ def get_current_user(
         )
         user_id = payload.get("sub")
         if user_id is None:
-            # return APIResponse(
-            #     status_code=200, success=False, message="User ID missing in token", data=None
-            # ).model_dump()
-            raise HTTPException(status_code=401, detail="User ID missing in token")
+            raise TokenRevoked(message="User ID missing in token", code=200)
 
         return user_id
     except JWTError as ex:
@@ -57,38 +44,6 @@ def get_current_user(
             data=None,
             errors=[str(ex)],
         ).model_dump()
-        # raise HTTPException(status_code=401, detail="Invalid token")
-
-
-# def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-#     token = credentials.credentials
-#     if redis.get(f"blacklist:{token}") == b"revoked":
-#         return APIResponse(
-#             status_code=200, success=False, message="Token has been revoked", data=None
-#         ).model_dump()
-#     try:
-#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_signature": False})
-#         user_id = payload.get("sub")
-#         # Fetch user from DB if needed
-#         return user_id
-#     except JWTError as ex:
-#         return APIResponse(
-#             status_code=200, success=False, message="Invalid token", data=None, errors=str(ex)
-#         ).model_dump()
-#         # raise HTTPException(status_code=401, detail="Invalid token")
-
-# try:
-#     payload = jwt.decode(
-#         rf"{token}",
-#         SECRET_KEY,
-#         algorithms=[ALGORITHM],
-#         options={"verify_signature": False},
-#     )
-#     print(f"payload: {payload}")  # Log this!
-#     return payload["sub"]
-# except JWTError as e:
-#     print("JWT decode error:", str(e))  # Log this!
-#     raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
 def get_current_doctor_id(
