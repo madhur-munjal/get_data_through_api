@@ -4,9 +4,11 @@ from datetime import UTC
 from datetime import datetime, timedelta
 
 from fastapi import Request
+
 # from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+
 # from sqlalchemy.orm import Session
 
 from src.database import get_db
@@ -49,12 +51,11 @@ def create_refresh_token(username: str):
     to_encode = {
         "sub": username,
         "jti": token_id,
-        "exp": datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        "exp": datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
     }
     token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     refresh_token_store[token_id] = username  # Store token ID
     return token
-
 
 
 # def verify_refresh_token(token: str):

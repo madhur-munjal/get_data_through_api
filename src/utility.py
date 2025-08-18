@@ -11,7 +11,6 @@ from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
 
 
-
 load_dotenv()
 from uuid import UUID
 
@@ -20,7 +19,7 @@ otp_store = {}
 
 
 def generate_otp(length=4):
-    return ''.join(random.choices(string.digits, k=length))
+    return "".join(random.choices(string.digits, k=length))
 
 
 def send_otp_email(to_email, otp):
@@ -28,7 +27,7 @@ def send_otp_email(to_email, otp):
     from_email = os.getenv("from_email_id")  # "support@smarthealapp.com"
     message["From"] = from_email
     message["To"] = to_email
-    message["Subject"] = 'Smart-Heal, Password Reset OTP'
+    message["Subject"] = "Smart-Heal, Password Reset OTP"
     print(f"Sending OTP {otp} to {to_email}")
     smtp_server = "smtpout.secureserver.net"  # 'mail.firsttoothclinic.com'
     server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
@@ -47,9 +46,15 @@ def validate_user_fields(values, cls):
     :param cls: Class type for which validation is being performed.
     :return: Validated values or raises ValueError if validation fails.
     """
-    PASSWORD_REGEX = re.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$")
-    USERNAME_REGEX = re.compile("^(?=[a-zA-Z])(?=.*[._-])(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]{1,18}[a-zA-Z0-9]$")
-    EMAIL_REGEX = re.compile("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$")  # Indian mobile numbers
+    PASSWORD_REGEX = re.compile(
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+    )
+    USERNAME_REGEX = re.compile(
+        "^(?=[a-zA-Z])(?=.*[._-])(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]{1,18}[a-zA-Z0-9]$"
+    )
+    EMAIL_REGEX = re.compile(
+        "^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$"
+    )  # Indian mobile numbers
 
     errors: list[InitErrorDetails] = []
 
@@ -59,7 +64,7 @@ def validate_user_fields(values, cls):
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid email format"),
                 loc=("email",),
-                input=values.email
+                input=values.email,
             )
         )
 
@@ -69,7 +74,7 @@ def validate_user_fields(values, cls):
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid username format"),
                 loc=("username",),
-                input=values.username
+                input=values.username,
             )
         )
 
@@ -77,10 +82,12 @@ def validate_user_fields(values, cls):
     if "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
         errors.append(
             InitErrorDetails(
-                type=PydanticCustomError("value_error",
-                                         "Invalid password format, Password must be at least 8 characters long and include uppercase, lowercase, digit, and special character"),
+                type=PydanticCustomError(
+                    "value_error",
+                    "Invalid password format, Password must be at least 8 characters long and include uppercase, lowercase, digit, and special character",
+                ),
                 loc=("password",),
-                input=values.password
+                input=values.password,
             )
         )
 
@@ -94,4 +101,3 @@ def validate_user_fields(values, cls):
 #
 # SECRET_KEY = "your-secret-key"
 # ALGORITHM = "HS256"
-

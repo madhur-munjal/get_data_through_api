@@ -1,7 +1,15 @@
 import uuid
 
 from sqlalchemy import (
-    Column, String, Date, Enum, Boolean, DateTime, ForeignKey, Text, JSON
+    Column,
+    String,
+    Date,
+    Enum,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Text,
+    JSON,
 )
 from sqlalchemy.dialects.mysql import BINARY
 from sqlalchemy.sql import func
@@ -21,12 +29,14 @@ class Patient(Base):
     last_name = Column(String(50), nullable=True)
     gender = Column(Enum("male", "female", "other"), nullable=True)
     date_of_birth = Column(Date, nullable=True)
-    phone = Column(String(15), nullable=True) # Change this to mobile
+    phone = Column(String(15), nullable=True)  # Change this to mobile
     email = Column(String(100), nullable=True)
     address = Column(Text, nullable=True)
 
     # Medical Info
-    blood_group = Column(Enum("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"), nullable=True)
+    blood_group = Column(
+        Enum("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"), nullable=True
+    )
     allergies = Column(Text, nullable=True)
     chronic_conditions = Column(Text, nullable=True)
     medications = Column(Text, nullable=True)
@@ -39,4 +49,6 @@ class Patient(Base):
 
     # Optional: Link to assigned doctor or clinic
     assigned_doctor_id = Column(String(36), ForeignKey("users.id"), nullable=True)
-    extra_data = Column(JSON, nullable=True)  # For extensibility (e.g. insurance, emergency contact)
+    extra_data = Column(
+        JSON, nullable=True
+    )  # For extensibility (e.g. insurance, emergency contact)

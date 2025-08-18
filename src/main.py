@@ -13,15 +13,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="api_to_get_data",
-              description="",
-              version="0.0.1",
-              contact={
-                  "name": "Madhur Munjal",
-                  # "url": "",
-                  # "email": ""
-              },
-              root_path="/src")
+app = FastAPI(
+    title="api_to_get_data",
+    description="",
+    version="0.0.1",
+    contact={
+        "name": "Madhur Munjal",
+        # "url": "",
+        # "email": ""
+    },
+    root_path="/src",
+)
 app.include_router(api_router.router)
 
 

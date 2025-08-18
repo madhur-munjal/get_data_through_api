@@ -3,6 +3,7 @@ from datetime import date, datetime
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, Literal, Dict
 
+
 class PatientDTO(BaseModel):
     # id: UUID
 
@@ -16,9 +17,9 @@ class PatientDTO(BaseModel):
     address: Optional[str] = None
 
     # Medical Info
-    blood_group: Optional[
-        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
-    ] = None
+    blood_group: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+        None
+    )
     allergies: Optional[str] = None
     chronic_conditions: Optional[str] = None
     medications: Optional[str] = None
@@ -38,8 +39,10 @@ class PatientDTO(BaseModel):
 class PatentCreate(PatientDTO):
     pass  # Same as PatentBase, used for incoming creation requests
 
+
 class PatentUpdate(PatientDTO):
     pass  # Optional: Customize fields to allow partial updates
+
 
 class PatentOut(PatientDTO):
     id: int

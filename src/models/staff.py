@@ -4,11 +4,12 @@ from pydantic import BaseModel, EmailStr, constr, StringConstraints, model_valid
 
 from src.utility import validate_user_fields
 
-ContactStr = Annotated[str, StringConstraints(pattern=r'^[6-9]\d{9}$')]
+ContactStr = Annotated[str, StringConstraints(pattern=r"^[6-9]\d{9}$")]
 
 
 class StaffCreate(BaseModel):
     """Model used to create a new user."""
+
     firstName: constr(min_length=3, max_length=15)
     lastName: constr(min_length=3, max_length=15)
     email: str
@@ -17,9 +18,7 @@ class StaffCreate(BaseModel):
     username: constr(min_length=5, max_length=18)
     password: constr(min_length=5)
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
     @model_validator(mode="after")
     def validate(cls, values):
@@ -40,13 +39,13 @@ class StaffOut(BaseModel):
     mobile: constr(min_length=5)
     username: constr(min_length=5, max_length=18)
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
+
+
 #
 #
 # # class TokenData(BaseModel):

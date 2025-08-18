@@ -12,7 +12,9 @@ hostname = os.getenv("hostname")
 database = os.getenv("database")
 db_port = os.getenv("db_port")
 DATABASE_URL = f"mysql+mysqlconnector://{mysql_username}:{mysql_password}@{hostname}:{db_port}/{database}"
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args={"connect_timeout": 10}, echo=True)
+engine = create_engine(
+    DATABASE_URL, pool_pre_ping=True, connect_args={"connect_timeout": 10}, echo=True
+)
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()

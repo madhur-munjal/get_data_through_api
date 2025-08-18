@@ -7,8 +7,9 @@ from src.models.response import APIResponse
 from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.schemas.tables.users import User
 
-router = APIRouter(prefix="/users", tags=["users"],
-    responses={404: {"error": "Not found"}})
+router = APIRouter(
+    prefix="/users", tags=["users"], responses={404: {"error": "Not found"}}
+)
 
 
 @router.get("/users_list", response_model=APIResponse)
@@ -16,48 +17,56 @@ def get_users(current_user=Depends(get_current_user), db: Session = Depends(get_
     """Fetch all users."""
     users = db.query(User).all()
     user_dtos = [UserOut.model_validate(user) for user in users]
-    return APIResponse(status_code=200,
-                       success=True,
-                       message="successfully fetched users",
-                       data=user_dtos
-                       ).model_dump()
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="successfully fetched users",
+        data=user_dtos,
+    ).model_dump()
 
 
 @router.delete("/delete-user", response_model=APIResponse)
 def delete_user(
-        request: UserIDRequest,
-        current_user=Depends(get_current_user),
-        db: Session = Depends(get_db)
+    request: UserIDRequest,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Delete a user by ID.
     This endpoint allows an authenticated user to delete another user by their ID.
     """
     user = db.query(User).filter(User.id == request.user_id).first()
     if not user:
-        return APIResponse(status_code=200,
-                           success=False,
-                           message="ID mismatch: the provided ID does not match any existing resource.",
-                           data=None
-                           ).model_dump()
+        return APIResponse(
+            status_code=200,
+            success=False,
+            message="ID mismatch: the provided ID does not match any existing resource.",
+            data=None,
+        ).model_dump()
         # raise HTTPException(status_code=404, detail="User not found")
     db.delete(user)
     db.commit()
-    return APIResponse(status_code=200,
-                       success=True,
-                       message="The user account was successfully deleted",
-                       data=f"User with ID {request.user_id} has been permanently deleted."
-                       ).model_dump()
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="The user account was successfully deleted",
+        data=f"User with ID {request.user_id} has been permanently deleted.",
+    ).model_dump()
 
 
 @router.put("/update-user", response_model=APIResponse)
-def update_item(request: UserIDRequest, payload: UserCreate, current_user=Depends(get_current_user),
-                db: Session = Depends(get_db)):
+def update_item(
+    request: UserIDRequest,
+    payload: UserCreate,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     user_db = db.query(User).filter(User.id == request.user_id).first()
     if not user_db:
-        return APIResponse(status_code=200,
-                           success=False,
-                           message=f"ID mismatch: the provided ID does not match any existing resource."
-                           ).model_dump()
+        return APIResponse(
+            status_code=200,
+            success=False,
+            message=f"ID mismatch: the provided ID does not match any existing resource.",
+        ).model_dump()
         # raise HTTPException(status_code=404, detail="Item not found")
     try:
         for field, value in payload.dict(exclude_unset=True).items():
@@ -65,10 +74,12 @@ def update_item(request: UserIDRequest, payload: UserCreate, current_user=Depend
 
         db.commit()
         db.refresh(user_db)
-        return APIResponse(status_code=200,
-                           success=True,
-                           message="User profile updated successfully.",
-                           data=UserOut.model_validate(user_db)).model_dump()
+        return APIResponse(
+            status_code=200,
+            success=True,
+            message="User profile updated successfully.",
+            data=UserOut.model_validate(user_db),
+        ).model_dump()
     # except IntegrityError as e:
     #     msg = str(e.orig) if hasattr(e, "orig") else str(e)
     #     if "Duplicate entry" in msg:
@@ -90,11 +101,12 @@ def update_item(request: UserIDRequest, payload: UserCreate, current_user=Depend
     except Exception as e:
         error_msg = str(e.orig) if hasattr(e, "orig") else str(e)
 
-        return APIResponse(status_code=200,
-                           success=False,
-                           message=f"Failed to update user details",
-                           data=None,
-                           errors=[error_msg]
-                           )
+        return APIResponse(
+            status_code=200,
+            success=False,
+            message=f"Failed to update user details",
+            data=None,
+            errors=[error_msg],
+        )
 
         # UserOut.model_validate(user_db)).model_dump()

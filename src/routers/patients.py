@@ -14,32 +14,38 @@ from src.dependencies import get_current_doctor_id
 
 
 router = APIRouter(
-    prefix="/patients",
-    tags=["patients"],
-    responses={404: {"error": "Not found"}}
+    prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}
 )
 
 
 @router.post("/", response_model=APIResponse)
 def create_patient(
-        request: PatentCreate,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id)
+    request: PatentCreate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     if db.query(Patient).filter_by(email=request.email).first():
-        return APIResponse(status_code=200, success=False, message="Email already exists", data=None).model_dump()
+        return APIResponse(
+            status_code=200, success=False, message="Email already exists", data=None
+        ).model_dump()
     if db.query(Patient).filter_by(phone=request.phone).first():
-        return APIResponse(status_code=200, success=False, message="Mobile number already exists", data=None).model_dump()
+        return APIResponse(
+            status_code=200,
+            success=False,
+            message="Mobile number already exists",
+            data=None,
+        ).model_dump()
 
     patient = Patient(**request.model_dump(), assigned_doctor_id=doctor_id)
     db.add(patient)
     db.commit()
     db.refresh(patient)
-    return APIResponse(status_code=200,
-                       success=False,
-                       message="Patient created successfully.",
-                       data={"id": patient.patient_id}
-                       ).model_dump()
+    return APIResponse(
+        status_code=200,
+        success=False,
+        message="Patient created successfully.",
+        data={"id": patient.patient_id},
+    ).model_dump()
 
 
 @router.get("/")  # , dependencies=Depends()
