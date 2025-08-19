@@ -10,10 +10,10 @@ from fastapi.responses import JSONResponse
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
 from src.database import engine, Base
-from src.core.exception_handlers import custom_validation_handler
+from src.core.exception_handlers import custom_validation_handler, custom_http_exception_handler
 from dotenv import load_dotenv
 from src.models.response import TokenRevoked
-from src.models.response import APIResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 load_dotenv()
 
@@ -63,6 +63,7 @@ app.add_middleware(
 )
 
 app.add_exception_handler(RequestValidationError, custom_validation_handler)
+app.add_exception_handler(StarletteHTTPException, custom_http_exception_handler)
 
 
 @app.exception_handler(TokenRevoked)
