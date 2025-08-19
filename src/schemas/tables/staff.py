@@ -35,4 +35,4 @@ class Staff(Base):
     mobile = Column(Text, nullable=False)
     username = Column(String(255), nullable=False, unique=True)  # index=True)
     password = Column(Text, nullable=False)
-    doc_id = Column(String(36), ForeignKey("doctors.id"), nullable=False)
+    doc_id = Column(String(36), ForeignKey("users.id"), nullable=False)
