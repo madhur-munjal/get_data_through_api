@@ -2,6 +2,7 @@ import os
 import sys
 
 import redis
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +12,7 @@ sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
 from src.database import engine, Base
 from src.core.exception_handlers import custom_validation_handler, custom_http_exception_handler
-from dotenv import load_dotenv
+from src.models.response import APIResponse
 from src.models.response import TokenRevoked
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -26,7 +27,9 @@ app = FastAPI(
         # "url": "",
         # "email": ""
     },
-    root_path="/src",
+    # root_path="/src",
+    docs_url="/api-docs",
+    redoc_url="/redoc-ui"
 )
 app.include_router(api_router.router)
 
@@ -79,4 +82,6 @@ async def status():
 
     :return:
     """
-    return {"status": "online"}
+    return APIResponse(
+        status_code=200, success=True, message="{'status': 'online'}", data=None
+    ).model_dump()

@@ -35,4 +35,16 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
         )
         return JSONResponse(status_code=404, content=response.dict())
     # For other status codes, fall back to default
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    if exc.status_code == 405:
+        response = APIResponse(
+            status_code=405,
+            success=False,
+            message=f"The method {request.method} is not supported for this endpoint."
+        )
+        return JSONResponse(status_code=405, content=response.dict())
+    response = APIResponse(
+        status_code=400,
+        success=False,
+        message=f"Default error response."
+    )
+    return JSONResponse(status_code=exc.status_code, content=response.dict())
