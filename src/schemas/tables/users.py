@@ -1,18 +1,16 @@
 import uuid
-from datetime import datetime, timedelta
 
 from sqlalchemy import (
     Column,
-    Integer,
     Text,
     String,
-    ForeignKey,
-    DateTime,
     CheckConstraint,
 )
 from sqlalchemy.orm import relationship
 
 from src.database import Base
+from visits import Visit # Do not delete
+from appointments import Appointment # Do not delete
 
 
 class User(Base):
@@ -34,6 +32,8 @@ class User(Base):
     username = Column(String(255), nullable=False, unique=True)  # index=True)
     password = Column(Text, nullable=False)
 
+    visits = relationship("Visit", back_populates="users")
+    appointments = relationship("Appointment", back_populates="users")
 
 # class PasswordResetToken(Base):
 #     __tablename__ = "reset_tokens"

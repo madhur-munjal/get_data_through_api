@@ -11,6 +11,7 @@ from sqlalchemy import (
     Text,
     JSON,
 )
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.mysql import BINARY
 from sqlalchemy.sql import func
 
@@ -52,3 +53,7 @@ class Patient(Base):
     extra_data = Column(
         JSON, nullable=True
     )  # For extensibility (e.g. insurance, emergency contact)
+
+    appointments = relationship("Appointments", back_populates="patient")
+    visits = relationship("Visit", back_populates="patient")
+

@@ -92,3 +92,18 @@ def validate_user_fields(values, cls):
         raise ValidationError.from_exception_data(cls, errors)
 
     return values
+
+
+def save_data_to_db(data, db_model, db_session):
+    """
+    Save data to the database.
+    :param data: Data to save.
+    :param db_model: SQLAlchemy model class.
+    :param db_session: SQLAlchemy session.
+    :return: Saved database object.
+    """
+    db_object = db_model(**data)
+    db_session.add(db_object)
+    db_session.commit()
+    db_session.refresh(db_object)
+    return db_object
