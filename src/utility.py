@@ -105,5 +105,7 @@ def save_data_to_db(data, db_model, db_session):
     db_object = db_model(**data)
     db_session.add(db_object)
     db_session.commit()
+    print(f"db_object.id before refresh: {db_object.patient_id}")
     db_session.refresh(db_object)
+    print(f"db_object.id: {db_object.patient_id}")
     return db_object

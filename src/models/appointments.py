@@ -2,24 +2,25 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
-from src.models.patients import PatentCreate
+from src.models.patients import PatientDTO, PatientOut
+
+
 
 
 class AppointmentCreate(BaseModel):
     # patient_id: int
     # doctor_id: int
-    patient: PatentCreate # Nested patient data
+    patient: PatientDTO  # Nested patient data
     scheduled_time: datetime
     status: Optional[str] = Field(default="scheduled")
 
+    model_config = {"from_attributes": True}
 
 
-class AppointmentRead(BaseModel):
-    id: int
-    patient_id: int
-    doctor_id: int
+class AppointmentOut(BaseModel):
+    patient_id: str
+    doctor_id: str
     scheduled_time: datetime
-    status: str
-    created_at: datetime
+    status: Optional[str] = Field(default="scheduled")
 
     model_config = {"from_attributes": True}

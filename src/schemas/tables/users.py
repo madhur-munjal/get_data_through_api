@@ -9,8 +9,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from src.database import Base
-from visits import Visit # Do not delete
-from appointments import Appointment # Do not delete
 
 
 class User(Base):
@@ -31,8 +29,9 @@ class User(Base):
     mobile = Column(Text, nullable=False)
     username = Column(String(255), nullable=False, unique=True)  # index=True)
     password = Column(Text, nullable=False)
-
-    visits = relationship("Visit", back_populates="users")
+    # from .visits import Visit
+    from .appointments import Appointment
+    # visits = relationship("Visit", back_populates="users")
     appointments = relationship("Appointment", back_populates="users")
 
 # class PasswordResetToken(Base):

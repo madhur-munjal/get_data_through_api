@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 # from . import models, schemas
 from src.database import get_db  # assuming you have a get_db dependency
-from src.models.patients import PatentCreate, PatentUpdate, PatentOut
+from src.models.patients import PatientDTO
 from src.models.response import APIResponse
 from src.schemas.tables.patients import Patient
 from src.dependencies import get_current_doctor_id
@@ -20,7 +20,7 @@ router = APIRouter(
 
 @router.post("/register", response_model=APIResponse)
 def create_patient(
-    request: PatentCreate,
+    request: PatientDTO,
     db: Session = Depends(get_db),
     doctor_id: UUID = Depends(get_current_doctor_id),
 ):

@@ -12,7 +12,6 @@ from sqlalchemy import (
     JSON,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.mysql import BINARY
 from sqlalchemy.sql import func
 
 from src.database import Base
@@ -27,9 +26,9 @@ class Patient(Base):
     )
     # Personal Info
     first_name = Column(String(50), nullable=False)
-    last_name = Column(String(50), nullable=True)
-    gender = Column(Enum("male", "female", "other"), nullable=True)
-    date_of_birth = Column(Date, nullable=True)
+    last_name = Column(String(50), nullable=True, default=None)
+    gender = Column(Enum("male", "female", "other"), nullable=True, default=None)
+    date_of_birth = Column(Date, nullable=True, default=None)
     phone = Column(String(15), nullable=True)  # Change this to mobile
     email = Column(String(100), nullable=True)
     address = Column(Text, nullable=True)
@@ -54,6 +53,8 @@ class Patient(Base):
         JSON, nullable=True
     )  # For extensibility (e.g. insurance, emergency contact)
 
-    appointments = relationship("Appointments", back_populates="patient")
-    visits = relationship("Visit", back_populates="patient")
+    # from .appointments import Appointment
+    # from .visits import Visit
 
+    appointments = relationship("Appointment", back_populates="patient")
+    # visits = relationship("Visit", back_populates="patient")

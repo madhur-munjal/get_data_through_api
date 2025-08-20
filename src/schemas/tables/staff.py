@@ -1,16 +1,12 @@
 import uuid
-from datetime import datetime, timedelta
 
 from sqlalchemy import (
     Column,
-    Integer,
     Text,
     String,
     ForeignKey,
-    DateTime,
     CheckConstraint,
 )
-from sqlalchemy.orm import relationship
 
 from src.database import Base
 

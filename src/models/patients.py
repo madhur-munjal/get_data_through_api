@@ -5,8 +5,7 @@ from typing import Optional, Literal, Dict
 
 
 class PatientDTO(BaseModel):
-    # id: UUID
-
+    # patient_id: UUID
     # Personal Info
     first_name: str = Field(..., max_length=50)
     last_name: Optional[str] = Field(None, max_length=50)
@@ -35,14 +34,18 @@ class PatientDTO(BaseModel):
     extra_data: Optional[Dict[str, str]] = None
 
 
-# TODO: verify the fields data type
-class PatentCreate(PatientDTO):
-    pass  # Same as PatentBase, used for incoming creation requests
+# # TODO: verify the fields data type
+# class PatentCreate(PatientDTO):
+#     pass  # Same as PatentBase, used for incoming creation requests
 
 
 class PatentUpdate(PatientDTO):
     pass  # Optional: Customize fields to allow partial updates
 
 
-class PatentOut(PatientDTO):
-    id: int
+class PatientOut(PatientDTO):
+    name: str
+    age: int
+
+    model_config = {"from_attributes": True}
+
