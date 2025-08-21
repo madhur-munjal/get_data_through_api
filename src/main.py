@@ -57,7 +57,7 @@ def check_redis():
         print("❌ Redis is not reachable.")
 
 
-origins = ["https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
+origins = ["http://localhost:4200", "http://api.smarthealapp.com"] # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
