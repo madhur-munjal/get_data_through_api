@@ -26,8 +26,6 @@ def register(
     current_user=Depends(get_current_user),
 ):
     """Register a new user."""
-    print(f"doctor_id: {doctor_id}")
-    print(f"user.username: {user.username}")
     db_user = (
         db.query(Staff)
         .filter_by(doc_id=doctor_id)

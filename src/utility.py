@@ -47,7 +47,7 @@ def validate_user_fields(values, cls):
     :return: Validated values or raises ValueError if validation fails.
     """
     PASSWORD_REGEX = re.compile(
-        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+        r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
     )
     USERNAME_REGEX = re.compile(
         "^(?=[a-zA-Z])(?=.*[._-])(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]{1,18}[a-zA-Z0-9]$"

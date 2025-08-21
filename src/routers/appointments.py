@@ -27,16 +27,28 @@ def create_appointment(
         current_user=Depends(get_current_user),
 ):
     """Register a new appointment."""
-
-    # Extract patient data
-    patient_data = appointment.patient.dict()
-    save_patient_data = save_data_to_db(patient_data, Patient, db)  # Create patient here
-    print(f"save_patient_data in routers/appointments.py: {save_patient_data}")
-    print(type(save_patient_data))
-    patient_id = save_patient_data.patient_id
+    patient_mobile_number = appointment.patient.mobile
+    db_user = (
+        db.query(Patient)
+        .filter_by(mobile=patient_mobile_number)
+        .first()
+    )
+    if db_user:
+        print(f"Mobile {patient_mobile_number} already exists in patient table")
+        # return APIResponse(
+        #     status_code=200, success=False, message="Username already exists", data=None
+        # ).model_dump()
+        patient_id = db_user.patient_id
+    else:
+        # Extract patient data
+        patient_data = appointment.patient.dict()
+        # try:
+        save_patient_data = save_data_to_db(patient_data, Patient, db)  # Create patient here
+        # except Exception as e:
+        #     print(f"Error saving patient data: {e}")
+        patient_id = save_patient_data.patient_id
     data = appointment.dict()
     data.update({"doctor_id": doctor_id})
-    print(f"data in routers/appointments.py: {data}")
     db_appointment = Appointment(patient_id=patient_id, doctor_id=doctor_id,
                                  scheduled_time=data["scheduled_time"], status=data["status"])
     db.add(db_appointment)
