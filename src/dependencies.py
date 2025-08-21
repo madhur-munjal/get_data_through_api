@@ -3,10 +3,14 @@ Recheck the dependency, now using verify_token which is in auth_utils.py
 """
 
 import os
-from fastapi import Depends
+from uuid import UUID
+
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
-from uuid import UUID
+from redis import Redis
+
+from src.exceptions import APIException
 from src.models.response import APIResponse, TokenRevoked
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -18,8 +22,8 @@ from src.redis_client import get_redis_client
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    redis=Depends(get_redis_client),
+        credentials: HTTPAuthorizationCredentials = Depends(security),
+        redis=Depends(get_redis_client),
 ):
     token = credentials.credentials
     if redis.get(f"blacklist:{token}"):  # is_token_blacklisted(redis, token):
@@ -47,14 +51,19 @@ def get_current_user(
 
 
 def get_current_doctor_id(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+        credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> UUID:
     token = credentials.credentials
     print(f"token in get_current_doctor_id: {token}")
     if not token:
-        return APIResponse(
-            status_code=200, success=False, message="Used id doesn't found", data=None
-        ).model_dump()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token is missing"
+        )
+        # .model_dump())
+        # return APIResponse(
+        #     status_code=200, success=False, message="Used id doesn't found", data=None
+        # ).model_dump()
 
     try:
         payload = jwt.decode(
@@ -67,14 +76,10 @@ def get_current_doctor_id(
         return payload["doc_id"]
     except JWTError as e:
         print("JWT decode error:", str(e))  # Log this!
-        return APIResponse(
-            status_code=200, success=False, message="Token decode failed", errors=e
-        ).model_dump()
-
-
-# redis_client = Redis(host="localhost", port=6379, decode_responses=True)
-
-from redis import Redis
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e)
+        )
 
 
 def blacklist_token(redis: Redis, token: str, expiry_seconds: int):

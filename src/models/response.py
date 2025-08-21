@@ -1,12 +1,11 @@
 from typing import Generic, TypeVar, Union, Optional, Any, List
 
-# from pydantic import Field
-from pydantic.generics import GenericModel
+from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
 
-class BaseResponse(GenericModel, Generic[T]):
+class BaseResponse(BaseModel, Generic[T]):
     model_config = {"exclude_none": True}
 
     def __init__(self, **data):
@@ -23,7 +22,8 @@ class APIResponse(BaseResponse[T]):
     success: bool
     message: str
     data: Optional[Union[T, str]] = None  # Field(default=None, exclude_none=True)
-    errors: Optional[List[Any]] = None  # Field(default=None, exclude=True)
+    errors: Any = Field(default=None, exclude=True)
+    # errors: Optional[List[Any]] = None  # Field(default=None, exclude=True)
 
     @classmethod
     def error(cls, message: str, code: int = 400):

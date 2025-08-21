@@ -11,7 +11,7 @@ class PatientDTO(BaseModel):
     last_name: Optional[str] = Field(None, max_length=50)
     gender: Optional[Literal["male", "female", "other"]] = None
     date_of_birth: Optional[date] = None
-    phone: Optional[str] = Field(None, max_length=15)
+    mobile: Optional[str] = Field(None, max_length=15)
     email: Optional[EmailStr] = None
     address: Optional[str] = None
 

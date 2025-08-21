@@ -28,7 +28,7 @@ def create_patient(
         return APIResponse(
             status_code=200, success=False, message="Email already exists", data=None
         ).model_dump()
-    if db.query(Patient).filter_by(phone=request.phone).first():
+    if db.query(Patient).filter_by(mobile=request.mobile).first():
         return APIResponse(
             status_code=200,
             success=False,

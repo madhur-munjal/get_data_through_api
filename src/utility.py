@@ -7,7 +7,10 @@ from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
+from sqlalchemy.exc import IntegrityError
 
+from fastapi import HTTPException, status
+from src.exceptions import APIException
 
 load_dotenv()
 
@@ -102,10 +105,22 @@ def save_data_to_db(data, db_model, db_session):
     :param db_session: SQLAlchemy session.
     :return: Saved database object.
     """
-    db_object = db_model(**data)
-    db_session.add(db_object)
-    db_session.commit()
-    print(f"db_object.id before refresh: {db_object.patient_id}")
-    db_session.refresh(db_object)
-    print(f"db_object.id: {db_object.patient_id}")
-    return db_object
+    try:
+        db_object = db_model(**data)
+        db_session.add(db_object)
+        db_session.commit()
+        print(f"db_object.id before refresh: {db_object.patient_id}")
+        db_session.refresh(db_object)
+        print(f"db_object.id: {db_object.patient_id}")
+        return db_object
+    except IntegrityError as e:
+        db_session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Duplicate entry: user with this phone already exists"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e)
+        )

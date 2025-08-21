@@ -15,6 +15,11 @@ from src.core.exception_handlers import custom_validation_handler, custom_http_e
 from src.models.response import APIResponse
 from src.models.response import TokenRevoked
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from src.schemas.tables.appointments import Appointment
+from src.schemas.tables.users import User
+from src.schemas.tables.patients import Patient
+# from src.schemas.tables.visits import Visit
+from src.schemas.tables.staff import Staff
 
 load_dotenv()
 
