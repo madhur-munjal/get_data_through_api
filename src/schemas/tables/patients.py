@@ -29,7 +29,7 @@ class Patient(Base):
     last_name = Column(String(50), nullable=True, default=None)
     gender = Column(Enum("male", "female", "other"), nullable=True, default=None)
     date_of_birth = Column(Date, nullable=True, default=None)
-    phone = Column(String(15), nullable=True)  # Change this to mobile
+    mobile = Column(String(15), unique=True)
     email = Column(String(100), nullable=True)
     address = Column(Text, nullable=True)
 
