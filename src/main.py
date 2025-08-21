@@ -60,7 +60,7 @@ def check_redis():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Or specify your frontend URL
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],  # ["*"],  # Or ["GET", "POST", "OPTIONS"]
     allow_headers=["*"],  # Or ["Authorization", "Content-Type"]
 )
