@@ -16,9 +16,9 @@ RUN apt-get update && \
 RUN pip install -r requirements.txt
 
 COPY ./src /src
-RUN ls -la /src
+#RUN ls -la /src
 
-RUN chmod +x start.sh
+#RUN chmod +x start.sh
 #ENTRYPOINT ["./start.sh"]
 # Run Alembic migrations, then start Uvicorn
 #CMD /bin/bash -c "uvicorn main:app --host 0.0.0.0 --port 8000 && alembic upgrade head"
