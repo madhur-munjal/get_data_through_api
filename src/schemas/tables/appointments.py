@@ -5,7 +5,9 @@ from sqlalchemy import (
     Column,
     String,
     DateTime,
-    ForeignKey
+    ForeignKey,
+    Date,
+    Time
 )
 from sqlalchemy.orm import relationship
 
@@ -18,7 +20,8 @@ class Appointment(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     patient_id = Column(String(36), ForeignKey("patients.patient_id"))
     doctor_id = Column(String(36), ForeignKey("users.id"))
-    scheduled_time = Column(DateTime, nullable=False)
+    scheduled_date = Column(Date, nullable=True)
+    scheduled_time = Column(Time, nullable=True)
     status = Column(String(20), default="scheduled")
     created_at = Column(DateTime, default=datetime.utcnow)
     # from .visits import Visit

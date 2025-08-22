@@ -13,17 +13,8 @@ RUN apt-get update && \
     python3-dev
 
 
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src /src
-#RUN ls -la /src
-
-#RUN chmod +x start.sh
-#ENTRYPOINT ["./start.sh"]
-# Run Alembic migrations, then start Uvicorn
-#CMD /bin/bash -c "uvicorn main:app --host 0.0.0.0 --port 8000 && alembic upgrade head"
-#CMD redis-server --daemonize yes && uvicorn main:app --host 0.0.0.0 --port 8000
+EXPOSE 8000
 CMD ["/bin/sh", "-c", "redis-server --daemonize yes && uvicorn main:app --host 0.0.0.0 --port 8000"]
-
-#CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-##CMD ["fastapi", "dev", "main.py", "--host", "0.0.0.0", "--port", "8000"]

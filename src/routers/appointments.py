@@ -19,12 +19,12 @@ router = APIRouter(
 )
 
 
-@router.post("/appointments", response_model=APIResponse[AppointmentOut])
+@router.post("/create_appointment", response_model=APIResponse[AppointmentOut])
 def create_appointment(
         appointment: AppointmentCreate,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
-        current_user=Depends(get_current_user),
+        current_user=Depends(get_current_user)
 ):
     """Register a new appointment."""
     patient_mobile_number = appointment.patient.mobile
@@ -33,6 +33,7 @@ def create_appointment(
         .filter_by(mobile=patient_mobile_number)
         .first()
     )
+    print(f"db_user: {db_user}")
     if db_user:
         print(f"Mobile {patient_mobile_number} already exists in patient table")
         # return APIResponse(
@@ -50,7 +51,7 @@ def create_appointment(
     data = appointment.dict()
     data.update({"doctor_id": doctor_id})
     db_appointment = Appointment(patient_id=patient_id, doctor_id=doctor_id,
-                                 scheduled_time=data["scheduled_time"], status=data["status"])
+                                 scheduled_date=data["scheduled_date"], scheduled_time=data["scheduled_time"], status=data["status"])
     db.add(db_appointment)
     db.commit()
     db.refresh(db_appointment)
@@ -60,3 +61,23 @@ def create_appointment(
         message=f"New Appointment created.",
         data=AppointmentOut.model_validate(db_appointment),
     ).model_dump()
+
+
+@router.get("/get_appintments")
+def get_appointment_data(db: Session = Depends(get_db)):
+    results = db.query(Appointment).all()
+    return APIResponse(
+            status_code=200,
+            success=True,
+            message=f"New Appointment created.",
+            data = [{
+            "patient_first_name": row.patient.first_name,
+            "patient_mobile": row.patient.mobile,
+            "scheduled_date": row.scheduled_date,
+            "scheduled_time": row.scheduled_time,
+        }
+        for row in results
+    ],
+
+            # data1=AppointmentOut.model_validate(db_appointment),
+        ).model_dump()

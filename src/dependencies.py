@@ -10,7 +10,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from redis import Redis
 
-from src.exceptions import APIException
 from src.models.response import APIResponse, TokenRevoked
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -54,17 +53,11 @@ def get_current_doctor_id(
         credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> UUID:
     token = credentials.credentials
-    print(f"token in get_current_doctor_id: {token}")
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is missing"
         )
-        # .model_dump())
-        # return APIResponse(
-        #     status_code=200, success=False, message="Used id doesn't found", data=None
-        # ).model_dump()
-
     try:
         payload = jwt.decode(
             rf"{token}",
@@ -72,10 +65,8 @@ def get_current_doctor_id(
             algorithms=[ALGORITHM],
             options={"verify_signature": False},
         )
-        print(f"payload: {payload}")  # payload in get_current_doctor_id
         return payload["doc_id"]
     except JWTError as e:
-        print("JWT decode error:", str(e))  # Log this!
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e)

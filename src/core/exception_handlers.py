@@ -34,7 +34,6 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
             message="The resource you are looking for does not exist."
         )
         return JSONResponse(status_code=404, content=response.dict())
-    # For other status codes, fall back to default
     if exc.status_code == 405:
         response = APIResponse(
             status_code=405,
@@ -42,10 +41,6 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
             message=f"The method {request.method} is not supported for this endpoint."
         )
         return JSONResponse(status_code=405, content=response.dict())
-    # print(f"request in custom_validation_handler: {request}")
-    # print(f"exc.status_code in custom_validation_handler: {exc.status_code}")
-    # print(f"message in custom_validation_handler: {exc}")
-    # print(f"type of message in custom_validation_handler: {type(exc)}")
     response = APIResponse(
         status_code=exc.status_code,
         success=False,

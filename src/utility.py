@@ -10,7 +10,6 @@ from pydantic_core import InitErrorDetails, PydanticCustomError
 from sqlalchemy.exc import IntegrityError
 
 from fastapi import HTTPException, status
-from src.exceptions import APIException
 
 load_dotenv()
 

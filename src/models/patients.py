@@ -19,13 +19,13 @@ class PatientDTO(BaseModel):
     blood_group: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
         None
     )
-    allergies: Optional[str] = None
-    chronic_conditions: Optional[str] = None
-    medications: Optional[str] = None
+    # allergies: Optional[str] = None
+    # chronic_conditions: Optional[str] = None
+    # medications: Optional[str] = None
     notes: Optional[str] = None
 
     # Metadata
-    is_active: bool = True
+    # is_active: bool = True
     created_at: datetime
     updated_at: Optional[datetime] = None
 

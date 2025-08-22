@@ -15,11 +15,6 @@ from src.core.exception_handlers import custom_validation_handler, custom_http_e
 from src.models.response import APIResponse
 from src.models.response import TokenRevoked
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from src.schemas.tables.appointments import Appointment
-from src.schemas.tables.users import User
-from src.schemas.tables.patients import Patient
-# from src.schemas.tables.visits import Visit
-from src.schemas.tables.staff import Staff
 
 load_dotenv()
 
@@ -62,10 +57,13 @@ def check_redis():
         print("❌ Redis is not reachable.")
 
 
+origins = ["http://localhost:4200",
+           "http://api.smarthealapp.com"]  # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify your frontend URL
-    allow_credentials=True,
+    allow_origins=origins,  # Or specify your frontend URL
+    allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],  # ["*"],  # Or ["GET", "POST", "OPTIONS"]
     allow_headers=["*"],  # Or ["Authorization", "Content-Type"]
 )
@@ -90,3 +88,9 @@ async def status():
     return APIResponse(
         status_code=200, success=True, message="{'status': 'online'}", data=None
     ).model_dump()
+
+
+# if __name__ == "__main__":
+#     import uvicorn
+#     port = int(os.environ.get("PORT", 8000))
+#     uvicorn.run("main:app", host="0.0.0.0", port=port)
