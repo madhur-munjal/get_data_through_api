@@ -63,7 +63,7 @@ def create_appointment(
     ).model_dump()
 
 
-@router.get("/get_appintments")
+@router.get("/get_appointments")
 def get_appointment_data(db: Session = Depends(get_db)):
     results = db.query(Appointment).all()
     return APIResponse(
