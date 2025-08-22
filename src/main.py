@@ -57,9 +57,11 @@ def check_redis():
         print("❌ Redis is not reachable.")
 
 
+origins = ["http://localhost:4200", "http://api.smarthealapp.com"] # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify your frontend URL
+    allow_origins=origins,  # Or specify your frontend URL
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],  # ["*"],  # Or ["GET", "POST", "OPTIONS"]
     allow_headers=["*"],  # Or ["Authorization", "Content-Type"]
