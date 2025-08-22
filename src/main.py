@@ -2,6 +2,7 @@ import os
 import sys
 
 import redis
+import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -57,7 +58,8 @@ def check_redis():
         print("❌ Redis is not reachable.")
 
 
-origins = ["http://localhost:4200", "http://api.smarthealapp.com"] # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
+origins = ["http://localhost:4200",
+           "http://api.smarthealapp.com"]  # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -87,3 +89,8 @@ async def status():
     return APIResponse(
         status_code=200, success=True, message="{'status': 'online'}", data=None
     ).model_dump()
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
