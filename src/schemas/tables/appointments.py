@@ -15,6 +15,7 @@ from src.database import Base
 
 
 class Appointment(Base):
+
     __tablename__ = "appointments"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -29,5 +30,5 @@ class Appointment(Base):
     # from .users import User
 
     patient = relationship("Patient", back_populates="appointments")
-    users = relationship("User", back_populates="appointments")
-    # visit = relationship("Visit", back_populates="appointments")
+    user = relationship("User", back_populates="appointments")
+    visits = relationship("Visit", back_populates="appointments")

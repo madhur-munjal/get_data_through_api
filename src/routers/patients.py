@@ -3,14 +3,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-# from . import models, schemas
-from src.database import get_db  # assuming you have a get_db dependency
+from src.database import get_db
 from src.models.patients import PatientDTO
 from src.models.response import APIResponse
 from src.schemas.tables.patients import Patient
 from src.dependencies import get_current_doctor_id
 
-# from . import crud  # assuming you have crud methods for patents
 
 
 router = APIRouter(
@@ -47,7 +45,6 @@ def create_patient(
         data={"id": patient.patient_id},
     ).model_dump()
 
-#
 # @router.get("/")  # , dependencies=Depends()
 # def read_patients(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
 #     return db.query(Patient).offset(skip).limit(limit).all()

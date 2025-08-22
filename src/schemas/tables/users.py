@@ -30,9 +30,9 @@ class User(Base):
     username = Column(String(255), nullable=False, unique=True)  # index=True)
     password = Column(Text, nullable=False)
     # from .visits import Visit
-    from .appointments import Appointment
-    # visits = relationship("Visit", back_populates="users")
-    appointments = relationship("Appointment", back_populates="users")
+    # from .appointments import Appointment
+    visits = relationship("Visit", back_populates="user")
+    appointments = relationship("Appointment", back_populates="user")
 
 # class PasswordResetToken(Base):
 #     __tablename__ = "reset_tokens"

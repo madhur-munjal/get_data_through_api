@@ -6,8 +6,6 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import get_current_user
-# from src.models.users import UserIDRequest, UserOut, UserCreate
-# from src.models.staff import StaffCreate, StaffOut
 from src.models.appointments import AppointmentCreate, AppointmentOut
 from src.models.response import APIResponse
 from src.schemas.tables.appointments import Appointment
@@ -33,12 +31,7 @@ def create_appointment(
         .filter_by(mobile=patient_mobile_number)
         .first()
     )
-    print(f"db_user: {db_user}")
     if db_user:
-        print(f"Mobile {patient_mobile_number} already exists in patient table")
-        # return APIResponse(
-        #     status_code=200, success=False, message="Username already exists", data=None
-        # ).model_dump()
         patient_id = db_user.patient_id
     else:
         # Extract patient data
@@ -51,7 +44,8 @@ def create_appointment(
     data = appointment.dict()
     data.update({"doctor_id": doctor_id})
     db_appointment = Appointment(patient_id=patient_id, doctor_id=doctor_id,
-                                 scheduled_date=data["scheduled_date"], scheduled_time=data["scheduled_time"], status=data["status"])
+                                 scheduled_date=data["scheduled_date"], scheduled_time=data["scheduled_time"],
+                                 status=data["status"])
     db.add(db_appointment)
     db.commit()
     db.refresh(db_appointment)
@@ -67,17 +61,16 @@ def create_appointment(
 def get_appointment_data(db: Session = Depends(get_db)):
     results = db.query(Appointment).all()
     return APIResponse(
-            status_code=200,
-            success=True,
-            message=f"New Appointment created.",
-            data = [{
+        status_code=200,
+        success=True,
+        message=f"New Appointment created.",
+        data=[{
             "patient_first_name": row.patient.first_name,
             "patient_mobile": row.patient.mobile,
             "scheduled_date": row.scheduled_date,
             "scheduled_time": row.scheduled_time,
         }
-        for row in results
-    ],
+            for row in results
+        ],
 
-            # data1=AppointmentOut.model_validate(db_appointment),
-        ).model_dump()
+    ).model_dump()

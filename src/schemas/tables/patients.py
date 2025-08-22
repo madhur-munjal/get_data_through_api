@@ -54,4 +54,4 @@ class Patient(Base):
     # from .visits import Visit
 
     appointments = relationship("Appointment", back_populates="patient")
-    # visits = relationship("Visit", back_populates="patient")
+    visits = relationship("Visit", back_populates="patient")
