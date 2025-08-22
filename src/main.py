@@ -11,7 +11,10 @@ from fastapi.responses import JSONResponse
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
 from src.database import engine, Base
-from src.core.exception_handlers import custom_validation_handler, custom_http_exception_handler
+from src.core.exception_handlers import (
+    custom_validation_handler,
+    custom_http_exception_handler,
+)
 from src.models.response import APIResponse
 from src.models.response import TokenRevoked
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -29,7 +32,7 @@ app = FastAPI(
     },
     # root_path="/src",
     docs_url="/api-docs",
-    redoc_url="/redoc-ui"
+    redoc_url="/redoc-ui",
 )
 app.include_router(api_router.router)
 
@@ -57,8 +60,10 @@ def check_redis():
         print("❌ Redis is not reachable.")
 
 
-origins = ["http://localhost:4200",
-           "http://api.smarthealapp.com"]  # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
+origins = [
+    "http://localhost:4200",
+    "http://api.smarthealapp.com",
+]  # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,

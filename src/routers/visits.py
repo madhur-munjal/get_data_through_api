@@ -5,10 +5,12 @@ from src.database import get_db
 from src.dependencies import get_current_user
 from src.models.response import APIResponse
 from src.models.visits import VisitOut
+
 # from src.schemas.tables.visits import Visit
 
 router = APIRouter(
-    prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}})
+    prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}
+)
 # APIResponse(
 #         status_code=404,
 #         success=False,

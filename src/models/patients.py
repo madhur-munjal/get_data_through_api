@@ -48,4 +48,3 @@ class PatientOut(PatientDTO):
     age: int
 
     model_config = {"from_attributes": True}
-

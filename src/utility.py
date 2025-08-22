@@ -116,10 +116,7 @@ def save_data_to_db(data, db_model, db_session):
         db_session.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Duplicate entry: user with this phone already exists"
+            detail="Duplicate entry: user with this phone already exists",
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))

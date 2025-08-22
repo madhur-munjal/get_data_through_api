@@ -21,8 +21,8 @@ from src.redis_client import get_redis_client
 
 
 def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
-        redis=Depends(get_redis_client),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    redis=Depends(get_redis_client),
 ):
     token = credentials.credentials
     if redis.get(f"blacklist:{token}"):  # is_token_blacklisted(redis, token):
@@ -50,13 +50,12 @@ def get_current_user(
 
 
 def get_current_doctor_id(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> UUID:
     token = credentials.credentials
     if not token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token is missing"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing"
         )
     try:
         payload = jwt.decode(
@@ -67,10 +66,7 @@ def get_current_doctor_id(
         )
         return payload["doc_id"]
     except JWTError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 
 def blacklist_token(redis: Redis, token: str, expiry_seconds: int):

@@ -10,7 +10,6 @@ from src.schemas.tables.patients import Patient
 from src.dependencies import get_current_doctor_id
 
 
-
 router = APIRouter(
     prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}
 )
@@ -45,10 +44,11 @@ def create_patient(
         data={"id": patient.patient_id},
     ).model_dump()
 
+
 # @router.get("/")  # , dependencies=Depends()
 # def read_patients(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
 #     return db.query(Patient).offset(skip).limit(limit).all()
-    # return crud.get_patents(db, skip=skip, limit=limit)
+# return crud.get_patents(db, skip=skip, limit=limit)
 
 
 # @router.get("/{patient_id}", response_model=PatentOut)

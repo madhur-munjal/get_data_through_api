@@ -13,39 +13,43 @@ from src.schemas.tables.patients import Patient
 from src.utility import save_data_to_db
 
 router = APIRouter(
-    prefix="/appointments", tags=["appointments"], responses={404: {"error": "Not found"}}
+    prefix="/appointments",
+    tags=["appointments"],
+    responses={404: {"error": "Not found"}},
 )
 
 
 @router.post("/create_appointment", response_model=APIResponse[AppointmentOut])
 def create_appointment(
-        appointment: AppointmentCreate,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        current_user=Depends(get_current_user)
+    appointment: AppointmentCreate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    current_user=Depends(get_current_user),
 ):
     """Register a new appointment."""
     patient_mobile_number = appointment.patient.mobile
-    db_user = (
-        db.query(Patient)
-        .filter_by(mobile=patient_mobile_number)
-        .first()
-    )
+    db_user = db.query(Patient).filter_by(mobile=patient_mobile_number).first()
     if db_user:
         patient_id = db_user.patient_id
     else:
         # Extract patient data
         patient_data = appointment.patient.dict()
         # try:
-        save_patient_data = save_data_to_db(patient_data, Patient, db)  # Create patient here
+        save_patient_data = save_data_to_db(
+            patient_data, Patient, db
+        )  # Create patient here
         # except Exception as e:
         #     print(f"Error saving patient data: {e}")
         patient_id = save_patient_data.patient_id
     data = appointment.dict()
     data.update({"doctor_id": doctor_id})
-    db_appointment = Appointment(patient_id=patient_id, doctor_id=doctor_id,
-                                 scheduled_date=data["scheduled_date"], scheduled_time=data["scheduled_time"],
-                                 status=data["status"])
+    db_appointment = Appointment(
+        patient_id=patient_id,
+        doctor_id=doctor_id,
+        scheduled_date=data["scheduled_date"],
+        scheduled_time=data["scheduled_time"],
+        status=data["status"],
+    )
     db.add(db_appointment)
     db.commit()
     db.refresh(db_appointment)
@@ -64,13 +68,13 @@ def get_appointment_data(db: Session = Depends(get_db)):
         status_code=200,
         success=True,
         message=f"New Appointment created.",
-        data=[{
-            "patient_first_name": row.patient.first_name,
-            "patient_mobile": row.patient.mobile,
-            "scheduled_date": row.scheduled_date,
-            "scheduled_time": row.scheduled_time,
-        }
+        data=[
+            {
+                "patient_first_name": row.patient.first_name,
+                "patient_mobile": row.patient.mobile,
+                "scheduled_date": row.scheduled_date,
+                "scheduled_time": row.scheduled_time,
+            }
             for row in results
         ],
-
     ).model_dump()

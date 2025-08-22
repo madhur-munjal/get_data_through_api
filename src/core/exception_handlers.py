@@ -31,19 +31,17 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
         response = APIResponse(
             status_code=404,
             success=False,
-            message="The resource you are looking for does not exist."
+            message="The resource you are looking for does not exist.",
         )
         return JSONResponse(status_code=404, content=response.dict())
     if exc.status_code == 405:
         response = APIResponse(
             status_code=405,
             success=False,
-            message=f"The method {request.method} is not supported for this endpoint."
+            message=f"The method {request.method} is not supported for this endpoint.",
         )
         return JSONResponse(status_code=405, content=response.dict())
     response = APIResponse(
-        status_code=exc.status_code,
-        success=False,
-        message=exc.detail
+        status_code=exc.status_code, success=False, message=exc.detail
     )
     return JSONResponse(status_code=exc.status_code, content=response.dict())

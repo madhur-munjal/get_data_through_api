@@ -4,8 +4,6 @@ from pydantic import BaseModel, Field
 from src.models.patients import PatientDTO, PatientOut
 
 
-
-
 class AppointmentCreate(BaseModel):
     # patient_id: int
     # doctor_id: int

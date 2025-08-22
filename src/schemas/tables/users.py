@@ -34,6 +34,7 @@ class User(Base):
     visits = relationship("Visit", back_populates="user")
     appointments = relationship("Appointment", back_populates="user")
 
+
 # class PasswordResetToken(Base):
 #     __tablename__ = "reset_tokens"
 #

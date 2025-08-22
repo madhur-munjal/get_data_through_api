@@ -8,7 +8,14 @@ router = APIRouter(
 )
 
 # List of routers
-routers = [patients.router, users.router, auth.router, staff.router, appointments.router, visits.router]
+routers = [
+    patients.router,
+    users.router,
+    auth.router,
+    staff.router,
+    appointments.router,
+    visits.router,
+]
 
 # Include all routers
 for r in routers:
