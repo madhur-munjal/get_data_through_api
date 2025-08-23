@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.models.patients import PatientDTO
+from src.models.patients import PatientRecord
 from src.models.response import APIResponse
 from src.schemas.tables.patients import Patient
 from src.dependencies import get_current_doctor_id
@@ -17,14 +17,11 @@ router = APIRouter(
 
 @router.post("/register", response_model=APIResponse)
 def create_patient(
-    request: PatientDTO,
+    request: PatientRecord,
     db: Session = Depends(get_db),
     doctor_id: UUID = Depends(get_current_doctor_id),
 ):
-    if db.query(Patient).filter_by(email=request.email).first():
-        return APIResponse(
-            status_code=200, success=False, message="Email already exists", data=None
-        ).model_dump()
+    """Sample API to register patient, We will create a patient in Appointment API."""
     if db.query(Patient).filter_by(mobile=request.mobile).first():
         return APIResponse(
             status_code=200,
@@ -39,7 +36,7 @@ def create_patient(
     db.refresh(patient)
     return APIResponse(
         status_code=200,
-        success=False,
+        success=True,
         message="Patient created successfully.",
         data={"id": patient.patient_id},
     ).model_dump()

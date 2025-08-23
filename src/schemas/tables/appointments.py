@@ -12,6 +12,7 @@ class Appointment(Base):
     __tablename__ = "appointments"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    # Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id = Column(String(36), ForeignKey("patients.patient_id"))
     doctor_id = Column(String(36), ForeignKey("users.id"))
     scheduled_date = Column(Date, nullable=True)

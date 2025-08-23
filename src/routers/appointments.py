@@ -32,8 +32,8 @@ def get_appointment_data(db: Session = Depends(get_db)):
                 "scheduled_date": row.scheduled_date,
                 "scheduled_time": row.scheduled_time,
                 "patient_id": row.patient_id,
-                "patient_first_name": row.patient.first_name,
-                "patient_first_name": row.patient.last_name,
+                "patient_first_name": row.patient.firstName,
+                "patient_first_name": row.patient.lastName,
             }
             for row in results
         ],
@@ -47,7 +47,8 @@ def create_appointment(
         doctor_id: UUID = Depends(get_current_doctor_id),
         current_user=Depends(get_current_user),
 ):
-    """Register a new appointment."""
+    """Register a new appointment.
+    If enter new mobile number, then it will create under new patients record."""
     patient_mobile_number = appointment.patient.mobile
     db_user = db.query(Patient).filter_by(mobile=patient_mobile_number).first()
     if db_user:
@@ -55,12 +56,9 @@ def create_appointment(
     else:
         # Extract patient data
         patient_data = appointment.patient.dict()
-        # try:
         save_patient_data = save_data_to_db(
             patient_data, Patient, db
-        )  # Create patient here
-        # except Exception as e:
-        #     print(f"Error saving patient data: {e}")
+        )
         patient_id = save_patient_data.patient_id
     data = appointment.dict()
     data.update({"doctor_id": doctor_id})

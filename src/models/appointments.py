@@ -4,18 +4,18 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from src.models.patients import PatientDTO
+from src.models.patients import PatientRecord
 
 
 class AppointmentType(str, Enum):
-    scheduled = "scheduled"
+    new = "new"
     follow_up = "follow-up"
 
 
 class AppointmentCreate(BaseModel):
     # patient_id: int
     # doctor_id: int
-    patient: PatientDTO  # Nested patient data
+    patient: PatientRecord  # Nested patient data
     scheduled_date: date
     scheduled_time: time
     type: AppointmentType  # Optional[str] = Field(default="general")
