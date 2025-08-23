@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time
+from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time, Enum
 from sqlalchemy.orm import relationship
 
 from src.database import Base
@@ -16,6 +16,7 @@ class Appointment(Base):
     doctor_id = Column(String(36), ForeignKey("users.id"))
     scheduled_date = Column(Date, nullable=True)
     scheduled_time = Column(Time, nullable=True)
+    type = Column(Enum("new", "follow-up", name="status_enum"))
     status = Column(String(20), default="scheduled")
     created_at = Column(DateTime, default=datetime.utcnow)
     # from .visits import Visit

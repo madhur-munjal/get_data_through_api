@@ -1,7 +1,15 @@
-from typing import Optional
 from datetime import date, time
+from enum import Enum
+from typing import Optional
+
 from pydantic import BaseModel, Field
-from src.models.patients import PatientDTO, PatientOut
+
+from src.models.patients import PatientDTO
+
+
+class AppointmentType(str, Enum):
+    scheduled = "scheduled"
+    follow_up = "follow-up"
 
 
 class AppointmentCreate(BaseModel):
@@ -10,8 +18,8 @@ class AppointmentCreate(BaseModel):
     patient: PatientDTO  # Nested patient data
     scheduled_date: date
     scheduled_time: time
+    type: AppointmentType  # Optional[str] = Field(default="general")
     status: Optional[str] = Field(default="scheduled")
-
     model_config = {"from_attributes": True}
 
 

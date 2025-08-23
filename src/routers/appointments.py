@@ -19,12 +19,33 @@ router = APIRouter(
 )
 
 
+@router.get("/")
+def get_appointment_data(db: Session = Depends(get_db)):
+    results = db.query(Appointment).all()
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched appointment lists.",
+        data=[
+            {
+                "appointment_id": row.id,
+                "scheduled_date": row.scheduled_date,
+                "scheduled_time": row.scheduled_time,
+                "patient_id": row.patient_id,
+                "patient_first_name": row.patient.first_name,
+                "patient_first_name": row.patient.last_name,
+            }
+            for row in results
+        ],
+    ).model_dump() # CHanged it to pydantic Type
+
+
 @router.post("/create_appointment", response_model=APIResponse[AppointmentOut])
 def create_appointment(
-    appointment: AppointmentCreate,
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
-    current_user=Depends(get_current_user),
+        appointment: AppointmentCreate,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        current_user=Depends(get_current_user),
 ):
     """Register a new appointment."""
     patient_mobile_number = appointment.patient.mobile
@@ -48,6 +69,7 @@ def create_appointment(
         doctor_id=doctor_id,
         scheduled_date=data["scheduled_date"],
         scheduled_time=data["scheduled_time"],
+        type=data["type"],
         status=data["status"],
     )
     db.add(db_appointment)
@@ -58,23 +80,4 @@ def create_appointment(
         success=True,
         message=f"New Appointment created.",
         data=AppointmentOut.model_validate(db_appointment),
-    ).model_dump()
-
-
-@router.get("/get_appointments")
-def get_appointment_data(db: Session = Depends(get_db)):
-    results = db.query(Appointment).all()
-    return APIResponse(
-        status_code=200,
-        success=True,
-        message=f"New Appointment created.",
-        data=[
-            {
-                "patient_first_name": row.patient.first_name,
-                "patient_mobile": row.patient.mobile,
-                "scheduled_date": row.scheduled_date,
-                "scheduled_time": row.scheduled_time,
-            }
-            for row in results
-        ],
     ).model_dump()
