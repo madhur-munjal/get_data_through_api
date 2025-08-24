@@ -18,21 +18,21 @@ class TemperatureUnit(str, Enum):
 
 class PatientRecord(BaseModel):
     firstName: str
-    lastName: str
-    age: int
+    lastName: str = None
+    age: int = None
     mobile: str
     gender: Gender
-    address: str
+    address: str = None
     currentVisit: datetime
-    lastVisit: datetime
+    lastVisit: datetime = None
     bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
         None
     )
-    weight: float
-    bloodPressureUpper: int
-    bloodPressureLower: int
-    temperature: float
-    temperatureType: TemperatureUnit
+    weight: float = None
+    bloodPressureUpper: int = None
+    bloodPressureLower: int = None
+    temperature: float = None
+    temperatureType: TemperatureUnit = None
 
     # @validator("currentVisit", "lastVisit", pre=True)
     # def parse_date(cls, value):
@@ -44,6 +44,23 @@ class PatientRecord(BaseModel):
     #         return [test.strip() for test in value.split(",")]
     #     return value
 
+class PatientUpdate(BaseModel):
+    firstName: str
+    lastName: Optional[str] = None
+    age: Optional[int] = None
+    mobile: str
+    gender: Gender
+    address: Optional[str] = None
+    currentVisit: datetime = None
+    lastVisit: datetime = None
+    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+        None
+    )
+    weight: Optional[float] = None
+    bloodPressureUpper: Optional[int] = None
+    bloodPressureLower: Optional[int] = None
+    temperature: Optional[float] = None
+    temperatureType: Optional[TemperatureUnit] = None
 
 # class PatientDTO(BaseModel):
 #     # patient_id: UUID

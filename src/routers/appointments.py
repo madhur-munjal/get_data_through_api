@@ -1,12 +1,13 @@
+from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import get_current_user
-from src.models.appointments import AppointmentCreate, AppointmentOut
+from src.models.appointments import AppointmentCreate, AppointmentOut, AppointmentResponse
 from src.models.response import APIResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
@@ -17,27 +18,6 @@ router = APIRouter(
     tags=["appointments"],
     responses={404: {"error": "Not found"}},
 )
-
-
-@router.get("/")
-def get_appointment_data(db: Session = Depends(get_db)):
-    results = db.query(Appointment).all()
-    return APIResponse(
-        status_code=200,
-        success=True,
-        message=f"Successfully fetched appointment lists.",
-        data=[
-            {
-                "appointment_id": row.id,
-                "scheduled_date": row.scheduled_date,
-                "scheduled_time": row.scheduled_time,
-                "patient_id": row.patient_id,
-                "patient_first_name": row.patient.firstName,
-                "patient_first_name": row.patient.lastName,
-            }
-            for row in results
-        ],
-    ).model_dump() # CHanged it to pydantic Type
 
 
 @router.post("/create_appointment", response_model=APIResponse[AppointmentOut])
@@ -79,3 +59,39 @@ def create_appointment(
         message=f"New Appointment created.",
         data=AppointmentOut.model_validate(db_appointment),
     ).model_dump()
+
+
+@router.get("/")
+def get_appointment_data(db: Session = Depends(get_db)):
+    results = db.query(Appointment).all()
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched appointment lists.",
+        data=[
+            {
+                "appointment_id": row.id,
+                "scheduled_date": row.scheduled_date,
+                "scheduled_time": row.scheduled_time,
+                "patient_id": row.patient_id,
+                "firstName": row.patient.firstName,
+                "lastName": row.patient.lastName,
+            }
+            for row in results
+        ],
+    ).model_dump()  # CHanged it to pydantic Type
+
+
+@router.get("/get_appointment_by_date", response_model=APIResponse[list[AppointmentResponse]])
+def get_appointment_by_date(appointment_date: date = Query(..., description="Date in YYYY-MM-DD format"),
+                            db: Session = Depends(get_db)):
+    results = db.query(Appointment).filter(Appointment.scheduled_date == appointment_date).all()
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched appointment lists for date {appointment_date}.",
+        data=[
+            AppointmentResponse.from_row(row)
+            for row in results
+        ],
+    ).model_dump()  # CHanged it to pydantic Type

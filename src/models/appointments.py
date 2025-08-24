@@ -2,7 +2,7 @@ from datetime import date, time
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from src.models.patients import PatientRecord
 
@@ -29,5 +29,29 @@ class AppointmentOut(BaseModel):
     scheduled_date: date
     scheduled_time: time
     status: Optional[str] = Field(default="scheduled")
+
+    model_config = {"from_attributes": True}
+
+
+class AppointmentResponse(BaseModel):
+    appointment_id: str
+    scheduled_date: date
+    scheduled_time: time
+    patient_id: str
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_row(cls, row):
+        return cls(
+            appointment_id=row.id,
+            scheduled_date=row.scheduled_date,
+            scheduled_time=row.scheduled_time,
+            patient_id=row.patient_id,
+            firstName=row.patient.firstName,
+            lastName=row.patient.lastName,
+        )
 
     model_config = {"from_attributes": True}

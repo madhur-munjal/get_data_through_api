@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.models.patients import PatientRecord
+from src.models.patients import PatientRecord, PatientUpdate
 from src.models.response import APIResponse
 from src.schemas.tables.patients import Patient
 from src.dependencies import get_current_doctor_id
@@ -42,6 +42,26 @@ def create_patient(
     ).model_dump()
 
 
+@router.put("/{patent_id}", response_model=APIResponse[PatientRecord])
+def update_patent(patient_id: str, update_data: PatientUpdate, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    print(patient)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    print("checking patient record")
+    for field, value in update_data.dict(exclude_unset=True).items():
+        print(f"Updating field: {field} with value: {value}")
+        setattr(patient, field, value)
+
+    db.commit()
+    db.refresh(patient)
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="Patient updated successfully.",
+        data=None,  # return updated patient record
+    ).model_dump()
+
 # @router.get("/")  # , dependencies=Depends()
 # def read_patients(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
 #     return db.query(Patient).offset(skip).limit(limit).all()
@@ -57,10 +77,6 @@ def create_patient(
 #     # return db_patent
 #
 #
-# @router.put("/{patent_id}", response_model=PatentOut)
-# def update_patent(patent_id: int, patent: PatentUpdate, db: Session = Depends(get_db)):
-#     pass
-#     # return crud.update_patent(db, patent_id, patent)
 #
 #
 # @router.delete("/{patent_id}", status_code=status.HTTP_204_NO_CONTENT)
