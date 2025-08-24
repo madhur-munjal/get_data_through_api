@@ -45,10 +45,8 @@ def create_patient(
 @router.put("/{patent_id}", response_model=APIResponse[PatientRecord])
 def update_patent(patient_id: str, update_data: PatientUpdate, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
-    print(patient)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
-    print("checking patient record")
     for field, value in update_data.dict(exclude_unset=True).items():
         print(f"Updating field: {field} with value: {value}")
         setattr(patient, field, value)

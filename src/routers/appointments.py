@@ -94,4 +94,4 @@ def get_appointment_by_date(appointment_date: date = Query(..., description="Dat
             AppointmentResponse.from_row(row)
             for row in results
         ],
-    ).model_dump()  # CHanged it to pydantic Type
+    ).model_dump()  # Changed it to pydantic Type

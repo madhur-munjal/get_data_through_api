@@ -1,41 +1,19 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import get_current_user
 from src.models.response import APIResponse
-from src.models.visits import VisitOut, VisitIn
+from src.models.visits import VisitOut, VisitIn,VisitResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.visits import Visit
 
 router = APIRouter(
     prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}
 )
-
-
-# APIResponse(
-#         status_code=404,
-#         success=False,
-#         message="Not found",
-#         data=None,
-#     ).model_dump())
-
-
-# @router.get("/visits_list", response_model=APIResponse)
-# def get_visits(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-#     """Fetch all users."""
-#     visits = db.query(Visit).all()
-#     user_dtos = [VisitOut.model_validate(visit) for visit in visits]
-#     return APIResponse(
-#         status_code=200,
-#         success=True,
-#         message="successfully fetched visits",
-#         data=user_dtos,
-#     ).model_dump()
-
 
 @router.post("/add_visits", response_model=APIResponse[VisitOut])
 def add_visits(
@@ -66,9 +44,6 @@ def add_visits(
             message=f"Appointment with ID {appointment_id} not found.",
             data=None,
         ).model_dump()
-    # print(f"type of patient_id: {type(patient_id)}")
-    # print(f"type of doctor_id: {type(doctor_id)}")
-    medicationDetails = [med.json() for med in visit_data.medicationDetails]
     db_visit = Visit(
         patient_id=patient_id,
         doctor_id=doctor_id,
@@ -87,4 +62,25 @@ def add_visits(
         success=True,
         message=f"Visit was successfully added.",
         data=VisitOut.model_validate(db_visit),
+    ).model_dump()
+
+
+@router.get("/visits_list/{patient_id}") #, response_model=APIResponse[VisitResponse])
+def get_visits_by_patient_id(patient_id: str, db: Session = Depends(get_db)):
+    """Fetch visit details by patient id."""
+    visits = db.query(Visit).filter(Visit.patient_id == patient_id).all()
+    print(f"visits: {visits}")
+    print(f"Type of visits: {type(visits)}")
+    print([VisitResponse.from_row(row) for row in visits])
+    if not visits:
+        raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")
+    # visit_details = [convert_visit_to_response(v) for v in visits]
+    visit_details =[ VisitResponse.from_row(row)
+            for row in visits
+        ]
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="successfully fetched visits",
+        data=visit_details,
     ).model_dump()

@@ -1,6 +1,6 @@
-from typing import Literal, Union
-from typing import Optional, List, Dict, Any
-
+from typing import Literal, Union, Optional, List, Any
+from datetime import date
+import json
 from pydantic import BaseModel, Field
 
 
@@ -104,5 +104,43 @@ class VisitOut(BaseModel):
     # notes: Optional[str]
     # diagnosis: Optional[str]
     # prescription: Optional[str]
+
+    model_config = {"from_attributes": True}
+
+
+class VisitResponse(BaseModel):
+    patient_id: str
+    # doctor_id: str
+    # appointment_id: str  # Optional[UUID] = None
+    appointment_date: date
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    mobile: Optional[str] = None
+    type: Optional[str] = None  # e.g., "new", "follow-up"
+    analysis: Optional[str] = None
+    advice: Optional[str] = None
+    tests: Optional[List[str]] = None  # or define a TestDetails model if structured
+    followUpVisit: Optional[str] = None
+    medicationDetails: Any  # Optional[List[MedicationDetails]] = None  # Optional[List[MedicationDetails]] = None
+
+    model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_row(cls, row):
+        return cls(
+            patient_id=row.patient_id,
+            # doctor_id=row.doctor_id,
+            # appointment_id=row.doctor_id,
+            appointment_date=row.appointments.scheduled_date,
+            firstName=row.patient.firstName,
+            lastName=row.patient.lastName,
+            mobile=row.patient.mobile,
+            type=row.appointments.type,
+            analysis=row.analysis,
+            advice=row.analysis,
+            tests=row.tests,
+            followUpVisit=row.followUpVisit,
+            medicationDetails=row.medicationDetails  # MedicationDetails(**json.loads(row.medicationDetails)) if row.medicationDetails else None,
+        )
 
     model_config = {"from_attributes": True}
