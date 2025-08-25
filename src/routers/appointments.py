@@ -62,8 +62,11 @@ def create_appointment(
 
 
 @router.get("/")
-def get_appointment_data(db: Session = Depends(get_db)):
-    results = db.query(Appointment).all()
+def get_appointment_data(page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1),
+db: Session = Depends(get_db)):
+    offset = (page - 1) * page_size
+    results = db.query(Appointment).offset(offset).limit(page_size).all()
     return APIResponse(
         status_code=200,
         success=True,

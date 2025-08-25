@@ -1,7 +1,8 @@
 import uuid
 
-from sqlalchemy import Column, String, ForeignKey, JSON
+from sqlalchemy import Column, String, ForeignKey, JSON, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from src.database import Base
 
@@ -19,6 +20,9 @@ class Visit(Base):
     tests = Column(JSON, nullable=True)
     followUpVisit = Column(String(100), nullable=True)
     medicationDetails = Column(JSON, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
     # Uncommented additional fields and used as needed
     # follow_up = Column(String(100), nullable=True)    # visit_date = Column(Date, nullable=True)
     # scheduled_time = Column(Time, nullable=True)

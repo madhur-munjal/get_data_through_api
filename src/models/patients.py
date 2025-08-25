@@ -18,21 +18,19 @@ class TemperatureUnit(str, Enum):
 
 class PatientRecord(BaseModel):
     firstName: str
-    lastName: str = None
-    age: int = None
+    lastName: Optional[str] = None
+    age: Optional[int] = None
     mobile: str
     gender: Gender
-    address: str = None
-    currentVisit: datetime
-    lastVisit: datetime = None
-    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
-        None
-    )
-    weight: float = None
-    bloodPressureUpper: int = None
-    bloodPressureLower: int = None
-    temperature: float = None
-    temperatureType: TemperatureUnit = None
+    address: Optional[str] = None
+    # currentVisit: datetime
+    # lastVisit: datetime = None
+    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = None
+    weight: Optional[float] = None
+    bloodPressureUpper: Optional[int] = None
+    bloodPressureLower: Optional[int] = None
+    temperature: Optional[float] = None
+    temperatureType: Optional[TemperatureUnit] = None
 
     # @validator("currentVisit", "lastVisit", pre=True)
     # def parse_date(cls, value):
@@ -51,8 +49,8 @@ class PatientUpdate(BaseModel):
     mobile: str
     gender: Gender
     address: Optional[str] = None
-    currentVisit: datetime = None
-    lastVisit: datetime = None
+    # currentVisit: datetime = None
+    # lastVisit: datetime = None
     bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
         None
     )

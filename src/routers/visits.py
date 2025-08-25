@@ -10,6 +10,7 @@ from src.models.response import APIResponse
 from src.models.visits import VisitOut, VisitIn,VisitResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.visits import Visit
+from src.schemas.tables.patients import Patient
 
 router = APIRouter(
     prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}
@@ -55,6 +56,12 @@ def add_visits(
         medicationDetails=[med.dict() for med in visit_data.medicationDetails],
     )
     db.add(db_visit)
+
+    # 2. Update patient's lastVisit field
+    patient = db.query(Patient).filter_by(patient_id=patient_id).first()
+    if patient:
+        if not patient.lastVisit or appointment_details.scheduled_date > patient.lastVisit:#visit_data.visit_date > patient.lastVisit:
+            patient.lastVisit = appointment_details.scheduled_date
     db.commit()
     db.refresh(db_visit)
     return APIResponse(
@@ -69,9 +76,6 @@ def add_visits(
 def get_visits_by_patient_id(patient_id: str, db: Session = Depends(get_db)):
     """Fetch visit details by patient id."""
     visits = db.query(Visit).filter(Visit.patient_id == patient_id).all()
-    print(f"visits: {visits}")
-    print(f"Type of visits: {type(visits)}")
-    print([VisitResponse.from_row(row) for row in visits])
     if not visits:
         raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")
     # visit_details = [convert_visit_to_response(v) for v in visits]
@@ -84,3 +88,25 @@ def get_visits_by_patient_id(patient_id: str, db: Session = Depends(get_db)):
         message="successfully fetched visits",
         data=visit_details,
     ).model_dump()
+
+@router.get("/visits_list/{mobile}", response_model=APIResponse[VisitResponse])
+def get_visits_by_patient_mobile(mobile: str, db: Session = Depends(get_db)):
+    """Fetch visit details by mobile number."""
+    patient_details = db.query(Patient).filter(Patient.mobile == mobile).first()
+    if not patient_details:
+        raise HTTPException(status_code=404, detail=f"No Patient found with mobile number {mobile}")
+    get_visits_by_patient_id(patient_details.patient_id, db)
+
+    # visits = db.query(Patient).filter(Visit.patient_id == patient_id).all()
+#     if not visits:
+#         raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")
+#     # visit_details = [convert_visit_to_response(v) for v in visits]
+#     visit_details =[ VisitResponse.from_row(row)
+#             for row in visits
+#         ]
+#     return APIResponse(
+#         status_code=200,
+#         success=True,
+#         message="successfully fetched visits",
+#         data=visit_details,
+#     ).model_dump()

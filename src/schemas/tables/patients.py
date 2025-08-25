@@ -2,7 +2,7 @@ import enum
 import uuid
 
 from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -32,7 +32,7 @@ class Patient(Base):
     gender = Column(Enum(Gender), nullable=False)  # mandatory
     address = Column(String(45), nullable=True)
     currentVisit = Column(DateTime, nullable=True)
-    lastVisit = Column(DateTime, nullable=True)
+    lastVisit = Column(Date, nullable=True)
     bloodGroup = Column(String(5), nullable=True)  # Optional, but you can validate values in app logic
     weight = Column(Float, nullable=True)
     bloodPressureUpper = Column(Integer, nullable=True)
