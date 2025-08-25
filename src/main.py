@@ -61,8 +61,9 @@ def check_redis():
 
 
 origins = [
+    "*",
     "http://localhost:4200",
-    "http://api.smarthealapp.com",
+    # "http://api.smarthealapp.com",
 ]  # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
 
 app.add_middleware(

@@ -32,6 +32,7 @@ class MedicationDetails(BaseModel):
 }
 ]
     """
+
     medicine: str
     type: Literal["tablet", "syrup", "injection", "ointment", "capsule"]
     count: Union[int, str]
@@ -140,7 +141,7 @@ class VisitResponse(BaseModel):
             advice=row.analysis,
             tests=row.tests,
             followUpVisit=row.followUpVisit,
-            medicationDetails=row.medicationDetails  # MedicationDetails(**json.loads(row.medicationDetails)) if row.medicationDetails else None,
+            medicationDetails=row.medicationDetails,  # MedicationDetails(**json.loads(row.medicationDetails)) if row.medicationDetails else None,
         )
 
     model_config = {"from_attributes": True}

@@ -7,7 +7,7 @@ from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import get_current_user
 from src.models.response import APIResponse
-from src.models.visits import VisitOut, VisitIn,VisitResponse
+from src.models.visits import VisitOut, VisitIn, VisitResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.visits import Visit
 from src.schemas.tables.patients import Patient
@@ -16,12 +16,13 @@ router = APIRouter(
     prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}
 )
 
+
 @router.post("/add_visits", response_model=APIResponse[VisitOut])
 def add_visits(
-        visit_data: VisitIn,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        current_user=Depends(get_current_user),
+    visit_data: VisitIn,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    current_user=Depends(get_current_user),
 ):
     """Register a new visit details."""
     appointment_id = visit_data.appointment_id
@@ -60,7 +61,10 @@ def add_visits(
     # 2. Update patient's lastVisit field
     patient = db.query(Patient).filter_by(patient_id=patient_id).first()
     if patient:
-        if not patient.lastVisit or appointment_details.scheduled_date > patient.lastVisit:#visit_data.visit_date > patient.lastVisit:
+        if (
+            not patient.lastVisit
+            or appointment_details.scheduled_date > patient.lastVisit
+        ):  # visit_data.visit_date > patient.lastVisit:
             patient.lastVisit = appointment_details.scheduled_date
     db.commit()
     db.refresh(db_visit)
@@ -72,16 +76,16 @@ def add_visits(
     ).model_dump()
 
 
-@router.get("/visits_list/{patient_id}") #, response_model=APIResponse[VisitResponse])
+@router.get("/visits_list/{patient_id}")  # , response_model=APIResponse[VisitResponse])
 def get_visits_by_patient_id(patient_id: str, db: Session = Depends(get_db)):
     """Fetch visit details by patient id."""
     visits = db.query(Visit).filter(Visit.patient_id == patient_id).all()
     if not visits:
-        raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")
+        raise HTTPException(
+            status_code=404, detail=f"No visit by Patient id {patient_id}"
+        )
     # visit_details = [convert_visit_to_response(v) for v in visits]
-    visit_details =[ VisitResponse.from_row(row)
-            for row in visits
-        ]
+    visit_details = [VisitResponse.from_row(row) for row in visits]
     return APIResponse(
         status_code=200,
         success=True,
@@ -89,15 +93,20 @@ def get_visits_by_patient_id(patient_id: str, db: Session = Depends(get_db)):
         data=visit_details,
     ).model_dump()
 
+
 @router.get("/visits_list/{mobile}", response_model=APIResponse[VisitResponse])
 def get_visits_by_patient_mobile(mobile: str, db: Session = Depends(get_db)):
     """Fetch visit details by mobile number."""
     patient_details = db.query(Patient).filter(Patient.mobile == mobile).first()
     if not patient_details:
-        raise HTTPException(status_code=404, detail=f"No Patient found with mobile number {mobile}")
+        raise HTTPException(
+            status_code=404, detail=f"No Patient found with mobile number {mobile}"
+        )
     get_visits_by_patient_id(patient_details.patient_id, db)
 
     # visits = db.query(Patient).filter(Visit.patient_id == patient_id).all()
+
+
 #     if not visits:
 #         raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")
 #     # visit_details = [convert_visit_to_response(v) for v in visits]

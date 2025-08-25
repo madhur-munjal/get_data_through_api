@@ -1,14 +1,13 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
+from src.dependencies import get_current_doctor_id
 from src.models.patients import PatientRecord, PatientUpdate
 from src.models.response import APIResponse
 from src.schemas.tables.patients import Patient
-from src.dependencies import get_current_doctor_id
-
 
 router = APIRouter(
     prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}
@@ -43,7 +42,9 @@ def create_patient(
 
 
 @router.put("/{patent_id}", response_model=APIResponse[PatientRecord])
-def update_patent(patient_id: str, update_data: PatientUpdate, db: Session = Depends(get_db)):
+def update_patent(
+    patient_id: str, update_data: PatientUpdate, db: Session = Depends(get_db)
+):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -59,25 +60,3 @@ def update_patent(patient_id: str, update_data: PatientUpdate, db: Session = Dep
         message="Patient updated successfully.",
         data=None,  # return updated patient record
     ).model_dump()
-
-# @router.get("/")  # , dependencies=Depends()
-# def read_patients(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-#     return db.query(Patient).offset(skip).limit(limit).all()
-# return crud.get_patents(db, skip=skip, limit=limit)
-
-
-# @router.get("/{patient_id}", response_model=PatentOut)
-# def read_patent(patent_id: int, db: Session = Depends(get_db)):
-#     pass
-#     # db_patent = crud.get_patent(db, patent_id)
-#     # if not db_patent:
-#     #     raise HTTPException(status_code=404, detail="Patent not found")
-#     # return db_patent
-#
-#
-#
-#
-# @router.delete("/{patent_id}", status_code=status.HTTP_204_NO_CONTENT)
-# def delete_patent(patent_id: int, db: Session = Depends(get_db)):
-#     pass
-#     # return crud.delete_patent(db, patent_id)
