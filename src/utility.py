@@ -89,8 +89,6 @@ def validate_user_fields(values, cls):
                 input=values.password,
             )
         )
-    print(f"Validation errors: {errors}")
-    print(f"Values after validation: {values}")
     if errors:
         raise ValidationError.from_exception_data(cls, errors)
 
