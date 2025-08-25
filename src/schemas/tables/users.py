@@ -1,13 +1,9 @@
 import uuid
-from datetime import datetime, timedelta
 
 from sqlalchemy import (
     Column,
-    Integer,
     Text,
     String,
-    ForeignKey,
-    DateTime,
     CheckConstraint,
 )
 from sqlalchemy.orm import relationship
@@ -33,6 +29,10 @@ class User(Base):
     mobile = Column(Text, nullable=False)
     username = Column(String(255), nullable=False, unique=True)  # index=True)
     password = Column(Text, nullable=False)
+    # from .visits import Visit
+    # from .appointments import Appointment
+    visits = relationship("Visit", back_populates="user")
+    appointments = relationship("Appointment", back_populates="user")
 
 
 # class PasswordResetToken(Base):

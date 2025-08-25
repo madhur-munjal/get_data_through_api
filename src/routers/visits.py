@@ -1,60 +1,121 @@
-# from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-# from pydantic import BaseModel, Field
-# import sys
-# import os
-#
-# from datetime import datetime
-# sys.path.append(os.path.join(os.getcwd(), ".."))
-# from sqlalchemy import text
-# from sqlalchemy.orm import Session
-# from src.database import get_db, engine
-# from src.models.patients import Patient
-# from src.models.visits import Visits
-#
-# router = APIRouter(prefix="/medical", tags=["medical", "doctor"], responses={404: {"error": "Not found"}}, )
-#
-#
-# class MedicalBase(BaseModel):
-#     """request payload to add/update medical data into database"""
-#     patient_id: int = Field(..., description="Unique identifier for the patient", example=1)
-#     medical_history: str = Field(None, description="Medical history of the patient",
-#                                             example={"allergies": "None", "conditions": "Diabetes"})
-#     medications: str = Field(..., description="Current medications of the patient",
-#                                         example={"insulin": "10 units daily"})
-#     allergies: str = Field(None, description="Allergies of the patient", example="Peanuts")
-#     last_checkup_date: str = Field(None, description="Date of the last checkup", example="2023-10-01T12:00:00Z")
-#     followup_date: str = Field(None, description="Date of the next checkup", example="2023-10-01T12:00:00Z")
-#     notes: str = Field(None, description="Additional notes about the patient",
-#                                  example="Patient is responding well to treatment")
-#     created_at: datetime = Field(default_factory=datetime.utcnow,
-#                                  description="Timestamp when the record was created")
-#     updated_at: datetime = Field(default_factory=datetime.utcnow,
-#                                  description="Timestamp when the record was last updated")
-#     image_data: str = Field(None, description="Base64 encoded image data of the patient",
-#                                       example="iVBORw0KGgoAAAANSUhEUgAAAAUA...")
-#     image_url: str = Field(None, description="URL of the image of the patient",
-#                                      example="https://example.com/image.jpg")
-#
-#
-# @router.get("/", status_code=status.HTTP_200_OK)  # , dependencies=[Depends(authenticate_application)]
-# async def read_data(db: Session = Depends(get_db)):
-#     # item = db.query(Item).filter(Item.id == item_id).first()
-#     # return item
-#     # return {"name": "dummy_data"}
-#     device = db.query(Visits).all()
-#     return device
-#
-#
-# # @router.put("/items/{item_id}", status_code=status.HTTP_200_OK)  # , dependencies=[Depends(authenticate_application)]
-# # async def read_data(item_id: int, item: Medical):
-# #     return {"item_id": item_id, "item": item.field_1}
-#
-#
-# @router.get("/get_db")
-# def read_root():
-#     with engine.connect() as conn:
-#         result = conn.execute(text("SELECT DATABASE();"))
-#         db_name = result.scalar()  # Or result.fetchone()[0]
-#         return {"database": db_name}
-#
-#         # return {"database": result.fetchone()}
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from src.database import get_db
+from src.dependencies import get_current_doctor_id
+from src.dependencies import get_current_user
+from src.models.response import APIResponse
+from src.models.visits import VisitOut, VisitIn, VisitResponse
+from src.schemas.tables.appointments import Appointment
+from src.schemas.tables.visits import Visit
+from src.schemas.tables.patients import Patient
+
+router = APIRouter(
+    prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}
+)
+
+
+@router.post("/add_visits", response_model=APIResponse[VisitOut])
+def add_visits(
+    visit_data: VisitIn,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    current_user=Depends(get_current_user),
+):
+    """Register a new visit details."""
+    appointment_id = visit_data.appointment_id
+    # prescription = visit_data.prescription
+    # follow_up = visit_data.follow_up
+    # print(
+    #     f"Adding visit for appointment ID: {appointment_id}, doctor ID: {doctor_id}, follow-up: {follow_up}")
+    # print(f"type of appointment_id: {type(appointment_id)}")
+    # print(f"str(appointment_id): {str(appointment_id)}")
+    # uuid_appointment_id = UUID(appointment_id)
+    str_appointment_id = str(appointment_id)
+    appointment_details = db.query(Appointment).filter_by(id=str_appointment_id).first()
+    print(f"appointment_details: {appointment_details}")
+    if appointment_details:
+        patient_id = appointment_details.patient_id
+    else:
+        print(f"Appointment with ID {appointment_id} not found.")
+        return APIResponse(
+            status_code=200,
+            success=False,
+            message=f"Appointment with ID {appointment_id} not found.",
+            data=None,
+        ).model_dump()
+    db_visit = Visit(
+        patient_id=patient_id,
+        doctor_id=doctor_id,
+        appointment_id=appointment_id,
+        analysis=visit_data.analysis,
+        advice=visit_data.advice,
+        tests=visit_data.tests,
+        followUpVisit=visit_data.followUpVisit,
+        medicationDetails=[med.dict() for med in visit_data.medicationDetails],
+    )
+    db.add(db_visit)
+
+    # 2. Update patient's lastVisit field
+    patient = db.query(Patient).filter_by(patient_id=patient_id).first()
+    if patient:
+        if (
+            not patient.lastVisit
+            or appointment_details.scheduled_date > patient.lastVisit
+        ):  # visit_data.visit_date > patient.lastVisit:
+            patient.lastVisit = appointment_details.scheduled_date
+    db.commit()
+    db.refresh(db_visit)
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Visit was successfully added.",
+        data=VisitOut.model_validate(db_visit),
+    ).model_dump()
+
+
+@router.get("/visits_list/{patient_id}")  # , response_model=APIResponse[VisitResponse])
+def get_visits_by_patient_id(patient_id: str, db: Session = Depends(get_db)):
+    """Fetch visit details by patient id."""
+    visits = db.query(Visit).filter(Visit.patient_id == patient_id).all()
+    if not visits:
+        raise HTTPException(
+            status_code=404, detail=f"No visit by Patient id {patient_id}"
+        )
+    # visit_details = [convert_visit_to_response(v) for v in visits]
+    visit_details = [VisitResponse.from_row(row) for row in visits]
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="successfully fetched visits",
+        data=visit_details,
+    ).model_dump()
+
+
+@router.get("/visits_list/{mobile}", response_model=APIResponse[VisitResponse])
+def get_visits_by_patient_mobile(mobile: str, db: Session = Depends(get_db)):
+    """Fetch visit details by mobile number."""
+    patient_details = db.query(Patient).filter(Patient.mobile == mobile).first()
+    if not patient_details:
+        raise HTTPException(
+            status_code=404, detail=f"No Patient found with mobile number {mobile}"
+        )
+    get_visits_by_patient_id(patient_details.patient_id, db)
+
+    # visits = db.query(Patient).filter(Visit.patient_id == patient_id).all()
+
+
+#     if not visits:
+#         raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")
+#     # visit_details = [convert_visit_to_response(v) for v in visits]
+#     visit_details =[ VisitResponse.from_row(row)
+#             for row in visits
+#         ]
+#     return APIResponse(
+#         status_code=200,
+#         success=True,
+#         message="successfully fetched visits",
+#         data=visit_details,
+#     ).model_dump()

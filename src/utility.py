@@ -7,7 +7,9 @@ from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
+from sqlalchemy.exc import IntegrityError
 
+from fastapi import HTTPException, status
 
 load_dotenv()
 
@@ -44,7 +46,7 @@ def validate_user_fields(values, cls):
     :return: Validated values or raises ValueError if validation fails.
     """
     PASSWORD_REGEX = re.compile(
-        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+        r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
     )
     USERNAME_REGEX = re.compile(
         "^(?=[a-zA-Z])(?=.*[._-])(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]{1,18}[a-zA-Z0-9]$"
@@ -92,3 +94,29 @@ def validate_user_fields(values, cls):
         raise ValidationError.from_exception_data(cls, errors)
 
     return values
+
+
+def save_data_to_db(data, db_model, db_session):
+    """
+    Save data to the database.
+    :param data: Data to save.
+    :param db_model: SQLAlchemy model class.
+    :param db_session: SQLAlchemy session.
+    :return: Saved database object.
+    """
+    try:
+        db_object = db_model(**data)
+        db_session.add(db_object)
+        db_session.commit()
+        print(f"db_object.id before refresh: {db_object.patient_id}")
+        db_session.refresh(db_object)
+        print(f"db_object.id: {db_object.patient_id}")
+        return db_object
+    except IntegrityError as e:
+        db_session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Duplicate entry: user with this phone already exists",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))

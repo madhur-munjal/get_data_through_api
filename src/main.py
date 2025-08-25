@@ -2,7 +2,6 @@ import os
 import sys
 
 import redis
-import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -12,7 +11,10 @@ from fastapi.responses import JSONResponse
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
 from src.database import engine, Base
-from src.core.exception_handlers import custom_validation_handler, custom_http_exception_handler
+from src.core.exception_handlers import (
+    custom_validation_handler,
+    custom_http_exception_handler,
+)
 from src.models.response import APIResponse
 from src.models.response import TokenRevoked
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -30,7 +32,7 @@ app = FastAPI(
     },
     # root_path="/src",
     docs_url="/api-docs",
-    redoc_url="/redoc-ui"
+    redoc_url="/redoc-ui",
 )
 app.include_router(api_router.router)
 
@@ -58,8 +60,11 @@ def check_redis():
         print("❌ Redis is not reachable.")
 
 
-origins = ["http://localhost:4200",
-           "http://api.smarthealapp.com"]  # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
+origins = [
+    "*",
+    "http://localhost:4200",
+    # "http://api.smarthealapp.com",
+]  # "https://www.smarthealapp.com/auth/login", "https://smarthealapp.com/auth/login", "http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -92,5 +97,6 @@ async def status():
 
 
 # if __name__ == "__main__":
+#     import uvicorn
 #     port = int(os.environ.get("PORT", 8000))
 #     uvicorn.run("main:app", host="0.0.0.0", port=port)
