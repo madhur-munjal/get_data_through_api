@@ -1,6 +1,7 @@
+from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from src.auth_utils import hash_password
@@ -8,7 +9,6 @@ from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import get_current_user
 from src.models.response import APIResponse
-
 # from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.models.staff import StaffCreate, StaffOut
 from src.schemas.tables.staff import Staff
@@ -20,10 +20,10 @@ router = APIRouter(
 
 @router.post("/register", response_model=APIResponse[StaffOut])
 def register(
-    user: StaffCreate,
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
-    current_user=Depends(get_current_user),
+        user: StaffCreate,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        current_user=Depends(get_current_user),
 ):
     """Register a new user."""
     db_user = (
@@ -65,7 +65,7 @@ def register(
 
 @router.get("/staff_list", response_model=APIResponse)
 def get_staff_list(
-    doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
+        doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
 ):
     """Fetch all users."""
     users = db.query(Staff).filter(Staff.doc_id == doctor_id).all()
@@ -78,79 +78,29 @@ def get_staff_list(
     ).model_dump()
 
 
-# @router.delete("/delete-user", response_model=APIResponse)
-# def delete_user(
-#         request: UserIDRequest,
-#         current_user=Depends(get_current_user),
-#         db: Session = Depends(get_db)
-# ):
-#     """Delete a user by ID.
-#     This endpoint allows an authenticated user to delete another user by their ID.
-#     """
-#     user = db.query(Doctor).filter(Doctor.id == request.user_id).first()
-#     if not user:
-#         return APIResponse(status_code=200,
-#                            success=False,
-#                            message="ID mismatch: the provided ID does not match any existing resource.",
-#                            data=None
-#                            ).model_dump()
-#         # raise HTTPException(status_code=404, detail="User not found")
-#     db.delete(user)
-#     db.commit()
-#     return APIResponse(status_code=200,
-#                        success=True,
-#                        message="The user account was successfully deleted",
-#                        data=f"User with ID {request.user_id} has been permanently deleted."
-#                        ).model_dump()
-#
-#
-# @router.put("/update-user", response_model=APIResponse)
-# def update_item(request: UserIDRequest, payload: UserCreate, current_user=Depends(get_current_user),
-#                 db: Session = Depends(get_db)):
-#     user_db = db.query(Doctor).filter(Doctor.id == request.user_id).first()
-#     if not user_db:
-#         return APIResponse(status_code=200,
-#                            success=False,
-#                            message=f"ID mismatch: the provided ID does not match any existing resource."
-#                            ).model_dump()
-#         # raise HTTPException(status_code=404, detail="Item not found")
-#
-#     try:
-#         for field, value in payload.dict(exclude_unset=True).items():
-#             setattr(user_db, field, value)
-#
-#         db.commit()
-#         db.refresh(user_db)
-#         return APIResponse(status_code=200,
-#                            success=True,
-#                            message="User profile updated successfully.",
-#                            data=UserOut.model_validate(user_db)).model_dump()
-#     # except IntegrityError as e:
-#     #     msg = str(e.orig) if hasattr(e, "orig") else str(e)
-#     #     if "Duplicate entry" in msg:
-#     #         start = msg.find("Duplicate entry")
-#     #         end = msg.find(" for key", start)
-#     #         clean_msg = msg[start:end + len(" for key 'users.email'")]
-#     #         return APIResponse(status_code=200,
-#     #                            success=False,
-#     #                            message=f"Failed to update user details",
-#     #                            data=None,
-#     #                            errors=clean_msg
-#     #                            )
-#     #     return APIResponse(status_code=200,
-#     #                 success=False,
-#     #                 message=f"Failed to update user details",
-#     #                 data=None,
-#     #                 errors=[msg]
-#     #                 )
-#     except Exception as e:
-#         error_msg = str(e.orig) if hasattr(e, "orig") else str(e)
-#
-#         return APIResponse(status_code=200,
-#                            success=False,
-#                            message=f"Failed to update user details",
-#                            data=None,
-#                            errors=[error_msg]
-#                            )
-#
-#         # UserOut.model_validate(user_db)).model_dump()
+@router.get("/doc_wise_staff_list", response_model=APIResponse)
+def get_staff_list_by_doc_info(email: Optional[str] = Query(None),
+                               mobile: Optional[str] = Query(None),
+                               doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
+                               ):
+    """Fetch staff details on the basis of doctors mobile or email."""
+    if not email and not mobile:
+        raise HTTPException(status_code=400, detail="Provide either email or mobile")
+
+    query = db.query(Staff)
+    staff_list = None
+    if email:
+        staff_list = query.filter(Staff.email == email).all()
+    if not staff_list or mobile:
+        staff_list = query.filter(Staff.mobile == mobile).all()
+    if not staff_list:
+        raise HTTPException(status_code=404, detail="Staff not found")
+
+    user_dtos = [StaffOut.model_validate(staff) for staff in staff_list]
+
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="successfully fetched users",
+        data=user_dtos,
+    ).model_dump()
