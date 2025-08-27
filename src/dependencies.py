@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
+from jose import jwt, JWTError, ExpiredSignatureError
 from redis import Redis
 
 from src.models.response import APIResponse, TokenRevoked
@@ -32,13 +32,15 @@ def get_current_user(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM],
-            options={"verify_signature": False},
+            # options={"verify_signature": False},
         )
         user_id = payload.get("sub")
         if user_id is None:
             raise TokenRevoked(message="User ID missing in token", code=200)
 
         return user_id
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
     except JWTError as ex:
         return APIResponse(
             status_code=200,
@@ -62,9 +64,13 @@ def get_current_doctor_id(
             rf"{token}",
             SECRET_KEY,
             algorithms=[ALGORITHM],
-            options={"verify_signature": False},
+            # options={"verify_signature": False},
         )
         return payload["doc_id"]
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
+        )
     except JWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
