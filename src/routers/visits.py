@@ -66,6 +66,10 @@ def add_visits(
             or appointment_details.scheduled_date > patient.lastVisit
         ):  # visit_data.visit_date > patient.lastVisit:
             patient.lastVisit = appointment_details.scheduled_date
+
+    # 2. Update appointment status as completed.
+    appointment_details.status = "completed"
+
     db.commit()
     db.refresh(db_visit)
     return APIResponse(
