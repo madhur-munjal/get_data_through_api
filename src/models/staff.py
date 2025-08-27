@@ -9,7 +9,6 @@ ContactStr = Annotated[str, StringConstraints(pattern=r"^[6-9]\d{9}$")]
 
 class StaffCreate(BaseModel):
     """Model used to create a new user."""
-
     firstName: constr(min_length=3, max_length=15)
     lastName: constr(min_length=3, max_length=15)
     email: str

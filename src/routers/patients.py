@@ -43,7 +43,7 @@ def create_patient(
 
 @router.put("/{patent_id}", response_model=APIResponse[PatientRecord])
 def update_patent(
-    patient_id: str, update_data: PatientUpdate, db: Session = Depends(get_db)
+    patient_id: str, update_data: PatientUpdate, db: Session = Depends(get_db), doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     if not patient:

@@ -18,11 +18,11 @@ class BaseResponse(BaseModel, Generic[T]):
 
 
 class APIResponse(BaseResponse[T]):
-    status_code: int
-    success: bool
-    message: str
+    status_code: int = 400
+    success: bool = False
+    message: str = "Default message"
     data: Optional[Union[T, str]] = None  # Field(default=None, exclude_none=True)
-    errors: Any = Field(default=None, exclude=True)
+    errors: Any = Field(default=None, exclude_none=True)
     # errors: Optional[List[Any]] = None  # Field(default=None, exclude=True)
 
     @classmethod

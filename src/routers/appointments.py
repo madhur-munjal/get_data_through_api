@@ -37,11 +37,13 @@ def create_appointment(
     db_user = db.query(Patient).filter_by(mobile=patient_mobile_number).first()
     if db_user:
         patient_id = db_user.patient_id
+        type = "follow-up"
     else:
         # Extract patient data
         patient_data = appointment.patient.dict()
         save_patient_data = save_data_to_db(patient_data, Patient, db)
         patient_id = save_patient_data.patient_id
+        type = "new"
     data = appointment.dict()
     data.update({"doctor_id": doctor_id})
     db_appointment = Appointment(
@@ -49,8 +51,8 @@ def create_appointment(
         doctor_id=doctor_id,
         scheduled_date=data["scheduled_date"],
         scheduled_time=data["scheduled_time"],
-        type=data["type"],
-        status=data["status"],
+        type=type,
+        status="scheduled",
     )
     db.add(db_appointment)
     db.commit()
@@ -68,6 +70,7 @@ def get_appointment_data(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1),
     db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
     offset = (page - 1) * page_size
     results = db.query(Appointment).offset(offset).limit(page_size).all()
@@ -95,6 +98,7 @@ def get_appointment_data(
 def get_appointment_by_date(
     appointment_date: date = Query(..., description="Date in YYYY-MM-DD format"),
     db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
     results = (
         db.query(Appointment)

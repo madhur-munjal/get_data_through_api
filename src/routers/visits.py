@@ -66,6 +66,10 @@ def add_visits(
             or appointment_details.scheduled_date > patient.lastVisit
         ):  # visit_data.visit_date > patient.lastVisit:
             patient.lastVisit = appointment_details.scheduled_date
+
+    # 2. Update appointment status as completed.
+    appointment_details.status = "completed"
+
     db.commit()
     db.refresh(db_visit)
     return APIResponse(
@@ -77,7 +81,7 @@ def add_visits(
 
 
 @router.get("/visits_list/{patient_id}")  # , response_model=APIResponse[VisitResponse])
-def get_visits_by_patient_id(patient_id: str, db: Session = Depends(get_db)):
+def get_visits_by_patient_id(patient_id: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     """Fetch visit details by patient id."""
     visits = db.query(Visit).filter(Visit.patient_id == patient_id).all()
     if not visits:
@@ -95,7 +99,7 @@ def get_visits_by_patient_id(patient_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/visits_list/{mobile}", response_model=APIResponse[VisitResponse])
-def get_visits_by_patient_mobile(mobile: str, db: Session = Depends(get_db)):
+def get_visits_by_patient_mobile(mobile: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     """Fetch visit details by mobile number."""
     patient_details = db.query(Patient).filter(Patient.mobile == mobile).first()
     if not patient_details:

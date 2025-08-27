@@ -20,7 +20,7 @@ async def custom_validation_handler(request: Request, exc: RequestValidationErro
         content=APIResponse(
             status_code=422,
             success=False,
-            message="Validation failed",
+            message=f"Validation failed for {len(simplified_errors)} field(s).",
             errors=simplified_errors,
         ).model_dump(),
     )
