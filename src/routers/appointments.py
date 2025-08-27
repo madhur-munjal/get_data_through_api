@@ -70,7 +70,7 @@ def get_appointment_data(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1),
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     offset = (page - 1) * page_size
     results = db.query(Appointment).offset(offset).limit(page_size).all()
@@ -98,7 +98,7 @@ def get_appointment_data(
 def get_appointment_by_date(
     appointment_date: date = Query(..., description="Date in YYYY-MM-DD format"),
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     results = (
         db.query(Appointment)

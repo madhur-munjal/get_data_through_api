@@ -147,7 +147,7 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
             refresh_token,
             "refresh_secret",
             algorithms=["HS256"],
-            options={"verify_signature": False},
+            # options={"verify_signature": False},
         )
     except jwt.ExpiredSignatureError:
         return APIResponse(

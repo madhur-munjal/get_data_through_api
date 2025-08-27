@@ -20,7 +20,7 @@ class PatientRecord(BaseModel):
     lastName: Optional[str] = None
     age: Optional[int] = None
     mobile: str
-    gender: Gender
+    gender: Optional[Gender] = None
     address: Optional[str] = None
     # currentVisit: datetime
     # lastVisit: datetime = None

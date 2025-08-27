@@ -9,6 +9,7 @@ from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import get_current_user
 from src.models.response import APIResponse
+
 # from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.models.staff import StaffCreate, StaffOut
 from src.schemas.tables.staff import Staff
@@ -20,10 +21,10 @@ router = APIRouter(
 
 @router.post("/register", response_model=APIResponse[StaffOut])
 def register(
-        user: StaffCreate,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        current_user=Depends(get_current_user),
+    user: StaffCreate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    current_user=Depends(get_current_user),
 ):
     """Register a new user."""
     db_user = (
@@ -65,7 +66,7 @@ def register(
 
 @router.get("/staff_list", response_model=APIResponse)
 def get_staff_list(
-        doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
+    doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
 ):
     """Fetch all users."""
     users = db.query(Staff).filter(Staff.doc_id == doctor_id).all()
@@ -79,10 +80,12 @@ def get_staff_list(
 
 
 @router.get("/doc_wise_staff_list", response_model=APIResponse)
-def get_staff_list_by_doc_info(email: Optional[str] = Query(None),
-                               mobile: Optional[str] = Query(None),
-                               doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
-                               ):
+def get_staff_list_by_doc_info(
+    email: Optional[str] = Query(None),
+    mobile: Optional[str] = Query(None),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    db: Session = Depends(get_db),
+):
     """Fetch staff details on the basis of doctors mobile or email."""
     if not email and not mobile:
         raise HTTPException(status_code=400, detail="Provide either email or mobile")
