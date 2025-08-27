@@ -4,12 +4,12 @@ import re
 import smtplib
 import string
 from email.mime.text import MIMEText
+
 from dotenv import load_dotenv
+from fastapi import HTTPException, status
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from sqlalchemy.exc import IntegrityError
-
-from fastapi import HTTPException, status
 
 load_dotenv()
 
@@ -115,7 +115,7 @@ def save_data_to_db(data, db_model, db_session):
         db_session.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Duplicate entry: user with this phone already exists",
+            detail=str(e)  # IntegrityError will come for "Duplicate entry or validation error etc.",
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
