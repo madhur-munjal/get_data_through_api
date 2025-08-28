@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from src.auth_utils import hash_password
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.dependencies import get_current_user
+from src.dependencies import get_current_user_payload
 from src.models.response import APIResponse
 
 # from src.models.users import UserIDRequest, UserOut, UserCreate
@@ -24,7 +24,7 @@ def register(
     user: StaffCreate,
     db: Session = Depends(get_db),
     doctor_id: UUID = Depends(get_current_doctor_id),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_user_payload),
 ):
     """Register a new user."""
     db_user = (
@@ -59,7 +59,7 @@ def register(
     return APIResponse(
         status_code=200,
         success=True,
-        message=f"- New staff account created under {current_user} supervision.",
+        message=f"- New staff account created under {current_user.get("sub")} supervision.",
         data=StaffOut.model_validate(db_user),
     ).model_dump()
 

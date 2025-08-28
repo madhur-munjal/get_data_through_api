@@ -25,7 +25,7 @@ class Staff(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     firstName = Column(String(15), nullable=False)
-    lastName = Column(String(15), nullable=False)
+    lastName = Column(String(15), nullable=True)
     email = Column(String(255), unique=True, nullable=False)
     country = Column(String(255), nullable=False)
     mobile = Column(Text, nullable=False)

@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from typing import List
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.models.patients import PatientRecord, PatientUpdate
@@ -52,7 +52,6 @@ def update_patent(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     for field, value in update_data.dict(exclude_unset=True).items():
-        print(f"Updating field: {field} with value: {value}")
         setattr(patient, field, value)
 
     db.commit()
@@ -62,4 +61,18 @@ def update_patent(
         success=True,
         message="Patient updated successfully.",
         data=None,  # return updated patient record
+    ).model_dump()
+
+
+@router.get("/get_patients_list", response_model=APIResponse[List[PatientRecord]]) #  #APIResponse[PatientRecord]
+def get_patients_list(
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+):
+    patients = db.query(Patient).filter(Patient.assigned_doctor_id == doctor_id).all()
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="Patients fetched successfully.",
+        data=[PatientRecord.model_validate(p) for p in patients],
     ).model_dump()

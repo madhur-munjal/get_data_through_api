@@ -29,8 +29,7 @@ class User(Base):
     mobile = Column(Text, nullable=False)
     username = Column(String(255), nullable=False, unique=True)  # index=True)
     password = Column(Text, nullable=False)
-    # from .visits import Visit
-    # from .appointments import Appointment
+    role = Column(String(50), nullable=False, default="admin")  # e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
     visits = relationship("Visit", back_populates="user")
     appointments = relationship("Appointment", back_populates="user")
 
