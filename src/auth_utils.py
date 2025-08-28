@@ -13,7 +13,7 @@ from passlib.context import CryptContext
 
 from src.database import get_db
 from src.schemas.tables.users import User
-from src.dependencies import get_current_user
+from src.dependencies import get_current_user_payload
 
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 

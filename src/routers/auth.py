@@ -111,7 +111,7 @@ def login(
     db_user = doc_db_user or staff_db_user
     # TODO: add id in below
     access_token = create_access_token(
-        {"sub": username, "doc_id": doc_id}, request=request
+        {"sub": username, "doc_id": doc_id, "role":db_user.role}, request=request
     )
     refresh_token = create_refresh_token(username)
     response.set_cookie(
@@ -122,7 +122,6 @@ def login(
         samesite="strict",
         max_age=30 * 24 * 60 * 60,
     )
-    # print(f"db_user: {db_user}")
     return APIResponse(
         status_code=200,
         success=True,
@@ -205,7 +204,6 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 
     try:
         send_otp_email(request.email, otp)
-        print(f"otp_store: {otp_store}")  # For debugging purposes
         return APIResponse(
             status_code=200, success=True, message="OTP sent successfully", data=None
         ).model_dump()
@@ -221,7 +219,6 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 
 @router.post("/verify-otp", response_model=APIResponse, status_code=status.HTTP_200_OK)
 def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
-    print(f"otp_store in verify: {otp_store}")  # For debugging purposes
     stored_otp = otp_store.get(request.email)
     if not stored_otp:
         return APIResponse(

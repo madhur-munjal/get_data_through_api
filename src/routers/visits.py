@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.dependencies import get_current_user
+from src.dependencies import get_current_user_payload
 from src.models.response import APIResponse
 from src.models.visits import VisitOut, VisitIn, VisitResponse
 from src.schemas.tables.appointments import Appointment
@@ -22,24 +22,15 @@ def add_visits(
     visit_data: VisitIn,
     db: Session = Depends(get_db),
     doctor_id: UUID = Depends(get_current_doctor_id),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_user_payload),
 ):
     """Register a new visit details."""
     appointment_id = visit_data.appointment_id
-    # prescription = visit_data.prescription
-    # follow_up = visit_data.follow_up
-    # print(
-    #     f"Adding visit for appointment ID: {appointment_id}, doctor ID: {doctor_id}, follow-up: {follow_up}")
-    # print(f"type of appointment_id: {type(appointment_id)}")
-    # print(f"str(appointment_id): {str(appointment_id)}")
-    # uuid_appointment_id = UUID(appointment_id)
     str_appointment_id = str(appointment_id)
     appointment_details = db.query(Appointment).filter_by(id=str_appointment_id).first()
-    print(f"appointment_details: {appointment_details}")
     if appointment_details:
         patient_id = appointment_details.patient_id
     else:
-        print(f"Appointment with ID {appointment_id} not found.")
         return APIResponse(
             status_code=200,
             success=False,
@@ -84,7 +75,7 @@ def add_visits(
 def get_visits_by_patient_id(
     patient_id: str,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_user_payload),
 ):
     """Fetch visit details by patient id."""
     visits = db.query(Visit).filter(Visit.patient_id == patient_id).all()
@@ -104,7 +95,7 @@ def get_visits_by_patient_id(
 
 @router.get("/visits_list/{mobile}", response_model=APIResponse[VisitResponse])
 def get_visits_by_patient_mobile(
-    mobile: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)
+    mobile: str, db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)
 ):
     """Fetch visit details by mobile number."""
     patient_details = db.query(Patient).filter(Patient.mobile == mobile).first()

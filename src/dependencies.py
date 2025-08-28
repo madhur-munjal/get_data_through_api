@@ -20,7 +20,7 @@ security = HTTPBearer()
 from src.redis_client import get_redis_client
 
 
-def get_current_user(
+def get_current_user_payload(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     redis=Depends(get_redis_client),
 ):
@@ -38,7 +38,7 @@ def get_current_user(
         if user_id is None:
             raise TokenRevoked(message="User ID missing in token", code=200)
 
-        return user_id
+        return payload # user_id
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except JWTError as ex:
@@ -52,7 +52,7 @@ def get_current_user(
 
 
 def get_current_doctor_id(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Depends(security), current_user=Depends(get_current_user_payload),
 ) -> UUID:
     token = credentials.credentials
     if not token:
@@ -77,3 +77,10 @@ def get_current_doctor_id(
 
 def blacklist_token(redis: Redis, token: str, expiry_seconds: int):
     redis.setex(f"blacklist:{token}", expiry_seconds, "revoked")
+
+
+def require_owner(user_payload=Depends(get_current_user_payload)):
+    print(user_payload, type(user_payload))
+    if user_payload.get("role") != "owner":
+        raise HTTPException(status_code=403, detail="Permission denied.")
+    return user_payload

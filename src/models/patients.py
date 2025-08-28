@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class Gender(str, Enum):
@@ -32,6 +32,9 @@ class PatientRecord(BaseModel):
     bloodPressureLower: Optional[int] = None
     temperature: Optional[float] = None
     temperatureType: Optional[TemperatureUnit] = None
+
+    model_config = {"from_attributes": True}
+    # model_config = ConfigDict(from_attributes=True)
 
 
 class PatientUpdate(BaseModel):

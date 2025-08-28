@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.dependencies import get_current_user
+from src.dependencies import get_current_user_payload, require_owner
 from src.models.response import APIResponse
 from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.schemas.tables.users import User
@@ -13,7 +13,8 @@ router = APIRouter(
 
 
 @router.get("/users_list", response_model=APIResponse)
-def get_users(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+def get_users(current_user=Depends(get_current_user_payload), db: Session = Depends(get_db),
+              role=Depends(require_owner)):
     """Fetch all users."""
     users = db.query(User).all()
     user_dtos = [UserOut.model_validate(user) for user in users]
@@ -27,9 +28,9 @@ def get_users(current_user=Depends(get_current_user), db: Session = Depends(get_
 
 @router.delete("/delete-user", response_model=APIResponse)
 def delete_user(
-    request: UserIDRequest,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+        request: UserIDRequest,
+        current_user=Depends(get_current_user_payload),
+        db: Session = Depends(get_db), role=Depends(require_owner)
 ):
     """Delete a user by ID.
     This endpoint allows an authenticated user to delete another user by their ID.
@@ -55,10 +56,10 @@ def delete_user(
 
 @router.put("/update-user", response_model=APIResponse)
 def update_item(
-    request: UserIDRequest,
-    payload: UserCreate,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+        request: UserIDRequest,
+        payload: UserCreate,
+        current_user=Depends(get_current_user_payload),
+        db: Session = Depends(get_db), role=Depends(require_owner)
 ):
     user_db = db.query(User).filter(User.id == request.user_id).first()
     if not user_db:

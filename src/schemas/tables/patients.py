@@ -29,7 +29,7 @@ class Patient(Base):
     lastName = Column(String(15), nullable=True)
     age = Column(Integer, nullable=False)  # mandatory
     mobile = Column(String(15), nullable=False)  # mandatory
-    gender = Column(Enum(Gender), nullable=False)  # mandatory
+    gender = Column(Enum(Gender), nullable=True)
     address = Column(String(45), nullable=True)
     currentVisit = Column(DateTime, nullable=True)
     lastVisit = Column(Date, nullable=True)
