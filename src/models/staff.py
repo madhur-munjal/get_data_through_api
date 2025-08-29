@@ -38,6 +38,7 @@ class StaffOut(BaseModel):
     country: str
     mobile: constr(min_length=5)
     username: constr(min_length=5, max_length=18)
+    role: str
 
     model_config = {"from_attributes": True}
 
