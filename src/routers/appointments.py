@@ -51,8 +51,8 @@ def create_appointment(
     db_appointment = Appointment(
         patient_id=patient_id,
         doctor_id=doctor_id,
-        scheduled_date=data["scheduled_date"],
-        scheduled_time=data["scheduled_time"],
+        scheduled_date=data["schedule_date_time"].date(),
+        scheduled_time=data["schedule_date_time"].time(),
         type=type,
         status=AppointmentStatus.UPCOMING.value,
     )

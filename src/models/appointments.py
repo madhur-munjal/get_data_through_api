@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, time, datetime
 from enum import Enum
 from typing import Optional
 
@@ -21,8 +21,9 @@ class AppointmentType(str, Enum):
 
 class AppointmentCreate(BaseModel):
     patient: PatientRecord  # Nested patient data
-    scheduled_date: date
-    scheduled_time: time
+    schedule_date_time: datetime
+    # scheduled_date: date
+    # scheduled_time: time
 
     model_config = {"from_attributes": True}
 
