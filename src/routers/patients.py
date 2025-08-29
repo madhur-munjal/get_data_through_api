@@ -41,7 +41,7 @@ def create_patient(
     ).model_dump()
 
 
-@router.put("/{patent_id}", response_model=APIResponse[PatientRecord])
+@router.put("/{patient_id}", response_model=APIResponse[PatientRecord])
 def update_patent(
     patient_id: str,
     update_data: PatientUpdate,

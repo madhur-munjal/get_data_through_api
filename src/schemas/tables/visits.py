@@ -17,7 +17,7 @@ class Visit(Base):
 
     analysis = Column(String(250), nullable=True)
     advice = Column(String(250), nullable=True)
-    tests = Column(JSON, nullable=True)
+    tests = Column(String(250), nullable=True)
     followUpVisit = Column(String(100), nullable=True)
     medicationDetails = Column(JSON, nullable=True)
     created_at = Column(DateTime, server_default=func.now())

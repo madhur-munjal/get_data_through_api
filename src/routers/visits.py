@@ -7,7 +7,7 @@ from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import get_current_user_payload
 from src.models.response import APIResponse
-from src.models.visits import VisitOut, VisitIn, VisitResponse
+from src.models.visits import VisitOut, VisitCreate, VisitResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.visits import Visit
 from src.schemas.tables.patients import Patient
@@ -19,7 +19,7 @@ router = APIRouter(
 
 @router.post("/add_visits", response_model=APIResponse[VisitOut])
 def add_visits(
-    visit_data: VisitIn,
+    visit_data: VisitCreate,
     db: Session = Depends(get_db),
     doctor_id: UUID = Depends(get_current_doctor_id),
     current_user=Depends(get_current_user_payload),
