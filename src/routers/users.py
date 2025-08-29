@@ -108,6 +108,6 @@ def update_item(
             message=f"Failed to update user details",
             data=None,
             errors=[error_msg],
-        )
+        ).model_dump()
 
         # UserOut.model_validate(user_db)).model_dump()

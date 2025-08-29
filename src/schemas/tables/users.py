@@ -33,3 +33,4 @@ class User(Base):
                   default="admin")  # mandatory e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
     visits = relationship("Visit", back_populates="user")
     appointments = relationship("Appointment", back_populates="user")
+    staff = relationship("Staff", back_populates="doctor")

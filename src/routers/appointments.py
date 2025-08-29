@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
@@ -26,15 +26,15 @@ router = APIRouter(
 
 @router.post("/create_appointment", response_model=APIResponse[AppointmentOut])
 def create_appointment(
-    appointment: AppointmentCreate,
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
-    current_user=Depends(get_current_user_payload),
+        appointment: AppointmentCreate,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        current_user=Depends(get_current_user_payload),
 ):
     """Register a new appointment.
     If enter new mobile number, then it will create under new patients record."""
     patient_mobile_number = appointment.patient.mobile
-    db_user = db.query(Patient).filter_by(mobile=patient_mobile_number).first()
+    db_user = db.query(Patient).filter_by(assigned_doctor_id=doctor_id, mobile=patient_mobile_number).first()
     if db_user:
         patient_id = db_user.patient_id
         type = "follow-up"
@@ -66,12 +66,12 @@ def create_appointment(
     ).model_dump()
 
 
-@router.get("")
+@router.get("", response_model=APIResponse[list[AppointmentResponse]])
 def get_appointment_data(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1),
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
+        page: int = Query(1, ge=1),
+        page_size: int = Query(20, ge=1),
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
     results = db.query(Appointment).filter_by(doctor_id=doctor_id).offset(offset).limit(page_size).all()
@@ -79,7 +79,7 @@ def get_appointment_data(
         status_code=200,
         success=True,
         message=f"Successfully fetched appointment lists.",
-        data= [AppointmentResponse.from_row(p) for p in results]
+        data=[AppointmentResponse.from_row(p) for p in results]
     ).model_dump()
     #     [
     #         {
@@ -98,13 +98,14 @@ def get_appointment_data(
     "/get_appointment_by_date", response_model=APIResponse[list[AppointmentResponse]]
 )
 def get_appointment_by_date(
-    appointment_date: date = Query(..., description="Date in YYYY-MM-DD format"),
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user_payload),
+        appointment_date: date = Query(..., description="Date in YYYY-MM-DD format"),
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user_payload),
+        doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     results = (
         db.query(Appointment)
-        .filter_by(scheduled_date=appointment_date)
+        .filter_by(doctor_id=doctor_id, scheduled_date=appointment_date)
         .all()
     )
     return APIResponse(
@@ -112,4 +113,23 @@ def get_appointment_by_date(
         success=True,
         message=f"Successfully fetched appointment lists for date {appointment_date}.",
         data=[AppointmentResponse.from_row(row) for row in results],
-    ).model_dump()  # Changed it to pydantic Type
+    ).model_dump()
+
+
+@router.put("/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut])
+def update_appointment(appointment_id: int, update_data: AppointmentCreate, db: Session = Depends(get_db)):
+    appointment = db.query(Appointment).filter_by(id=appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    for key, value in update_data.dict(exclude_unset=True).items():
+        setattr(appointment, key, value)
+
+    db.commit()
+    db.refresh(appointment)
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Appointment updated successfully.",
+        data=AppointmentOut.model_validate(appointment),
+    ).model_dump()
