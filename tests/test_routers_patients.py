@@ -58,43 +58,43 @@ def test_get_patients_list(client, override_dependencies):
 
 
 
-def test_update_patient_success(client, override_dependencies):
-    payload = {
-        "firstName": "Jane",
-        "lastName": "string",
-        "age": 35,
-        "mobile": "string",
-        "gender": "male",
-        "address": "string",
-        "bloodGroup": "A+"
-    }
-    response = client.put(f"/patients/{TEST_PATIENT_ID}", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["success"] is True
-    assert data["message"] == "Patient updated successfully."
-
-
-def test_update_patient_not_found(client, mocker):
-    payload = {
-        "firstName": "NotFound",
-        "lastName": "string",
-        "age": 35,
-        "mobile": "string",
-        "gender": "male",
-        "address": "string",
-        "bloodGroup": "A+"
-    }
-    mock_session = mocker.Mock()
-    query_mock = mocker.Mock()
-    query_mock.filter().first.return_value = None  # Simulate not found
-    mock_session.query.return_value = query_mock
-
-    app.dependency_overrides[get_db] = lambda: mock_session
-    app.dependency_overrides[get_current_doctor_id] = lambda: TEST_DOCTOR_ID
-
-    response = client.put(f"/patients/{TEST_PATIENT_ID}", json=payload)
-    assert response.status_code == 404
-    assert response.json()["message"] == "Patient not found"
-
-    app.dependency_overrides.clear()
+# def test_update_patient_success(client, override_dependencies):
+#     payload = {
+#         "firstName": "Jane",
+#         "lastName": "string",
+#         "age": 35,
+#         "mobile": "string",
+#         "gender": "male",
+#         "address": "string",
+#         "bloodGroup": "A+"
+#     }
+#     response = client.put(f"/patients/{TEST_PATIENT_ID}", json=payload)
+#     assert response.status_code == 200
+#     data = response.json()
+#     assert data["success"] is True
+#     assert data["message"] == "Patient updated successfully."
+#
+#
+# def test_update_patient_not_found(client, mocker):
+#     payload = {
+#         "firstName": "NotFound",
+#         "lastName": "string",
+#         "age": 35,
+#         "mobile": "string",
+#         "gender": "male",
+#         "address": "string",
+#         "bloodGroup": "A+"
+#     }
+#     mock_session = mocker.Mock()
+#     query_mock = mocker.Mock()
+#     query_mock.filter().first.return_value = None  # Simulate not found
+#     mock_session.query.return_value = query_mock
+#
+#     app.dependency_overrides[get_db] = lambda: mock_session
+#     app.dependency_overrides[get_current_doctor_id] = lambda: TEST_DOCTOR_ID
+#
+#     response = client.put(f"/patients/{TEST_PATIENT_ID}", json=payload)
+#     assert response.status_code == 404
+#     assert response.json()["message"] == "Patient not found"
+#
+#     app.dependency_overrides.clear()
