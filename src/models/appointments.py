@@ -13,13 +13,10 @@ class AppointmentType(str, Enum):
 
 
 class AppointmentCreate(BaseModel):
-    # patient_id: int
-    # doctor_id: int
     patient: PatientRecord  # Nested patient data
     scheduled_date: date
     scheduled_time: time
-    # type: AppointmentType  # Optional[str] = Field(default="general")
-    # status: Optional[str] = Field(default="scheduled")
+
     model_config = {"from_attributes": True}
 
 
