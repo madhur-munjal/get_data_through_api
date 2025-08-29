@@ -7,9 +7,16 @@ from pydantic import BaseModel, Field
 from src.models.patients import PatientRecord
 
 
+class AppointmentStatus(str, Enum):
+    UPCOMING = 0
+    COMPLETED = 1
+    NO_SHOW = 2
+
+
 class AppointmentType(str, Enum):
-    new = "new"
-    follow_up = "follow-up"
+    NEW = 0
+    FOLLOW_UP = 1
+    EMERGENCY = 2
 
 
 class AppointmentCreate(BaseModel):
@@ -21,22 +28,24 @@ class AppointmentCreate(BaseModel):
 
 
 class AppointmentOut(BaseModel):
+    """Schema for appointment output, used in response of create_appointment and update appointment API"""
     patient_id: str
     doctor_id: str
     scheduled_date: date
     scheduled_time: time
-    status: Optional[str] = Field(default="scheduled")
+    status: int = Field(default=AppointmentStatus.UPCOMING) # AppointmentStatus
 
     model_config = {"from_attributes": True}
 
 
 class AppointmentResponse(BaseModel):
+    """Schema for appointment output., used in get_appointment_list API"""
     appointment_id: str
     scheduled_date: date
     scheduled_time: time
     patient_id: str
-    type: str
-    status: str
+    type: int
+    status: int #AppointmentStatus
     firstName: Optional[str] = None
     lastName: Optional[str] = None
 
