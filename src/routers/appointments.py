@@ -66,7 +66,7 @@ def create_appointment(
     ).model_dump()
 
 
-@router.get("/")
+@router.get("")
 def get_appointment_data(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1),
@@ -79,18 +79,19 @@ def get_appointment_data(
         status_code=200,
         success=True,
         message=f"Successfully fetched appointment lists.",
-        data=[
-            {
-                "appointment_id": row.id,
-                "scheduled_date": row.scheduled_date,
-                "scheduled_time": row.scheduled_time,
-                "patient_id": row.patient_id,
-                "firstName": row.patient.firstName,
-                "lastName": row.patient.lastName,
-            }
-            for row in results
-        ],
-    ).model_dump()  # CHanged it to pydantic Type
+        data= [AppointmentResponse.from_row(p) for p in results]
+    ).model_dump()
+    #     [
+    #         {
+    #             "appointment_id": row.id,
+    #             "scheduled_date": row.scheduled_date,
+    #             "scheduled_time": row.scheduled_time,
+    #             "patient_id": row.patient_id,
+    #             "firstName": row.patient.firstName,
+    #             "lastName": row.patient.lastName,
+    #         }
+    #         for row in results
+    #     ],
 
 
 @router.get(
