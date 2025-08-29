@@ -59,7 +59,7 @@ def register(
     return APIResponse(
         status_code=200,
         success=True,
-        message=f"- New staff account created under {current_user.get("sub")} supervision.",
+        message=f"New staff account created under {current_user.get('sub')} supervision.",
         data=StaffOut.model_validate(db_user),
     ).model_dump()
 
