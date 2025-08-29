@@ -1,7 +1,7 @@
 import enum
 import uuid
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, UniqueConstraint
 from sqlalchemy import ForeignKey, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -48,3 +48,7 @@ class Patient(Base):
 
     appointments = relationship("Appointment", back_populates="patient")
     visits = relationship("Visit", back_populates="patient")
+
+    __table_args__ = (
+        UniqueConstraint("assigned_doctor_id", "mobile", name="uq_doc_patient"),
+    )
