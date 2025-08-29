@@ -22,23 +22,14 @@ class User(Base):
     )
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    firstName = Column(String(15), nullable=False)
-    lastName = Column(String(15), nullable=False)
-    email = Column(String(255), unique=True, nullable=False)
-    country = Column(String(255), nullable=False)
-    mobile = Column(Text, nullable=False)
-    username = Column(String(255), nullable=False, unique=True)  # index=True)
-    password = Column(Text, nullable=False)
-    role = Column(String(50), nullable=False, default="admin")  # e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
+    firstName = Column(String(15), nullable=False)  # mandatory
+    lastName = Column(String(15), nullable=True)
+    email = Column(String(255), unique=True, nullable=False)  # mandatory
+    country = Column(String(255), nullable=True)
+    mobile = Column(Text, nullable=False)  # mandatory
+    username = Column(String(255), nullable=False, unique=True)  # mandatory
+    password = Column(Text, nullable=False)  # mandatory
+    role = Column(String(50), nullable=False,
+                  default="admin")  # mandatory e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
     visits = relationship("Visit", back_populates="user")
     appointments = relationship("Appointment", back_populates="user")
-
-
-# class PasswordResetToken(Base):
-#     __tablename__ = "reset_tokens"
-#
-#     id = Column(Integer, primary_key=True)
-#     user_id = Column(Integer, ForeignKey("users.id"))
-#     token = Column(String(255), unique=True, default=lambda: str(uuid.uuid64()))
-#     expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(minutes=30))
-#     user = relationship("User")

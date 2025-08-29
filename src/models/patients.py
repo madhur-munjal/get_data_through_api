@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class Gender(str, Enum):
@@ -16,14 +16,12 @@ class TemperatureUnit(str, Enum):
 
 
 class PatientRecord(BaseModel):
-    firstName: str
+    firstName: str  # Required
     lastName: Optional[str] = None
     age: Optional[int] = None
-    mobile: str
+    mobile: str  # Required
     gender: Optional[Gender] = None
     address: Optional[str] = None
-    # currentVisit: datetime
-    # lastVisit: datetime = None
     bloodGroup: Optional[
         Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
     ] = None
@@ -34,18 +32,15 @@ class PatientRecord(BaseModel):
     temperatureType: Optional[TemperatureUnit] = None
 
     model_config = {"from_attributes": True}
-    # model_config = ConfigDict(from_attributes=True)
 
 
 class PatientUpdate(BaseModel):
-    firstName: str
+    firstName: str  # Required
     lastName: Optional[str] = None
     age: Optional[int] = None
-    mobile: str
-    gender: Gender
+    mobile: str  # Required
+    gender: Optional[Gender] = None
     address: Optional[str] = None
-    # currentVisit: datetime = None
-    # lastVisit: datetime = None
     bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
         None
     )

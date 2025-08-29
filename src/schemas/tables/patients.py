@@ -27,7 +27,7 @@ class Patient(Base):
     patient_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     firstName = Column(String(15), nullable=False)  # mandatory
     lastName = Column(String(15), nullable=True)
-    age = Column(Integer, nullable=False)  # mandatory
+    age = Column(Integer, nullable=True)
     mobile = Column(String(15), nullable=False)  # mandatory
     gender = Column(Enum(Gender), nullable=True)
     address = Column(String(45), nullable=True)
@@ -35,7 +35,7 @@ class Patient(Base):
     lastVisit = Column(Date, nullable=True)
     bloodGroup = Column(
         String(5), nullable=True
-    )  # Optional, but you can validate values in app logic
+    )  # e.g., "A+", "O-", etc.
     weight = Column(Float, nullable=True)
     bloodPressureUpper = Column(Integer, nullable=True)
     bloodPressureLower = Column(Integer, nullable=True)
