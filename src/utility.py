@@ -4,12 +4,13 @@ import re
 import smtplib
 import string
 from email.mime.text import MIMEText
-
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from sqlalchemy.exc import IntegrityError
+from src.models.enums import AppointmentType, AppointmentStatus
 
 load_dotenv()
 
@@ -119,3 +120,11 @@ def save_data_to_db(data, db_model, db_session):
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+
+def get_appointment_status(appointment_date_time: datetime, comparision_date_time: datetime = datetime.now(timezone.utc)) -> str:
+    appointment_date_time = appointment_date_time.replace(tzinfo=timezone.utc)
+    if appointment_date_time > comparision_date_time:
+        return AppointmentStatus.UPCOMING.value
+    else:
+        return AppointmentStatus.NO_SHOW.value
