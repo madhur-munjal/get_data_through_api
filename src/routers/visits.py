@@ -1,5 +1,5 @@
 from uuid import UUID
-
+from src.models.enums import AppointmentStatus
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -51,18 +51,15 @@ def add_visits(
 
     # 2. Update patient's lastVisit field
     patient = db.query(Patient).filter_by(patient_id=patient_id, assigned_doctor_id=doctor_id).first()
-    print(appointment_details.scheduled_date_time)
-    print(type(appointment_details.scheduled_date_time))
-
     if patient:
         if (
             not patient.lastVisit
             or appointment_details.scheduled_date_time.date() > patient.lastVisit
-        ):  # visit_data.visit_date > patient.lastVisit:
+        ):
             patient.lastVisit = appointment_details.scheduled_date_time.date()
 
     # 2. Update appointment status as completed.
-    appointment_details.status = 2  # AppointmentStatus.COMPLETED.value
+    appointment_details.status = AppointmentStatus.COMPLETED.value
 
     db.commit()
     db.refresh(db_visit)
