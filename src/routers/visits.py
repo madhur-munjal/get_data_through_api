@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.dependencies import get_current_doctor_id
+from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
 from src.models.response import APIResponse
 from src.models.visits import VisitOut, VisitCreate, VisitResponse
@@ -13,7 +13,7 @@ from src.schemas.tables.visits import Visit
 from src.schemas.tables.patients import Patient
 
 router = APIRouter(
-    prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}
+    prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}, dependencies=[Depends(require_owner)]
 )
 
 

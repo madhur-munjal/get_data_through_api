@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.dependencies import get_current_doctor_id
+from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
 from src.models.appointments import (
     AppointmentCreate,
@@ -22,6 +22,7 @@ router = APIRouter(
     prefix="/appointments",
     tags=["appointments"],
     responses={404: {"error": "Not found"}},
+    dependencies=[Depends(require_owner)]
 )
 
 

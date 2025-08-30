@@ -8,9 +8,10 @@ from src.dependencies import get_current_doctor_id
 from src.models.patients import PatientRecord, PatientUpdate
 from src.models.response import APIResponse
 from src.schemas.tables.patients import Patient
-
+from src.dependencies import require_owner
 router = APIRouter(
-    prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}
+    prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}, dependencies=[Depends(require_owner)]
+
 )
 
 
