@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.models.patients import PatientRecord, PatientUpdate
+from src.models.patients import PatientRecord, PatientUpdate, PatientOut
 from src.models.response import APIResponse
 from src.schemas.tables.patients import Patient
 from src.dependencies import require_owner
@@ -65,7 +65,7 @@ def update_patent(
     ).model_dump()
 
 
-@router.get("/get_patients_list", response_model=APIResponse[List[PatientRecord]]) #  #APIResponse[PatientRecord]
+@router.get("/get_patients_list", response_model=APIResponse[List[PatientOut]]) #  #APIResponse[PatientRecord]
 def get_patients_list(
     db: Session = Depends(get_db),
     doctor_id: UUID = Depends(get_current_doctor_id),
@@ -75,5 +75,5 @@ def get_patients_list(
         status_code=200,
         success=True,
         message="Patients fetched successfully.",
-        data=[PatientRecord.model_validate(p) for p in patients],
+        data=[PatientOut.model_validate(p) for p in patients],
     ).model_dump()
