@@ -50,7 +50,7 @@ def add_visits(
     db.add(db_visit)
 
     # 2. Update patient's lastVisit field
-    patient = db.query(Patient).filter_by(patient_id=patient_id).first()
+    patient = db.query(Patient).filter_by(patient_id=patient_id, assigned_doctor_id=doctor_id).first()
     if patient:
         if (
             not patient.lastVisit
@@ -59,7 +59,7 @@ def add_visits(
             patient.lastVisit = appointment_details.scheduled_date
 
     # 2. Update appointment status as completed.
-    appointment_details.status = "completed"
+    appointment_details.status = 2  # AppointmentStatus.COMPLETED.value
 
     db.commit()
     db.refresh(db_visit)

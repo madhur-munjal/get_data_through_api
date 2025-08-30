@@ -12,7 +12,7 @@ from src.models.appointments import (
     AppointmentOut,
     AppointmentResponse,
 )
-from src.utility import AppointmentType
+from src.models.enums import AppointmentType
 from src.models.response import APIResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient

@@ -36,6 +36,7 @@ class AppointmentResponse(BaseModel):
     scheduled_date_time: datetime
     # scheduled_time: time
     patient_id: str
+    mobile: str  # Required
     type: int
     status: int #AppointmentStatus
     firstName: Optional[str] = None
@@ -50,6 +51,7 @@ class AppointmentResponse(BaseModel):
             scheduled_date_time=row.scheduled_date_time,
             # scheduled_time=row.scheduled_time,  # datetime.strptime( "%H:%M"),
             patient_id=row.patient_id,
+            mobile=row.patient.mobile,
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             type=row.type,
