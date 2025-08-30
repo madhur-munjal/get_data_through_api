@@ -65,6 +65,7 @@ class PatientOut(BaseModel):
     @classmethod
     def from_row(cls, row):
         return cls(
+            patient_id=row.patient_id,
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             age=row.patient.age,
