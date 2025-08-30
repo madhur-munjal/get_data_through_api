@@ -2,7 +2,7 @@ from datetime import date, datetime
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-
+from sqlalchemy import desc
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
@@ -71,26 +71,27 @@ def create_appointment(
 
 
 @router.put("/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut])
-def update_appointment(appointment_id: int, update_data: AppointmentCreate, db: Session = Depends(get_db)):
+def update_appointment(appointment_id: str, update_data: AppointmentCreate, db: Session = Depends(get_db)):
     appointment = db.query(Appointment).filter_by(id=appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
-    data = update_data.dict(exclude_unset=True)
-
-    # Convert known fields
-    if "scheduled_date" in data:
-        data["scheduled_date"] = datetime.strptime(data["scheduled_date"], "%m/%d/%Y").date()
-
-    if "appointment_time" in data:
-        data["scheduled__time"] = datetime.strptime(data["scheduled_time"], "%H:%M:%S").time()
-
-    # Apply all fields
-    for key, value in data.items():
-        setattr(appointment, key, value)
-
-    # for key, value in update_data.dict(exclude_unset=True).items():
+    # data = update_data.dict(exclude_unset=True)
+    #
+    # # Convert known fields
+    # if "scheduled_date" in data:
+    #     data["scheduled_date"] = datetime.strptime(data["scheduled_date"], "%m/%d/%Y").date()
+    #
+    # if "appointment_time" in data:
+    #     data["scheduled_time"] = datetime.strptime(data["scheduled_time"], "%H:%M:%S").time()
+    #
+    # # Apply all fields
+    # for key, value in data.items():
+    #     print(key, value, sep="*****")
     #     setattr(appointment, key, value)
+
+    for key, value in update_data.dict(exclude_unset=True).items():
+        setattr(appointment, key, value)
 
     db.commit()
     db.refresh(appointment)
@@ -111,7 +112,7 @@ def get_appointment_data(
 ):
     offset = (page - 1) * page_size
     results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(
-        Appointment.scheduled_date).offset(offset).limit(page_size).all()
+        desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # TODO need to add time as well
     return APIResponse(
         status_code=200,
