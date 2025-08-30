@@ -1,6 +1,5 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
-
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
@@ -13,6 +12,7 @@ from src.models.appointments import (
     AppointmentResponse,
 )
 from src.models.enums import AppointmentType
+from src.models.patients import PatientOut
 from src.models.response import APIResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
@@ -52,9 +52,12 @@ def create_appointment(
     db_appointment = Appointment(
         patient_id=patient_id,
         doctor_id=doctor_id,
-        scheduled_date_time=data["scheduled_date_time"],
+        scheduled_date=datetime.strptime(data["scheduled_date"], "%m/%d/%Y").date(),
+        scheduled_time=datetime.strptime(data["scheduled_time"], "%H:%M:%S").time(),
         type=type,
-        status=get_appointment_status(data["scheduled_date_time"])  # AppointmentStatus.UPCOMING.value,
+        status=get_appointment_status(datetime.strptime(f"{data["scheduled_date"]} {data["scheduled_time"]}", "%m/%d/%Y %H:%M:%S")
+                                      )
+# data["scheduled_date_time"])  # AppointmentStatus.UPCOMING.value
     )
     db.add(db_appointment)
     db.commit()
@@ -67,6 +70,38 @@ def create_appointment(
     ).model_dump()
 
 
+@router.put("/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut])
+def update_appointment(appointment_id: int, update_data: AppointmentCreate, db: Session = Depends(get_db)):
+    appointment = db.query(Appointment).filter_by(id=appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    data = update_data.dict(exclude_unset=True)
+
+    # Convert known fields
+    if "scheduled_date" in data:
+        data["scheduled_date"] = datetime.strptime(data["scheduled_date"], "%m/%d/%Y").date()
+
+    if "appointment_time" in data:
+        data["scheduled__time"] = datetime.strptime(data["scheduled_time"], "%H:%M:%S").time()
+
+    # Apply all fields
+    for key, value in data.items():
+        setattr(appointment, key, value)
+
+    # for key, value in update_data.dict(exclude_unset=True).items():
+    #     setattr(appointment, key, value)
+
+    db.commit()
+    db.refresh(appointment)
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Appointment updated successfully.",
+        data=AppointmentOut.model_validate(appointment),
+    ).model_dump()
+
+
 @router.get("", response_model=APIResponse[list[AppointmentResponse]])
 def get_appointment_data(
         page: int = Query(1, ge=1),
@@ -75,7 +110,9 @@ def get_appointment_data(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
-    results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(Appointment.scheduled_date_time.desc()).offset(offset).limit(page_size).all()
+    results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(
+        Appointment.scheduled_date).offset(offset).limit(page_size).all()
+    # TODO need to add time as well
     return APIResponse(
         status_code=200,
         success=True,
@@ -93,6 +130,39 @@ def get_appointment_data(
     #         }
     #         for row in results
     #     ],
+
+
+# @router.get("/id", response_model=APIResponse[list[PatientOut]])
+# def get_appointment_data(
+#         # page: int = Query(1, ge=1),
+#         # page_size: int = Query(20, ge=1),
+#         db: Session = Depends(get_db),
+#         doctor_id: UUID = Depends(get_current_doctor_id),
+# ):
+#     # offset = (page - 1) * page_size
+#     results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(Appointment.scheduled_date_time.desc()).offset(offset).limit(page_size).all()
+#     return APIResponse(
+#         status_code=200,
+#         success=True,
+#         message=f"Successfully fetched appointment lists.",
+#         data=[AppointmentResponse.from_row(p) for p in results]
+#     ).model_dump()
+
+@router.get("/id", response_model=APIResponse[PatientOut])
+def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
+    appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appointment_details:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    # patient = db.query(Patient).filter(Patient.patient_id == appointment.patient_id).first()
+    # if not patient:
+    #     raise HTTPException(status_code=404, detail="Patient not found")
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched appointment details.",
+        data=PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
+    ).model_dump()
 
 
 @router.get(
@@ -114,23 +184,4 @@ def get_appointment_by_date(
         success=True,
         message=f"Successfully fetched appointment lists for date {appointment_date}.",
         data=[AppointmentResponse.from_row(row) for row in results],
-    ).model_dump()
-
-
-@router.put("/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut])
-def update_appointment(appointment_id: int, update_data: AppointmentCreate, db: Session = Depends(get_db)):
-    appointment = db.query(Appointment).filter_by(id=appointment_id).first()
-    if not appointment:
-        raise HTTPException(status_code=404, detail="Appointment not found")
-
-    for key, value in update_data.dict(exclude_unset=True).items():
-        setattr(appointment, key, value)
-
-    db.commit()
-    db.refresh(appointment)
-    return APIResponse(
-        status_code=200,
-        success=True,
-        message=f"Appointment updated successfully.",
-        data=AppointmentOut.model_validate(appointment),
     ).model_dump()
