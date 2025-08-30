@@ -64,7 +64,7 @@ class VisitOut(BaseModel):
 
     analysis: Optional[str] = None
     advice: Optional[str] = None
-    tests: Optional[List[str]] = None  # or define a TestDetails model if structured
+    tests: Optional[str] = None  # or define a TestDetails model if structured
     followUpVisit: Optional[str] = None
     medicationDetails: Optional[List[MedicationDetails]] = None
 
