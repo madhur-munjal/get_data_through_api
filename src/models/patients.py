@@ -1,18 +1,8 @@
-from enum import Enum
 from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-
-class Gender(str, Enum):
-    male = "male"
-    female = "female"
-    other = "other"
-
-
-class TemperatureUnit(str, Enum):
-    celsius = "celsius"
-    fahrenheit = "fahrenheit"
+from .enums import Gender, TemperatureUnit
 
 
 class PatientRecord(BaseModel):

@@ -12,10 +12,11 @@ from src.models.appointments import (
     AppointmentOut,
     AppointmentResponse,
 )
+from src.utility import AppointmentType
 from src.models.response import APIResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
-from src.utility import save_data_to_db
+from src.utility import save_data_to_db, get_appointment_status
 
 router = APIRouter(
     prefix="/appointments",
@@ -37,23 +38,22 @@ def create_appointment(
     db_user = db.query(Patient).filter_by(assigned_doctor_id=doctor_id, mobile=patient_mobile_number).first()
     if db_user:
         patient_id = db_user.patient_id
-        type = "follow-up"
+        type = AppointmentType.FOLLOW_UP.value
     else:
         # Extract patient data
         patient_data = appointment.patient.dict()
         patient_data["assigned_doctor_id"] = doctor_id
         save_patient_data = save_data_to_db(patient_data, Patient, db)
         patient_id = save_patient_data.patient_id
-        type = "new"
+        type = AppointmentType.NEW.value
     data = appointment.dict()
     data.update({"doctor_id": doctor_id})
     db_appointment = Appointment(
         patient_id=patient_id,
         doctor_id=doctor_id,
-        scheduled_date=data["scheduled_date"],
-        scheduled_time=data["scheduled_time"],
+        scheduled_date_time=data["scheduled_date_time"],
         type=type,
-        status="scheduled",
+        status=get_appointment_status(data["scheduled_date_time"])  # AppointmentStatus.UPCOMING.value,
     )
     db.add(db_appointment)
     db.commit()
@@ -74,7 +74,7 @@ def get_appointment_data(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
-    results = db.query(Appointment).filter_by(doctor_id=doctor_id).offset(offset).limit(page_size).all()
+    results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(Appointment.scheduled_date_time.desc()).offset(offset).limit(page_size).all()
     return APIResponse(
         status_code=200,
         success=True,
