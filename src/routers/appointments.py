@@ -55,7 +55,7 @@ def create_appointment(
         scheduled_date=datetime.strptime(data["scheduled_date"], "%m/%d/%Y").date(),
         scheduled_time=datetime.strptime(data["scheduled_time"], "%H:%M:%S").time(),
         type=type,
-        status=get_appointment_status(datetime.strptime(f"{data.scheduled_date} {data.scheduled_time}", "%m/%d/%Y %H:%M:%S")
+        status=get_appointment_status(datetime.strptime(f"{data.get('scheduled_date')} {data.get('scheduled_time')}", "%m/%d/%Y %H:%M:%S")
                                       )
 # data["scheduled_date_time"])  # AppointmentStatus.UPCOMING.value
     )
