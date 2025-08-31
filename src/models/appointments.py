@@ -30,6 +30,7 @@ class AppointmentOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+
 class AppointmentResponse(BaseModel):
     """Schema for appointment output., used in get_appointment_list API"""
     appointment_id: str
@@ -60,6 +61,7 @@ class AppointmentResponse(BaseModel):
         )
 
     model_config = {"from_attributes": True}
+
 
 
 class AppointmentUpdate(BaseModel):

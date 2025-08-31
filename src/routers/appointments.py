@@ -77,6 +77,14 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
+    if update_data.scheduled_date:
+        appointment.scheduled_date = datetime.strptime(update_data.scheduled_date, "%m/%d/%Y").date()
+
+        # Update scheduled_time if provided
+    if update_data.scheduled_time:
+        appointment.scheduled_time = datetime.strptime(update_data.scheduled_time, "%H:%M:%S").time()
+
+
     # data = update_data.dict(exclude_unset=True)
     #
     # # Convert known fields
@@ -90,9 +98,26 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
     # for key, value in data.items():
     #     print(key, value, sep="*****")
     #     setattr(appointment, key, value)
-
-    for key, value in update_data.dict(exclude_unset=True).items():
-        setattr(appointment, key, value)
+    # print(update_data.dict(exclude_unset=True))
+    # print("*******")
+    # print(appointment)
+    # print("***********")
+    # print(type(appointment))
+    #
+    # data = appointment.dict()
+    # # data.update({"doctor_id": appointment.doctor_id})
+    #
+    # db_appointment = Appointment(
+    #     patient_id=data.patient_id,
+    #     doctor_id=data.doctor_id,
+    #     scheduled_date=datetime.strptime(data.get("scheduled_date"), "%m/%d/%Y").date(),
+    #     scheduled_time=datetime.strptime(data.get("scheduled_time"), "%H:%M:%S").time(),
+    #     type=data.type,
+    #     status=data.status
+    # )
+    #
+    # # for key, value in update_data.dict(exclude_unset=True).items():
+    # #     setattr(appointment, key, value)
 
     db.commit()
     db.refresh(appointment)
@@ -100,7 +125,8 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
         status_code=200,
         success=True,
         message=f"Appointment updated successfully.",
-        data=AppointmentOut.model_validate(appointment),
+        data=AppointmentOut.from_orm(appointment),
+# AppointmentOut.model_validate(db_appointment),
     ).model_dump()
 
 
