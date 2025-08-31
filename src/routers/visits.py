@@ -54,7 +54,7 @@ def add_visits(
     if patient:
         if (
             not patient.lastVisit
-            or appointment_details.scheduled_date_time.date() > patient.lastVisit
+            or appointment_details.scheduled_date > patient.lastVisit
         ):
             patient.lastVisit = appointment_details.scheduled_date
 
