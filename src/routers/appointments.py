@@ -10,6 +10,7 @@ from src.models.appointments import (
     AppointmentCreate,
     AppointmentOut,
     AppointmentResponse,
+    AppointmentUpdate
 )
 from src.models.enums import AppointmentType
 from src.models.patients import PatientOut
@@ -71,7 +72,7 @@ def create_appointment(
 
 
 @router.put("/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut])
-def update_appointment(appointment_id: str, update_data: AppointmentCreate, db: Session = Depends(get_db)):
+def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: Session = Depends(get_db)):
     appointment = db.query(Appointment).filter_by(id=appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
@@ -149,7 +150,7 @@ def get_appointment_data(
 #         data=[AppointmentResponse.from_row(p) for p in results]
 #     ).model_dump()
 
-@router.get("/id", response_model=APIResponse[PatientOut])
+@router.get("/{appointment_id}", response_model=APIResponse[PatientOut])
 def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
     appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
     if not appointment_details:

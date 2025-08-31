@@ -60,3 +60,10 @@ class AppointmentResponse(BaseModel):
         )
 
     model_config = {"from_attributes": True}
+
+
+class AppointmentUpdate(BaseModel):
+    # patient: PatientRecord  # Nested patient data
+    # scheduled_date_time: datetime
+    scheduled_date: str # "08/25/2025"
+    scheduled_time: str # "16:00:00"
