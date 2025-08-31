@@ -42,7 +42,7 @@ class MedicationDetails(BaseModel):
     beforeMeal: Optional[Union[bool, str]] = None
     afterMeal: Optional[Union[bool, str]] = None
     duration: Optional[str] = None
-    notes: str = Field(default="")
+    notes: Optional[str] = "" #Field(default="")
 
 
 class VisitCreate(BaseModel):
