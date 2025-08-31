@@ -56,7 +56,7 @@ def add_visits(
             not patient.lastVisit
             or appointment_details.scheduled_date_time.date() > patient.lastVisit
         ):
-            patient.lastVisit = appointment_details.scheduled_date_time.date()
+            patient.lastVisit = appointment_details.scheduled_date
 
     # 2. Update appointment status as completed.
     appointment_details.status = AppointmentStatus.COMPLETED.value
