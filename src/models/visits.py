@@ -39,8 +39,8 @@ class MedicationDetails(BaseModel):
     morning: Optional[bool] = None
     afternoon: Optional[bool] = None
     night: Optional[bool] = None
-    beforeMeal: Optional[Union[bool, str]]
-    afterMeal: Optional[Union[bool, str]]
+    beforeMeal: Optional[Union[bool, str]] = None
+    afterMeal: Optional[Union[bool, str]] = None
     duration: Optional[str] = None
     notes: str = Field(default="")
 
