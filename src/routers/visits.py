@@ -1,16 +1,17 @@
 from uuid import UUID
-from src.models.enums import AppointmentStatus
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
+from src.models.enums import AppointmentStatus
 from src.models.response import APIResponse
 from src.models.visits import VisitOut, VisitCreate, VisitResponse
 from src.schemas.tables.appointments import Appointment
-from src.schemas.tables.visits import Visit
 from src.schemas.tables.patients import Patient
+from src.schemas.tables.visits import Visit
 
 router = APIRouter(
     prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}, dependencies=[Depends(require_owner)]
@@ -19,10 +20,10 @@ router = APIRouter(
 
 @router.post("/add_visits", response_model=APIResponse[VisitOut])
 def add_visits(
-    visit_data: VisitCreate,
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
-    current_user=Depends(get_current_user_payload),
+        visit_data: VisitCreate,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        current_user=Depends(get_current_user_payload),
 ):
     """Register a new visit details."""
     appointment_id = visit_data.appointment_id
@@ -53,8 +54,8 @@ def add_visits(
     patient = db.query(Patient).filter_by(patient_id=patient_id, assigned_doctor_id=doctor_id).first()
     if patient:
         if (
-            not patient.lastVisit
-            or appointment_details.scheduled_date > patient.lastVisit
+                not patient.lastVisit
+                or appointment_details.scheduled_date > patient.lastVisit
         ):
             patient.lastVisit = appointment_details.scheduled_date
 
@@ -73,9 +74,9 @@ def add_visits(
 
 @router.get("/visits_list/{patient_id}")  # , response_model=APIResponse[VisitResponse])
 def get_visits_by_patient_id(
-    patient_id: str,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user_payload),
+        patient_id: str,
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user_payload),
 ):
     """Fetch visit details by patient id."""
     visits = db.query(Visit).filter(Visit.patient_id == patient_id).all()
@@ -93,9 +94,32 @@ def get_visits_by_patient_id(
     ).model_dump()
 
 
+@router.get("/visits_date_list/{patient_id}")  # , response_model=APIResponse[VisitResponse])
+def get_patient_details_with_visits_dates(
+        patient_id: str,
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user_payload),
+):
+    """Fetch patient details with their previous visit dates by patient id."""
+    patient_details = db.query(Patient).filter_by(patient_id=patient_id).first()
+    visits = db.query(Visit).filter(Visit.patient_id == patient_id).all()
+    if not visits:
+        raise HTTPException(
+            status_code=404, detail=f"No visit by Patient id {patient_id}"
+        )
+    # visit_details = [convert_visit_to_response(v) for v in visits]
+    visit_dates_details = [{row.created_at.date(): row.id} for row in visits]
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="successfully fetched patients details with visits date",
+        data={'patient_details': patient_details, 'visit_dates_details': visit_dates_details},
+    ).model_dump()
+
+
 @router.get("/visits_list/{mobile}", response_model=APIResponse[VisitResponse])
 def get_visits_by_patient_mobile(
-    mobile: str, db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)
+        mobile: str, db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)
 ):
     """Fetch visit details by mobile number."""
     patient_details = db.query(Patient).filter(Patient.mobile == mobile).first()
@@ -106,7 +130,6 @@ def get_visits_by_patient_mobile(
     get_visits_by_patient_id(patient_details.patient_id, db)
 
     # visits = db.query(Patient).filter(Visit.patient_id == patient_id).all()
-
 
 #     if not visits:
 #         raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")

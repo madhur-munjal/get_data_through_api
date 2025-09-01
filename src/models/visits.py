@@ -77,10 +77,10 @@ class VisitResponse(BaseModel):
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     mobile: Optional[str] = None
-    type: Optional[str] = None  # e.g., "new", "follow-up"
+    type: Optional[int] = None  # e.g., "new", "follow-up"
     analysis: Optional[str] = None
     advice: Optional[str] = None
-    tests: Optional[List[str]] = None  # or define a TestDetails model if structured
+    tests: Optional[str] = None  # or define a TestDetails model if structured
     followUpVisit: Optional[str] = None
     medicationDetails: Any  # Optional[List[MedicationDetails]] = None  # Optional[List[MedicationDetails]] = None
 

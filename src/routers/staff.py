@@ -90,7 +90,7 @@ def get_staff_list_by_doc_info(
     if not email and not mobile:
         raise HTTPException(status_code=400, detail="Provide either email or mobile")
 
-    staff_db = db.query(Staff).filter(Staff.doc_id == doctor_id).all()
+    # staff_db = db.query(Staff).filter(Staff.doc_id == doctor_id).all()
     staff_list = None
     if email:
         staff_list = db.query(Staff).join(Staff.doctor).filter(
@@ -103,13 +103,13 @@ def get_staff_list_by_doc_info(
             User.mobile == mobile
         ).all()
     if not staff_list:
-        raise HTTPException(status_code=404, detail="Staff not found")
+        raise HTTPException(status_code=404, detail="No Staff found")
 
     user_dtos = [StaffOut.model_validate(staff) for staff in staff_list]
 
     return APIResponse(
         status_code=200,
         success=True,
-        message="successfully fetched users",
+        message="successfully fetched staff lists",
         data=user_dtos,
     ).model_dump()

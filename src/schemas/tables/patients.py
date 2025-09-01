@@ -31,7 +31,7 @@ class Patient(Base):
     mobile = Column(String(15), nullable=False)  # mandatory
     gender = Column(Enum(Gender), nullable=True)
     address = Column(String(45), nullable=True)
-    currentVisit = Column(DateTime, nullable=True)
+    # currentVisit = Column(DateTime, nullable=True)
     lastVisit = Column(Date, nullable=True)
     bloodGroup = Column(
         String(5), nullable=True
