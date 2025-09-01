@@ -74,7 +74,7 @@ def get_staff_list(
     return APIResponse(
         status_code=200,
         success=True,
-        message="successfully fetched users",
+        message="successfully fetched staff lists",
         data=user_dtos,
     ).model_dump()
 

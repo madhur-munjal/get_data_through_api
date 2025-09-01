@@ -29,9 +29,9 @@ class StaffCreate(BaseModel):
 class StaffOut(BaseModel):
     id: UUID
     firstName: constr(min_length=3, max_length=15)
-    lastName: constr(min_length=3, max_length=15)
+    lastName: Optional[constr(min_length=3, max_length=15)] = None
     email: str
-    country: str
+    country: Optional[str] = None
     mobile: constr(min_length=5)
     username: constr(min_length=5, max_length=18)
     role: str
