@@ -127,11 +127,6 @@ def save_data_to_db(data, db_model, db_session):
 
 def get_appointment_status(appointment_date_time: datetime,
                            comparision_date_time: datetime = datetime.now(timezone.utc)) -> str:
-    print(f"appointment_date_time: {appointment_date_time}, comparision_date_time: {comparision_date_time}")
-    print(f"appointment_date_time.tzinfo: {appointment_date_time.tzinfo}, comparision_date_time.tzinfo: {comparision_date_time.tzinfo}")
-    print(f"type(appointment_date_time): {type(appointment_date_time)}, type(comparision_date_time): {type(comparision_date_time)}")
-    # appointment_date_time = pytz.utc.localize(appointment_date_time)
-    ## appointment_date_time = appointment_date_time #.replace(tzinfo=timezone.utc)
     if appointment_date_time.tzinfo is None or appointment_date_time.tzinfo.utcoffset(appointment_date_time) is None:
         # It's naive — localize it
         appointment_date_time = pytz.utc.localize(appointment_date_time)

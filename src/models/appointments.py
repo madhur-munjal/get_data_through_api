@@ -30,7 +30,6 @@ class AppointmentOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-
 class AppointmentResponse(BaseModel):
     """Schema for appointment output., used in get_appointment_list API"""
     appointment_id: str
@@ -56,8 +55,7 @@ class AppointmentResponse(BaseModel):
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             type=row.type,
-            status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time))
-            # get_appointment_status(row.scheduled_date_time) if row.scheduled_date_time else None
+            status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
         )
 
     model_config = {"from_attributes": True}

@@ -147,34 +147,7 @@ def get_appointment_data(
         message=f"Successfully fetched appointment lists.",
         data=[AppointmentResponse.from_row(p) for p in results]
     ).model_dump()
-    #     [
-    #         {
-    #             "appointment_id": row.id,
-    #             "scheduled_date": row.scheduled_date,
-    #             "scheduled_time": row.scheduled_time,
-    #             "patient_id": row.patient_id,
-    #             "firstName": row.patient.firstName,
-    #             "lastName": row.patient.lastName,
-    #         }
-    #         for row in results
-    #     ],
 
-
-# @router.get("/id", response_model=APIResponse[list[PatientOut]])
-# def get_appointment_data(
-#         # page: int = Query(1, ge=1),
-#         # page_size: int = Query(20, ge=1),
-#         db: Session = Depends(get_db),
-#         doctor_id: UUID = Depends(get_current_doctor_id),
-# ):
-#     # offset = (page - 1) * page_size
-#     results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(Appointment.scheduled_date_time.desc()).offset(offset).limit(page_size).all()
-#     return APIResponse(
-#         status_code=200,
-#         success=True,
-#         message=f"Successfully fetched appointment lists.",
-#         data=[AppointmentResponse.from_row(p) for p in results]
-#     ).model_dump()
 
 @router.get("/{appointment_id}", response_model=APIResponse[PatientOut])
 def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
