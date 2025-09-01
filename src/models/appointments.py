@@ -1,19 +1,19 @@
 from datetime import date, time, datetime
-from .enums import AppointmentStatus
-from typing import Optional
+from typing import Optional, Literal
 
 from pydantic import BaseModel, Field
 
 from src.models.patients import PatientRecord
 from src.utility import get_appointment_status
-
+from .enums import AppointmentStatus
+from .enums import Gender, TemperatureUnit
 
 
 class AppointmentCreate(BaseModel):
     patient: PatientRecord  # Nested patient data
     # scheduled_date_time: datetime
-    scheduled_date: str # "08/25/2025"
-    scheduled_time: str # "16:00:00"
+    scheduled_date: str  # "08/25/2025"
+    scheduled_time: str  # "16:00:00"
 
     model_config = {"from_attributes": True}
 
@@ -25,7 +25,7 @@ class AppointmentOut(BaseModel):
     # scheduled_date_time: datetime
     scheduled_date: date
     scheduled_time: time
-    status: int = Field(default=AppointmentStatus.UPCOMING) # AppointmentStatus
+    status: int = Field(default=AppointmentStatus.UPCOMING)  # AppointmentStatus
 
     model_config = {"from_attributes": True}
 
@@ -38,7 +38,7 @@ class AppointmentResponse(BaseModel):
     patient_id: str
     mobile: str  # Required
     type: int
-    status: int #AppointmentStatus
+    status: int  # AppointmentStatus
     firstName: Optional[str] = None
     lastName: Optional[str] = None
 
@@ -55,15 +55,59 @@ class AppointmentResponse(BaseModel):
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             type=row.type,
-            status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
+            status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(
+                row.status) != AppointmentStatus.COMPLETED.value else row.status
         )
-
-    model_config = {"from_attributes": True}
-
 
 
 class AppointmentUpdate(BaseModel):
     # patient: PatientRecord  # Nested patient data
     # scheduled_date_time: datetime
-    scheduled_date: str # "08/25/2025"
-    scheduled_time: str # "16:00:00"
+    scheduled_date: str  # "08/25/2025"
+    scheduled_time: str  # "16:00:00"
+
+
+class AppointmentById(BaseModel):
+    """Schema to get patient and appointment details by appointment id"""
+    patient_id: str
+    firstName: str  # Required
+    lastName: Optional[str] = None
+    age: Optional[int] = None
+    mobile: str  # Required
+    gender: Optional[Gender] = None
+    address: Optional[str] = None
+    lastVisit: Optional[date] = None
+    bloodGroup: Optional[
+        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+    ] = None
+    weight: Optional[float] = None
+    bloodPressureUpper: Optional[int] = None
+    bloodPressureLower: Optional[int] = None
+    temperature: Optional[float] = None
+    temperatureType: Optional[TemperatureUnit] = None
+    # patient: PatientOut
+    type: int
+    status: int
+
+    model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_row(cls, row):
+        return cls(
+            patient_id=row.patient_id,
+            firstName=row.patient.firstName,
+            lastName=row.patient.lastName,
+            age=row.patient.age,
+            mobile=row.patient.mobile,
+            gender=row.patient.gender,
+            address=row.patient.address,
+            lastVisit=row.patient.lastVisit,
+            bloodGroup=row.patient.bloodGroup,
+            weight=row.patient.weight,
+            bloodPressureUpper=row.patient.bloodPressureUpper,
+            bloodPressureLower=row.patient.bloodPressureLower,
+            temperature=row.patient.temperature,
+            temperatureType=row.patient.temperatureType,
+            type=row.type,
+            status=row.status
+        )

@@ -10,7 +10,8 @@ from src.models.appointments import (
     AppointmentCreate,
     AppointmentOut,
     AppointmentResponse,
-    AppointmentUpdate
+    AppointmentUpdate,
+AppointmentById
 )
 from src.models.enums import AppointmentType
 from src.models.patients import PatientOut
@@ -126,7 +127,6 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
         success=True,
         message=f"Appointment updated successfully.",
         data=AppointmentOut.from_orm(appointment),
-# AppointmentOut.model_validate(db_appointment),
     ).model_dump()
 
 
@@ -149,7 +149,7 @@ def get_appointment_data(
     ).model_dump()
 
 
-@router.get("/{appointment_id}", response_model=APIResponse[PatientOut])
+@router.get("/{appointment_id}", response_model=APIResponse[AppointmentById])
 def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
     appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
     if not appointment_details:
@@ -162,7 +162,7 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
         status_code=200,
         success=True,
         message=f"Successfully fetched appointment details.",
-        data=PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
+        data=AppointmentById.from_row(appointment_details) #PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
     ).model_dump()
 
 
