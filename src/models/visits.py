@@ -1,8 +1,10 @@
 from datetime import date
 from typing import Literal, Union, Optional, List, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
 from .enums import Gender, TemperatureUnit
+
 
 class MedicationDetails(BaseModel):
     """
@@ -42,7 +44,7 @@ class MedicationDetails(BaseModel):
     beforeMeal: Optional[Union[bool, str]] = None
     afterMeal: Optional[Union[bool, str]] = None
     duration: Optional[str] = None
-    notes: Optional[str] = "" #Field(default="")
+    notes: Optional[str] = ""  # Field(default="")
 
 
 class VisitCreate(BaseModel):
@@ -158,18 +160,35 @@ class VisitAllResponse(BaseModel):
     @classmethod
     def from_visit_row(cls, row):
         return cls(
-            appointment_id=row.appointment_id,
-            scheduled_date=row.appointments.scheduled_date.strftime("%m/%d/%Y"),
-            scheduled_time=row.appointments.scheduled_time.strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
             patient_id=row.patient_id,
-            mobile=row.patient.mobile,
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
+            age=row.patient.age,
+            mobile=row.patient.mobile,
+            gender=row.patient.gender,
+            address=row.patient.address,
+            lastVisit=row.patient.lastVisit,
+            bloodGroup=row.patient.bloodGroup,
+            weight=row.patient.weight,
+            bloodPressureUpper=row.patient.bloodPressureUpper,
+            bloodPressureLower=row.patient.bloodPressureLower,
+            temperature=row.patient.temperature,
+            temperatureType=row.patient.temperatureType,
             type=row.appointments.type,
             status=row.appointments.status,
             analysis=row.analysis,
             advice=row.advice,
             tests=row.tests,
             followUpVisit=row.followUpVisit,
-            medicationDetails=row.medicationDetails
+            medicationDetails=row.medicationDetails,
+            # scheduled_date=row.appointments.scheduled_date.strftime("%m/%d/%Y"),
+            # scheduled_time=row.appointments.scheduled_time.strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
+            # mobile=row.patient.mobile,
+            # type=row.appointments.type,
+            # status=row.appointments.status,
+            # analysis=row.analysis,
+            # advice=row.advice,
+            # tests=row.tests,
+            # followUpVisit=row.followUpVisit,
+            # medicationDetails=row.medicationDetails
         )
