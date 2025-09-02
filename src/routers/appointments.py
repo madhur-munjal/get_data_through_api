@@ -165,7 +165,6 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
         data=AppointmentById.from_row(appointment_details) #PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
     ).model_dump()
 
-
 @router.get(
     "/get_appointment_by_date", response_model=APIResponse[list[AppointmentResponse]]
 )

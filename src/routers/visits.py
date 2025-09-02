@@ -8,7 +8,8 @@ from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
 from src.models.enums import AppointmentStatus
 from src.models.response import APIResponse
-from src.models.visits import VisitOut, VisitCreate, VisitResponse
+# from src.models.appointments import AppointmentResponse
+from src.models.visits import VisitOut, VisitCreate, VisitResponse, VisitAllResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
@@ -94,6 +95,28 @@ def get_visits_by_patient_id(
     ).model_dump()
 
 
+@router.get("/visit_details/")  # , response_model=APIResponse[VisitResponse])
+def get_visit_details(
+        appointment_id: str,
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user_payload),
+):
+    """Fetch visit details by patient id."""
+    visit = db.query(Visit).filter_by(appointment_id=appointment_id).first()
+    if not visit:
+        raise HTTPException(
+            status_code=404, detail=f"No visit found by Appointment id {appointment_id}"
+        )
+    # visit_details = [VisitResponse.from_row(row) for row in visits]
+    # visit_patient_details = [{row.created_at.date(): row.id} for row in visits]
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="successfully fetched visit datails",
+        data=VisitAllResponse.from_visit_row(visit),
+    ).model_dump()
+
+
 @router.get("/visits_date_list/{patient_id}")  # , response_model=APIResponse[VisitResponse])
 def get_patient_details_with_visits_dates(
         patient_id: str,
@@ -116,30 +139,29 @@ def get_patient_details_with_visits_dates(
         data={'patient_details': patient_details, 'visit_dates_details': visit_dates_details},
     ).model_dump()
 
-
-@router.get("/visits_list/{mobile}", response_model=APIResponse[VisitResponse])
-def get_visits_by_patient_mobile(
-        mobile: str, db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)
-):
-    """Fetch visit details by mobile number."""
-    patient_details = db.query(Patient).filter(Patient.mobile == mobile).first()
-    if not patient_details:
-        raise HTTPException(
-            status_code=404, detail=f"No Patient found with mobile number {mobile}"
-        )
-    get_visits_by_patient_id(patient_details.patient_id, db)
-
-    # visits = db.query(Patient).filter(Visit.patient_id == patient_id).all()
-
-#     if not visits:
-#         raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")
-#     # visit_details = [convert_visit_to_response(v) for v in visits]
-#     visit_details =[ VisitResponse.from_row(row)
-#             for row in visits
-#         ]
-#     return APIResponse(
-#         status_code=200,
-#         success=True,
-#         message="successfully fetched visits",
-#         data=visit_details,
-#     ).model_dump()
+# @router.get("/visits_list/{mobile}", response_model=APIResponse[VisitResponse])
+# def get_visits_by_patient_mobile(
+#         mobile: str, db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)
+# ):
+#     """Fetch visit details by mobile number."""
+#     patient_details = db.query(Patient).filter(Patient.mobile == mobile).first()
+#     if not patient_details:
+#         raise HTTPException(
+#             status_code=404, detail=f"No Patient found with mobile number {mobile}"
+#         )
+#     get_visits_by_patient_id(patient_details.patient_id, db)
+#
+#     # visits = db.query(Patient).filter(Visit.patient_id == patient_id).all()
+#
+# #     if not visits:
+# #         raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")
+# #     # visit_details = [convert_visit_to_response(v) for v in visits]
+# #     visit_details =[ VisitResponse.from_row(row)
+# #             for row in visits
+# #         ]
+# #     return APIResponse(
+# #         status_code=200,
+# #         success=True,
+# #         message="successfully fetched visits",
+# #         data=visit_details,
+# #     ).model_dump()

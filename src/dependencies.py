@@ -69,7 +69,7 @@ def get_current_doctor_id(
         return payload["doc_id"]
     except ExpiredSignatureError:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Session Expired"
         )
     except JWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))

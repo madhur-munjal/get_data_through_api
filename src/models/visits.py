@@ -2,7 +2,7 @@ from datetime import date
 from typing import Literal, Union, Optional, List, Any
 
 from pydantic import BaseModel, Field
-
+from .enums import Gender, TemperatureUnit
 
 class MedicationDetails(BaseModel):
     """
@@ -105,4 +105,71 @@ class VisitResponse(BaseModel):
             # MedicationDetails(**json.loads(row.medicationDetails)) if row.medicationDetails else None,
         )
 
+
+class VisitAllResponse(BaseModel):
+    """Schema to get patient and appointment and visits details by appointment id"""
+    patient_id: str
+    firstName: str  # Required
+    lastName: Optional[str] = None
+    age: Optional[int] = None
+    mobile: str  # Required
+    gender: Optional[Gender] = None
+    address: Optional[str] = None
+    lastVisit: Optional[date] = None
+    bloodGroup: Optional[
+        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+    ] = None
+    weight: Optional[float] = None
+    bloodPressureUpper: Optional[int] = None
+    bloodPressureLower: Optional[int] = None
+    temperature: Optional[float] = None
+    temperatureType: Optional[TemperatureUnit] = None
+    type: int
+    status: int
+    analysis: Optional[str] = None
+    advice: Optional[str] = None
+    tests: Optional[str] = None  # or define a TestDetails model if structured
+    followUpVisit: Optional[str] = None
+    medicationDetails: Any  # Optional[List[MedicationDetails]] = None  # Optional[List[MedicationDetails]] = None
+
     model_config = {"from_attributes": True}
+
+    # @classmethod
+    # def from_row(cls, row):
+    #     return cls(
+    #         patient_id=row.patient_id,
+    #         firstName=row.patient.firstName,
+    #         lastName=row.patient.lastName,
+    #         age=row.patient.age,
+    #         mobile=row.patient.mobile,
+    #         gender=row.patient.gender,
+    #         address=row.patient.address,
+    #         lastVisit=row.patient.lastVisit,
+    #         bloodGroup=row.patient.bloodGroup,
+    #         weight=row.patient.weight,
+    #         bloodPressureUpper=row.patient.bloodPressureUpper,
+    #         bloodPressureLower=row.patient.bloodPressureLower,
+    #         temperature=row.patient.temperature,
+    #         temperatureType=row.patient.temperatureType,
+    #         type=row.type,
+    #         status=row.status
+    #     )
+
+    @classmethod
+    def from_visit_row(cls, row):
+        return cls(
+            appointment_id=row.appointment_id,
+            scheduled_date=row.appointments.scheduled_date.strftime("%m/%d/%Y"),
+            scheduled_time=row.appointments.scheduled_time.strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
+            patient_id=row.patient_id,
+            mobile=row.patient.mobile,
+            firstName=row.patient.firstName,
+            lastName=row.patient.lastName,
+            type=row.appointments.type,
+            status=row.appointments.status,
+            analysis=row.analysis,
+            advice=row.advice,
+            tests=row.tests,
+            followUpVisit=row.followUpVisit,
+            medicationDetails=row.medicationDetails
+        )
