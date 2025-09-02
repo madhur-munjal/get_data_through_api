@@ -1,8 +1,10 @@
 from datetime import date, datetime
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
+
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
@@ -11,13 +13,14 @@ from src.models.appointments import (
     AppointmentOut,
     AppointmentResponse,
     AppointmentUpdate,
-AppointmentById
+    AppointmentById
 )
 from src.models.enums import AppointmentType
-from src.models.patients import PatientOut
 from src.models.response import APIResponse
+from src.models.visits import VisitAllResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
+from src.schemas.tables.visits import Visit
 from src.utility import save_data_to_db, get_appointment_status
 
 router = APIRouter(
@@ -57,9 +60,10 @@ def create_appointment(
         scheduled_date=datetime.strptime(data["scheduled_date"], "%m/%d/%Y").date(),
         scheduled_time=datetime.strptime(data["scheduled_time"], "%H:%M:%S").time(),
         type=type,
-        status=get_appointment_status(datetime.strptime(f"{data.get('scheduled_date')} {data.get('scheduled_time')}", "%m/%d/%Y %H:%M:%S")
-                                      )
-# data["scheduled_date_time"])  # AppointmentStatus.UPCOMING.value
+        status=get_appointment_status(
+            datetime.strptime(f"{data.get('scheduled_date')} {data.get('scheduled_time')}", "%m/%d/%Y %H:%M:%S")
+            )
+        # data["scheduled_date_time"])  # AppointmentStatus.UPCOMING.value
     )
     db.add(db_appointment)
     db.commit()
@@ -84,7 +88,6 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
         # Update scheduled_time if provided
     if update_data.scheduled_time:
         appointment.scheduled_time = datetime.strptime(update_data.scheduled_time, "%H:%M:%S").time()
-
 
     # data = update_data.dict(exclude_unset=True)
     #
@@ -149,21 +152,56 @@ def get_appointment_data(
     ).model_dump()
 
 
-@router.get("/{appointment_id}", response_model=APIResponse[AppointmentById])
-def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
-    appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
-    if not appointment_details:
-        raise HTTPException(status_code=404, detail="Appointment not found")
+# @router.get("/{appointment_id}", response_model=APIResponse[AppointmentById])
+# def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
+#     appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+#     if not appointment_details:
+#         raise HTTPException(status_code=404, detail="Appointment not found")
+#
+#     # patient = db.query(Patient).filter(Patient.patient_id == appointment.patient_id).first()
+#     # if not patient:
+#     #     raise HTTPException(status_code=404, detail="Patient not found")
+#     return APIResponse(
+#         status_code=200,
+#         success=True,
+#         message=f"Successfully fetched appointment details.",
+#         data=AppointmentById.from_row(appointment_details)
+#         # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
+#     ).model_dump()
 
-    # patient = db.query(Patient).filter(Patient.patient_id == appointment.patient_id).first()
-    # if not patient:
-    #     raise HTTPException(status_code=404, detail="Patient not found")
-    return APIResponse(
-        status_code=200,
-        success=True,
-        message=f"Successfully fetched appointment details.",
-        data=AppointmentById.from_row(appointment_details) #PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
-    ).model_dump()
+@router.get("/{appointment_id}", response_model=APIResponse) # Check to return from two response
+def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
+    visit = db.query(Visit).filter_by(appointment_id=appointment_id).first()
+    if not visit:
+        print("no visit found")
+        appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+        if not appointment_details:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        return APIResponse(
+            status_code=200,
+            success=True,
+            message=f"Successfully fetched appointment details.",
+            data=AppointmentById.from_row(appointment_details)
+            # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
+        ).model_dump()
+        # raise HTTPException(
+        #     status_code=404, detail=f"No visit found by Appointment id {appointment_id}"
+        # )
+    # visit_details = [VisitResponse.from_row(row) for row in visits]
+    # visit_patient_details = [{row.created_at.date(): row.id} for row in visits]
+    else:
+        print("visit found")
+        print("********")
+        print(VisitAllResponse.from_visit_row(visit))
+        print("********")
+        return APIResponse(
+            status_code=200,
+            success=True,
+            message="successfully fetched visit datails",
+            data=VisitAllResponse.from_visit_row(visit),
+        ).model_dump()
+
+
 
 @router.get(
     "/get_appointment_by_date", response_model=APIResponse[list[AppointmentResponse]]

@@ -8,7 +8,7 @@ from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
 from src.models.enums import AppointmentStatus
 from src.models.response import APIResponse
-# from src.models.appointments import AppointmentResponse
+from src.models.appointments import AppointmentResponse, AppointmentById
 from src.models.visits import VisitOut, VisitCreate, VisitResponse, VisitAllResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
@@ -104,9 +104,19 @@ def get_visit_details(
     """Fetch visit details by patient id."""
     visit = db.query(Visit).filter_by(appointment_id=appointment_id).first()
     if not visit:
-        raise HTTPException(
-            status_code=404, detail=f"No visit found by Appointment id {appointment_id}"
-        )
+        appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+        if not appointment_details:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        return APIResponse(
+            status_code=200,
+            success=True,
+            message=f"Successfully fetched appointment details.",
+            data=AppointmentById.from_row(appointment_details)
+            # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
+        ).model_dump()
+        # raise HTTPException(
+        #     status_code=404, detail=f"No visit found by Appointment id {appointment_id}"
+        # )
     # visit_details = [VisitResponse.from_row(row) for row in visits]
     # visit_patient_details = [{row.created_at.date(): row.id} for row in visits]
     return APIResponse(
