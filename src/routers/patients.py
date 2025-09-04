@@ -101,7 +101,7 @@ def get_patients_list(
 
 
 @router.get("/{patient_id}",
-            response_model=APIResponse[PatientAppointmentResponse])  # #APIResponse[PatientRecord]
+            response_model=APIResponse[PatientRecord])  # #APIResponse[PatientRecord]
 def get_patients_details_with_appointment_list(
         patient_id: str,
         db: Session = Depends(get_db),
@@ -113,11 +113,13 @@ def get_patients_details_with_appointment_list(
 
     appointment_details = db.query(Appointment).filter_by(doctor_id=doctor_id, patient_id=patient_id).all()
 
+    # def to_dict(obj):
+    final_data = {column.name: getattr(patient, column.name) for column in patient.__table__.columns}
+    final_data["list_of_appointments"] = [row.scheduled_date for row in appointment_details]
+
     return APIResponse(
         status_code=200,
         success=True,
         message="Patients fetched successfully.",
-        data={"patient_details": PatientRecord.model_validate(patient),
-              "list_of_appointments": [row.scheduled_date for row in appointment_details]
-              }
+        data=PatientRecord.model_validate(final_data)
     ).model_dump()

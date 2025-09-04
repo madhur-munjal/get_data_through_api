@@ -21,6 +21,7 @@ class PatientRecord(BaseModel):
     bloodPressureLower: Optional[int] = None
     temperature: Optional[float] = None
     temperatureType: Optional[TemperatureUnit] = None
+    list_of_appointments: Optional[List] = None  # List of appointment dates
 
     model_config = {"from_attributes": True}
 
@@ -92,3 +93,4 @@ class PaginatedPatientResponse(BaseModel):
     page_size: int
     total_records: int
     patient_list: List[PatientOut]
+
