@@ -13,7 +13,8 @@ from src.models.appointments import (
     AppointmentOut,
     AppointmentResponse,
     AppointmentUpdate,
-    AppointmentById
+    AppointmentById,
+    PaginatedAppointmentResponse
 )
 from src.models.enums import AppointmentType
 from src.models.response import APIResponse
@@ -62,7 +63,7 @@ def create_appointment(
         type=type,
         status=get_appointment_status(
             datetime.strptime(f"{data.get('scheduled_date')} {data.get('scheduled_time')}", "%m/%d/%Y %H:%M:%S")
-            )
+        )
         # data["scheduled_date_time"])  # AppointmentStatus.UPCOMING.value
     )
     db.add(db_appointment)
@@ -133,7 +134,7 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
     ).model_dump()
 
 
-@router.get("", response_model=APIResponse[list[AppointmentResponse]])
+@router.get("", response_model=APIResponse[PaginatedAppointmentResponse])
 def get_appointment_data(
         page: int = Query(1, ge=1),
         page_size: int = Query(20, ge=1),
@@ -141,6 +142,7 @@ def get_appointment_data(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
+    total_records = db.query(Appointment).filter_by(doctor_id=doctor_id).count()
     results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(
         desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # TODO need to add time as well
@@ -148,7 +150,8 @@ def get_appointment_data(
         status_code=200,
         success=True,
         message=f"Successfully fetched appointment lists.",
-        data=[AppointmentResponse.from_row(p) for p in results]
+        data={"page": page, "page_size": page_size, "total_records": total_records,
+              "appointment_list": [AppointmentResponse.from_row(p) for p in results]}
     ).model_dump()
 
 
@@ -169,11 +172,10 @@ def get_appointment_data(
 #         # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
 #     ).model_dump()
 
-@router.get("/{appointment_id}", response_model=APIResponse) # Check to return from two response
+@router.get("/{appointment_id}", response_model=APIResponse)  # Check to return from two response
 def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
     visit = db.query(Visit).filter_by(appointment_id=appointment_id).first()
     if not visit:
-        print("no visit found")
         appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
         if not appointment_details:
             raise HTTPException(status_code=404, detail="Appointment not found")
@@ -190,17 +192,12 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
     # visit_details = [VisitResponse.from_row(row) for row in visits]
     # visit_patient_details = [{row.created_at.date(): row.id} for row in visits]
     else:
-        print("visit found")
-        print("********")
-        print(VisitAllResponse.from_visit_row(visit))
-        print("********")
         return APIResponse(
             status_code=200,
             success=True,
             message="successfully fetched visit datails",
             data=VisitAllResponse.from_visit_row(visit),
         ).model_dump()
-
 
 
 @router.get(
@@ -222,4 +219,24 @@ def get_appointment_by_date(
         success=True,
         message=f"Successfully fetched appointment lists for date {appointment_date}.",
         data=[AppointmentResponse.from_row(row) for row in results],
+    ).model_dump()
+
+
+@router.get(
+    "/booked_slots/get_date_wise_booked_slots")  # , response_model=APIResponse[list[AppointmentResponse]])
+def get_date_wise_booked_slots(
+        appointment_date: date = Query(..., description="Date in YYYY-MM-DD format"),
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+):
+    results = (
+        db.query(Appointment)
+        .filter_by(doctor_id=doctor_id, scheduled_date=appointment_date)
+        .all()
+    )
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched booked slots for {appointment_date}.",
+        data=[row.scheduled_time.strftime("%H:%M") for row in results],
     ).model_dump()

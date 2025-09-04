@@ -1,5 +1,5 @@
 from datetime import date, time, datetime
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 
 from pydantic import BaseModel, Field
 
@@ -55,8 +55,11 @@ class AppointmentResponse(BaseModel):
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             type=row.type,
-            status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(
-                row.status) != AppointmentStatus.COMPLETED.value else row.status
+            status=get_appointment_status(
+            datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
+            ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
+            # status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(
+            #     row.status) != AppointmentStatus.COMPLETED.value else row.status
         )
 
 
@@ -126,3 +129,10 @@ class AppointmentById(BaseModel):
     #         status=get_appointment_status(datetime.combine(row.appointments.scheduled_date, row.appointments.scheduled_time)) if str(
     #             row.appointments.status) != AppointmentStatus.COMPLETED.value else row.appointments.status
     #     )
+
+
+class PaginatedAppointmentResponse(BaseModel):
+    page: int
+    page_size: int
+    total_records: int
+    appointment_list: List[AppointmentResponse]
