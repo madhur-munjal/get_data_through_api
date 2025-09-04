@@ -69,7 +69,7 @@ def update_patent(
     ).model_dump()
 
 
-@router.get("/get_patients_list", response_model=APIResponse[PaginatedPatientResponse])  # #APIResponse[PatientRecord]
+@router.get("", response_model=APIResponse[PaginatedPatientResponse])  # #APIResponse[PatientRecord]
 def get_patients_list(
         page: int = Query(1, ge=1),
         page_size: int = Query(20, ge=1),
@@ -100,7 +100,7 @@ def get_patients_list(
     # ).model_dump()
 
 
-@router.get("/get_patients_details_with_list_of_appointments",
+@router.get("/{patient_id}",
             response_model=APIResponse[PatientAppointmentResponse])  # #APIResponse[PatientRecord]
 def get_patients_details_with_appointment_list(
         patient_id: str,
