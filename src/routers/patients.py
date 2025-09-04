@@ -1,25 +1,29 @@
+from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.models.patients import PatientRecord, PatientUpdate, PatientOut
-from src.models.response import APIResponse
-from src.schemas.tables.patients import Patient
 from src.dependencies import require_owner
+from src.models.patients import PatientRecord, PatientUpdate, PatientOut, PatientAppointmentResponse
+from src.models.response import APIResponse
+from src.schemas.tables.appointments import Appointment
+from src.schemas.tables.patients import Patient
+
 router = APIRouter(
-    prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}, dependencies=[Depends(require_owner)]
+    prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}},
+    dependencies=[Depends(require_owner)]
 
 )
 
 
 @router.post("/register", response_model=APIResponse)
 def create_patient(
-    request: PatientRecord,
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
+        request: PatientRecord,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Sample API to register patient, We will create a patient in Appointment API."""
     if db.query(Patient).filter_by(mobile=request.mobile).first():
@@ -44,10 +48,10 @@ def create_patient(
 
 @router.put("/{patient_id}", response_model=APIResponse[PatientRecord])
 def update_patent(
-    patient_id: str,
-    update_data: PatientUpdate,
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
+        patient_id: str,
+        update_data: PatientUpdate,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     if not patient:
@@ -65,10 +69,10 @@ def update_patent(
     ).model_dump()
 
 
-@router.get("/get_patients_list", response_model=APIResponse[List[PatientOut]]) #  #APIResponse[PatientRecord]
+@router.get("/get_patients_list", response_model=APIResponse[List[PatientOut]])  # #APIResponse[PatientRecord]
 def get_patients_list(
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     patients = db.query(Patient).filter(Patient.assigned_doctor_id == doctor_id).all()
     return APIResponse(
@@ -76,4 +80,27 @@ def get_patients_list(
         success=True,
         message="Patients fetched successfully.",
         data=[PatientOut.model_validate(p) for p in patients],
+    ).model_dump()
+
+
+@router.get("/get_patients_details_with_list_of_appointments",
+            response_model=APIResponse[PatientAppointmentResponse])  # #APIResponse[PatientRecord]
+def get_patients_details_with_appointment_list(
+        patient_id: str,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+):
+    patient = db.query(Patient).filter_by(assigned_doctor_id=doctor_id, patient_id=patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    appointment_details = db.query(Appointment).filter_by(doctor_id=doctor_id, patient_id=patient_id).all()
+
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="Patients fetched successfully.",
+        data={"patient_details": PatientRecord.model_validate(patient),
+              "list_of_appointments": [row.scheduled_date for row in appointment_details]
+              }
     ).model_dump()

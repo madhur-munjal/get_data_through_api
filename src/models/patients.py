@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 from pydantic import BaseModel
 
@@ -80,3 +80,8 @@ class PatientOut(BaseModel):
             temperature=row.patient.temperature,
             temperatureType=row.patient.temperatureType
         )
+
+
+class PatientAppointmentResponse(BaseModel):
+    patient_details: PatientRecord
+    list_of_appointments: List
