@@ -85,3 +85,10 @@ class PatientOut(BaseModel):
 class PatientAppointmentResponse(BaseModel):
     patient_details: PatientRecord
     list_of_appointments: List
+
+
+class PaginatedPatientResponse(BaseModel):
+    page: int
+    page_size: int
+    total_records: int
+    patient_list: List[PatientOut]

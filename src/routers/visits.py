@@ -1,6 +1,6 @@
 from uuid import UUID
-
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import date
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from src.database import get_db
@@ -149,29 +149,30 @@ def get_patient_details_with_visits_dates(
         data={'patient_details': patient_details, 'visit_dates_details': visit_dates_details},
     ).model_dump()
 
-# @router.get("/visits_list/{mobile}", response_model=APIResponse[VisitResponse])
-# def get_visits_by_patient_mobile(
-#         mobile: str, db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)
-# ):
-#     """Fetch visit details by mobile number."""
-#     patient_details = db.query(Patient).filter(Patient.mobile == mobile).first()
-#     if not patient_details:
-#         raise HTTPException(
-#             status_code=404, detail=f"No Patient found with mobile number {mobile}"
-#         )
-#     get_visits_by_patient_id(patient_details.patient_id, db)
-#
-#     # visits = db.query(Patient).filter(Visit.patient_id == patient_id).all()
-#
-# #     if not visits:
-# #         raise HTTPException(status_code=404, detail=f"No visit by Patient id {patient_id}")
-# #     # visit_details = [convert_visit_to_response(v) for v in visits]
-# #     visit_details =[ VisitResponse.from_row(row)
-# #             for row in visits
-# #         ]
-# #     return APIResponse(
-# #         status_code=200,
-# #         success=True,
-# #         message="successfully fetched visits",
-# #         data=visit_details,
-# #     ).model_dump()
+
+@router.get("/get_date_patient_wise_visits_details/")  # , response_model=APIResponse[VisitResponse])
+def get_date_patient_wise_visit_details(
+        patient_id: str,
+        scheduled_date: date = Query(..., description="Date in YYYY-MM-DD format"),
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+):
+    """Fetch patient details with their previous visit dates by patient id."""
+    # patient_details = db.query(Patient).filter_by(patient_id=patient_id).first()
+    # visits = db.query(Visit).filter_by(doctor_id=doctor_id,patient_id=patient_id).all()
+    visits = db.query(Visit).join(Appointment).filter(
+            Visit.doctor_id == doctor_id,
+            Visit.patient_id == patient_id,
+            Appointment.scheduled_date == scheduled_date
+        ).first()
+
+    if not visits:
+        raise HTTPException(
+            status_code=404, detail=f"No visit by Patient id {patient_id} on date {scheduled_date}"
+        )
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="successfully fetched patients details with visits date",
+        data=VisitAllResponse.from_visit_row(visits),
+    ).model_dump()

@@ -1,13 +1,13 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-
+from sqlalchemy import desc
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import require_owner
-from src.models.patients import PatientRecord, PatientUpdate, PatientOut, PatientAppointmentResponse
+from src.models.patients import PatientRecord, PatientUpdate, PatientOut, PatientAppointmentResponse, PaginatedPatientResponse
 from src.models.response import APIResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
@@ -69,18 +69,35 @@ def update_patent(
     ).model_dump()
 
 
-@router.get("/get_patients_list", response_model=APIResponse[List[PatientOut]])  # #APIResponse[PatientRecord]
+@router.get("/get_patients_list", response_model=APIResponse[PaginatedPatientResponse])  # #APIResponse[PatientRecord]
 def get_patients_list(
+        page: int = Query(1, ge=1),
+        page_size: int = Query(20, ge=1),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
-    patients = db.query(Patient).filter(Patient.assigned_doctor_id == doctor_id).all()
+    offset = (page - 1) * page_size
+    total_records = db.query(Patient).filter_by(assigned_doctor_id=doctor_id).count()
+    patients = db.query(Patient).filter_by(assigned_doctor_id=doctor_id).order_by(
+        desc(Patient.created_at)).offset(offset).limit(page_size).all()
+    # results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(
+    #     desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
+    # TODO need to add time as well
     return APIResponse(
         status_code=200,
         success=True,
-        message="Patients fetched successfully.",
-        data=[PatientOut.model_validate(p) for p in patients],
+        message=f"Successfully fetched appointment lists.",
+        data={"page": page, "page_size": page_size, "total_records": total_records,
+              "patient_list": [PatientOut.model_validate(p) for p in patients]}
     ).model_dump()
+
+    # patients = db.query(Patient).filter(Patient.assigned_doctor_id == doctor_id).all()
+    # return APIResponse(
+    #     status_code=200,
+    #     success=True,
+    #     message="Patients fetched successfully.",
+    #     data=[PatientOut.model_validate(p) for p in patients],
+    # ).model_dump()
 
 
 @router.get("/get_patients_details_with_list_of_appointments",
