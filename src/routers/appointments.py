@@ -164,7 +164,7 @@ def get_appointment_data(
     if month:
         try:
             month_number = list(month_name).index(month.capitalize())  # January = 1
-            query = query.filter(extract("month", Appointment.datetime) == month_number)
+            query = query.filter(extract("month", Appointment.scheduled_date) == month_number)
         except ValueError:
             pass  # Invalid month name, skip filter
 
@@ -175,7 +175,8 @@ def get_appointment_data(
             "Completed": AppointmentStatus.COMPLETED,
             "No Show": AppointmentStatus.NO_SHOW
         }
-        status_enum = STATUS_LOOKUP.get(status.capitalize())
+        status_enum = STATUS_LOOKUP.get(status)
+        # print(status.capitalize())
         status_db_value = status_enum.value
         print(STATUS_LOOKUP, "**********")
         print(status_db_value, "**********")
