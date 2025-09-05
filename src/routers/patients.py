@@ -1,6 +1,6 @@
 from typing import List
 from uuid import UUID
-
+from sqlalchemy import or_
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -73,13 +73,28 @@ def update_patent(
 def get_patients_list(
         page: int = Query(1, ge=1),
         page_size: int = Query(20, ge=1),
+        text: str = Query(None, description="Search by patient's first name, last name or mobile number"),
+        # month: str = Query(None, description="Filter by month "),
+        age: int = Query(None, description="Filter by patient age"),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
+    query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
+
+    if text:
+        query = query.filter(
+            or_(
+                Patient.firstName.ilike(f"%{text}%"),
+                Patient.lastName.ilike(f"%{text}%"),
+                Patient.mobile.ilike(f"%{text}%")
+            )
+        )
     total_records = db.query(Patient).filter_by(assigned_doctor_id=doctor_id).count()
-    patients = db.query(Patient).filter_by(assigned_doctor_id=doctor_id).order_by(
+    results = query.order_by(
         desc(Patient.created_at)).offset(offset).limit(page_size).all()
+
+
     # results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(
     #     desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # TODO need to add time as well
@@ -88,7 +103,7 @@ def get_patients_list(
         success=True,
         message=f"Successfully fetched appointment lists.",
         data={"page": page, "page_size": page_size, "total_records": total_records,
-              "patient_list": [PatientOut.model_validate(p) for p in patients]}
+              "patient_list": [PatientOut.model_validate(p) for p in results]}
     ).model_dump()
 
     # patients = db.query(Patient).filter(Patient.assigned_doctor_id == doctor_id).all()

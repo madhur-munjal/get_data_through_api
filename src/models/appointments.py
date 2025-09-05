@@ -55,10 +55,11 @@ class AppointmentResponse(BaseModel):
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             type=row.type,
-            status=get_appointment_status(
-            datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
-            ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
-            # status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(
+            status=row.status
+        # get_appointment_status(
+        #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
+        #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
+        #     # status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(
             #     row.status) != AppointmentStatus.COMPLETED.value else row.status
         )
 

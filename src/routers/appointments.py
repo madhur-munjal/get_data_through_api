@@ -176,15 +176,9 @@ def get_appointment_data(
             "No Show": AppointmentStatus.NO_SHOW
         }
         status_enum = STATUS_LOOKUP.get(status)
-        # print(status.capitalize())
         status_db_value = status_enum.value
-        print(STATUS_LOOKUP, "**********")
-        print(status_db_value, "**********")
-        print(type(status_db_value), "**********")
         query = query.filter(Appointment.status == int(status_db_value))
-        print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
-        print(query, "**********")
-
+        # print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
 
     total_records = db.query(Appointment).filter_by(doctor_id=doctor_id).count()
     results = query.order_by(
