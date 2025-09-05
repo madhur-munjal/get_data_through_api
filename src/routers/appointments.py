@@ -1,5 +1,7 @@
 from datetime import date, datetime
 from uuid import UUID
+from sqlalchemy import or_, extract
+from calendar import month_name
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import desc
@@ -16,7 +18,7 @@ from src.models.appointments import (
     AppointmentById,
     PaginatedAppointmentResponse
 )
-from src.models.enums import AppointmentType
+from src.models.enums import AppointmentType, AppointmentStatus
 from src.models.response import APIResponse
 from src.models.visits import VisitAllResponse
 from src.schemas.tables.appointments import Appointment
@@ -138,12 +140,53 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
 def get_appointment_data(
         page: int = Query(1, ge=1),
         page_size: int = Query(20, ge=1),
+        text: str = Query(None, description="Search by patient's first name, last name or mobile number"),
+        month: str = Query(None, description="Filter by month "),
+        status: str = Query(None, description="Filter by appointment status"),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
+    query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient)
+# .join(Patient)
+
+    # 🔍 Text filter: match firstname, lastname, or mobile
+    if text:
+        query = query.filter(
+            or_(
+                Patient.firstName.ilike(f"%{text}%"),
+                Patient.lastName.ilike(f"%{text}%"),
+                Patient.mobile.ilike(f"%{text}%")
+            )
+        )
+
+    # 📅 Month filter: convert month name to number and match against datetime column
+    if month:
+        try:
+            month_number = list(month_name).index(month.capitalize())  # January = 1
+            query = query.filter(extract("month", Appointment.datetime) == month_number)
+        except ValueError:
+            pass  # Invalid month name, skip filter
+
+    # 📌 Status filter: match against status column
+    if status is not None:
+        STATUS_LOOKUP = {
+            "Upcoming": AppointmentStatus.UPCOMING,
+            "Completed": AppointmentStatus.COMPLETED,
+            "No Show": AppointmentStatus.NO_SHOW
+        }
+        status_enum = STATUS_LOOKUP.get(status.capitalize())
+        status_db_value = status_enum.value
+        print(STATUS_LOOKUP, "**********")
+        print(status_db_value, "**********")
+        print(type(status_db_value), "**********")
+        query = query.filter(Appointment.status == int(status_db_value))
+        print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
+        print(query, "**********")
+
+
     total_records = db.query(Appointment).filter_by(doctor_id=doctor_id).count()
-    results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(
+    results = query.order_by(
         desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # TODO need to add time as well
     return APIResponse(
