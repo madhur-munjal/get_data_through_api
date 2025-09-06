@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time, Enum, Integer
+from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time, Enum, Integer, Float
 from sqlalchemy.orm import relationship
 from src.models.enums import AppointmentStatus, AppointmentType
 from src.database import Base
-
+from src.models.enums import TemperatureUnit
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -18,6 +18,14 @@ class Appointment(Base):
     scheduled_time = Column(Time, nullable=False)
     type = Column(Integer, nullable=False, default=AppointmentType.NEW)
     status = Column(Integer, nullable=False, default=AppointmentStatus.UPCOMING)
+    bloodGroup = Column(
+        String(5), nullable=True
+    )  # e.g., "A+", "O-", etc.
+    weight = Column(Float, nullable=True)
+    bloodPressureUpper = Column(Integer, nullable=True)
+    bloodPressureLower = Column(Integer, nullable=True)
+    temperature = Column(Float, nullable=True)
+    temperatureType = Column(Enum(TemperatureUnit), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     patient = relationship("Patient", back_populates="appointments")

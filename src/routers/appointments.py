@@ -44,35 +44,27 @@ def create_appointment(
     If enter new mobile number, then it will create under new patients record."""
     patient_data = appointment.patient.dict(exclude_unset=True)
     patient_id = patient_data.get("patientId")
+    valid_keys = {col.name for col in Patient.__table__.columns}
+    filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
+
     if patient_id is None:
         type = AppointmentType.NEW.value
         patient_data["assigned_doctor_id"] = doctor_id
-
-        valid_keys = {col.name for col in Patient.__table__.columns}
-        filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
-
-        # del patient_data["list_of_appointments"]  # Remove list_of_appointments as it is not present in Patient table.
+        # valid_keys = {col.name for col in Patient.__table__.columns}
+        # filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
         save_patient_data = save_data_to_db(filtered_data, Patient, db)
         patient_id = save_patient_data.patient_id
     else:
         type = AppointmentType.FOLLOW_UP.value
         patient = db.query(Patient).filter_by(patient_id=patient_id).first()
-        del patient_data["patientId"]  # Remove patient_id as it won't update as it is primary key.
-        print(patient_data)
-        print("**********")
+        # valid_keys = {col.name for col in Patient.__table__.columns}
+        # filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
+        for field, value in filtered_data.items():
+            setattr(patient, field, value)
 
-        patient.first_name = patient_data.get("firstName", patient.firstName)
-        patient.last_name = patient_data.get("lastName", patient.lastName)
-        patient.age = patient_data.get("age", patient.age)
-        patient.mobile = patient_data.get("mobile", patient.age)
-        patient.gender = patient_data.get("gender", patient.gender) #].value if isinstance(patient_data["gender"], Enum) else data["gender"]
-        patient.address = patient_data.get("address", patient.address)
-
-        # for field, value in patient_data.items():
-        #     setattr(patient, field, value)
 
     data = appointment.dict()
-    # data.update({"doctor_id": doctor_id})
+    print(f"data: {data}")
     db_appointment = Appointment(
         patient_id=patient_id,
         doctor_id=doctor_id,
@@ -81,8 +73,13 @@ def create_appointment(
         type=type,
         status=get_appointment_status(
             datetime.strptime(f"{data.get('scheduled_date')} {data.get('scheduled_time')}", "%m/%d/%Y %H:%M:%S")
-        )
-        # data["scheduled_date_time"])  # AppointmentStatus.UPCOMING.value
+        ),
+        bloodGroup=patient_data.get("bloodGroup"),
+        weight=patient_data.get("weight"),
+        bloodPressureUpper=patient_data.get("bloodPressureUpper"),
+        bloodPressureLower=patient_data.get("bloodPressureLower"),
+        temperature=patient_data.get("temperature"),
+        temperatureType=patient_data.get("temperatureType"),
     )
     db.add(db_appointment)
     db.commit()
@@ -164,7 +161,6 @@ def get_appointment_data(
 ):
     offset = (page - 1) * page_size
     query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient)
-    # .join(Patient)
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:
@@ -194,7 +190,6 @@ def get_appointment_data(
         status_enum = STATUS_LOOKUP.get(status)
         status_db_value = status_enum.value
         query = query.filter(Appointment.status == int(status_db_value))
-        # print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
 
     total_records = db.query(Appointment).filter_by(doctor_id=doctor_id).count()
     results = query.order_by(

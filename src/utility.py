@@ -97,7 +97,7 @@ def validate_user_fields(values, cls):
     return values
 
 
-def save_data_to_db(data, db_model, db_session):
+def save_data_to_db(data: dict, db_model, db_session):
     """
     Save data to the database.
     :param data: Data to save.

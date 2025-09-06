@@ -1,24 +1,12 @@
-import enum
 import uuid
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
 from sqlalchemy import ForeignKey, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from src.database import Base
-
-
-# Enums matching your Pydantic model
-class Gender(enum.Enum):
-    male = "male"
-    female = "female"
-    other = "other"
-
-
-class TemperatureUnit(enum.Enum):
-    celsius = "celsius"
-    fahrenheit = "fahrenheit"
+from src.models.enums import Gender, TemperatureUnit
 
 
 class Patient(Base):
