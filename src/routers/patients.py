@@ -21,7 +21,7 @@ router = APIRouter(
 
 @router.post("/register", response_model=APIResponse)
 def create_patient(
-        request: PatientRecord,
+        request: PatientUpdate,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
@@ -69,7 +69,7 @@ def update_patent(
     ).model_dump()
 
 
-@router.get("", response_model=APIResponse[PaginatedPatientResponse])  # #APIResponse[PatientRecord]
+@router.get("", response_model=APIResponse[PaginatedPatientResponse])
 def get_patients_list(
         page: int = Query(1, ge=1),
         page_size: int = Query(20, ge=1),
@@ -116,7 +116,7 @@ def get_patients_list(
 
 
 @router.get("/{patient_id}",
-            response_model=APIResponse[PatientRecord])  # #APIResponse[PatientRecord]
+            response_model=APIResponse[PatientRecord])
 def get_patients_details_with_appointment_list(
         patient_id: str,
         db: Session = Depends(get_db),

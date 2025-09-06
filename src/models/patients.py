@@ -23,6 +23,7 @@ class PatientRecord(BaseModel):
     temperatureType: Optional[TemperatureUnit] = None
     list_of_appointments: Optional[List] = None  # List of appointment dates
 
+
     model_config = {"from_attributes": True}
 
 
@@ -41,6 +42,8 @@ class PatientUpdate(BaseModel):
     bloodPressureLower: Optional[int] = None
     temperature: Optional[float] = None
     temperatureType: Optional[TemperatureUnit] = None
+
+    model_config = {"from_attributes": True}
 
 
 class PatientOut(BaseModel):

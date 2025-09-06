@@ -3,14 +3,14 @@ from typing import Optional, Literal, List
 
 from pydantic import BaseModel, Field
 
-from src.models.patients import PatientRecord
+from src.models.patients import PatientRecord, PatientUpdate
 from src.utility import get_appointment_status
 from .enums import AppointmentStatus
 from .enums import Gender, TemperatureUnit
 
 
 class AppointmentCreate(BaseModel):
-    patient: PatientRecord  # Nested patient data
+    patient: PatientUpdate  # Nested patient data
     # scheduled_date_time: datetime
     scheduled_date: str  # "08/25/2025"
     scheduled_time: str  # "16:00:00"
@@ -65,8 +65,6 @@ class AppointmentResponse(BaseModel):
 
 
 class AppointmentUpdate(BaseModel):
-    # patient: PatientRecord  # Nested patient data
-    # scheduled_date_time: datetime
     scheduled_date: str  # "08/25/2025"
     scheduled_time: str  # "16:00:00"
 

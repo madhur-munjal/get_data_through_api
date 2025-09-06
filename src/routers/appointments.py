@@ -52,6 +52,11 @@ def create_appointment(
         # Extract patient data
         patient_data = appointment.patient.dict()
         patient_data["assigned_doctor_id"] = doctor_id
+
+        valid_keys = {col.name for col in Patient.__table__.columns}
+        filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
+
+        # del patient_data["list_of_appointments"]  # Remove list_of_appointments as it is not present in Patient table.
         save_patient_data = save_data_to_db(patient_data, Patient, db)
         patient_id = save_patient_data.patient_id
         type = AppointmentType.NEW.value
