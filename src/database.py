@@ -2,8 +2,8 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+# from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 load_dotenv()  # ✅ This loads .env variables into os.environ
 mysql_username = os.getenv("mysql_username")
@@ -17,7 +17,15 @@ engine = create_engine(
 )
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-Base = declarative_base()
+
+
+# Base = declarative_base()
+class Base(DeclarativeBase):
+    def to_dict(self):
+        return {
+            column.name: getattr(self, column.name)
+            for column in self.__table__.columns
+        }
 
 
 def get_db():

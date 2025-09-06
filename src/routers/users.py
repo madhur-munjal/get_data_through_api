@@ -54,23 +54,21 @@ def delete_user(
     ).model_dump()
 
 
-@router.put("/update-user", response_model=APIResponse)
-def update_item(
-        request: UserIDRequest,
-        payload: UserCreate,
-        current_user=Depends(get_current_user_payload),
-        db: Session = Depends(get_db), role=Depends(require_owner)
+@router.put("/{user_id}", response_model=APIResponse)
+def update_user(
+        user_id: str,
+        update_data: UserCreate,
+        db: Session = Depends(get_db),
 ):
-    user_db = db.query(User).filter(User.id == request.user_id).first()
+    user_db = db.query(User).filter(User.id == user_id).first()
     if not user_db:
         return APIResponse(
             status_code=200,
             success=False,
             message=f"ID mismatch: the provided ID does not match any existing resource.",
         ).model_dump()
-        # raise HTTPException(status_code=404, detail="Item not found")
     try:
-        for field, value in payload.dict(exclude_unset=True).items():
+        for field, value in update_data.dict(exclude_unset=True).items():
             setattr(user_db, field, value)
 
         db.commit()
@@ -81,24 +79,6 @@ def update_item(
             message="User profile updated successfully.",
             data=UserOut.model_validate(user_db),
         ).model_dump()
-    # except IntegrityError as e:
-    #     msg = str(e.orig) if hasattr(e, "orig") else str(e)
-    #     if "Duplicate entry" in msg:
-    #         start = msg.find("Duplicate entry")
-    #         end = msg.find(" for key", start)
-    #         clean_msg = msg[start:end + len(" for key 'users.email'")]
-    #         return APIResponse(status_code=200,
-    #                            success=False,
-    #                            message=f"Failed to update user details",
-    #                            data=None,
-    #                            errors=clean_msg
-    #                            )
-    #     return APIResponse(status_code=200,
-    #                 success=False,
-    #                 message=f"Failed to update user details",
-    #                 data=None,
-    #                 errors=[msg]
-    #                 )
     except Exception as e:
         error_msg = str(e.orig) if hasattr(e, "orig") else str(e)
 
@@ -110,4 +90,3 @@ def update_item(
             errors=[error_msg],
         ).model_dump()
 
-        # UserOut.model_validate(user_db)).model_dump()

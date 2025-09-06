@@ -1,13 +1,14 @@
-from typing import List
 from uuid import UUID
-from sqlalchemy import or_
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import require_owner
-from src.models.patients import PatientRecord, PatientUpdate, PatientOut, PatientAppointmentResponse, PaginatedPatientResponse
+from src.models.patients import PatientRecord, PatientUpdate, PatientOut, PaginatedPatientResponse
 from src.models.response import APIResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
@@ -94,7 +95,6 @@ def get_patients_list(
     results = query.order_by(
         desc(Patient.created_at)).offset(offset).limit(page_size).all()
 
-
     # results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(
     #     desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # TODO need to add time as well
@@ -137,4 +137,30 @@ def get_patients_details_with_appointment_list(
         success=True,
         message="Patients fetched successfully.",
         data=PatientRecord.model_validate(final_data)
+    ).model_dump()
+
+
+@router.get("/get_patients_list_on_basis_of_mobile/{mobile}", response_model=APIResponse)
+def get_patients_list_on_basis_of_mobile(
+        mobile: str,  # = mobile_no,  # Query(None, description="Search by patient's mobile number"),
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id)
+):
+    query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
+
+    if mobile:
+        query = query.filter(
+            or_(
+                Patient.mobile.ilike(f"%{mobile}%")
+            )
+        )
+    results = query.all()
+    # final_data = {column.name: getattr(Patient, column.name) for column in Patient.__table__.columns}
+    # print(results)
+    # print([PatientOut.model_validate(p) for p in results])
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched patients lists.",
+        data={"patient_list": [PatientOut.model_validate(row) for row in results]}
     ).model_dump()

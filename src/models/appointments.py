@@ -114,21 +114,6 @@ class AppointmentById(BaseModel):
             status=row.status
         )
 
-    # @classmethod
-    # def from_visit_row(cls, row):
-    #     return cls(
-    #         appointment_id=row.id,
-    #         scheduled_date=row.appointments.scheduled_date.strftime("%m/%d/%Y"),
-    #         scheduled_time=row.appointments.scheduled_time.strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
-    #         patient_id=row.patient_id,
-    #         mobile=row.patient.mobile,
-    #         firstName=row.patient.firstName,
-    #         lastName=row.patient.lastName,
-    #         type=row.appointments.type,
-    #         status=get_appointment_status(datetime.combine(row.appointments.scheduled_date, row.appointments.scheduled_time)) if str(
-    #             row.appointments.status) != AppointmentStatus.COMPLETED.value else row.appointments.status
-    #     )
-
 
 class PaginatedAppointmentResponse(BaseModel):
     page: int
