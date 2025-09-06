@@ -53,6 +53,7 @@ def create_appointment(
 
         # del patient_data["list_of_appointments"]  # Remove list_of_appointments as it is not present in Patient table.
         save_patient_data = save_data_to_db(filtered_data, Patient, db)
+        patient_id = save_patient_data.patient_id
     else:
         type = AppointmentType.FOLLOW_UP.value
         patient = db.query(Patient).filter_by(patient_id=patient_id).first()
