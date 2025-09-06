@@ -58,9 +58,18 @@ def create_appointment(
         type = AppointmentType.FOLLOW_UP.value
         patient = db.query(Patient).filter_by(patient_id=patient_id).first()
         del patient_data["patientId"]  # Remove patient_id as it won't update as it is primary key.
+        print(patient_data)
+        print("**********")
 
-        for field, value in patient_data.items():
-            setattr(patient, field, value)
+        patient.first_name = patient_data.get("firstName", patient.firstName)
+        patient.last_name = patient_data.get("lastName", patient.lastName)
+        patient.age = patient_data.get("age", patient.age)
+        patient.mobile = patient_data.get("mobile", patient.age)
+        patient.gender = patient_data.get("gender", patient.gender) #].value if isinstance(patient_data["gender"], Enum) else data["gender"]
+        patient.address = patient_data.get("address", patient.address)
+
+        # for field, value in patient_data.items():
+        #     setattr(patient, field, value)
 
     data = appointment.dict()
     # data.update({"doctor_id": doctor_id})

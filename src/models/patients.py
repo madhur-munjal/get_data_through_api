@@ -94,7 +94,7 @@ class PaginatedPatientResponse(BaseModel):
     patient_list: List[PatientOut]
 
 
-class PatientInWithId(BaseModel):
+class PatientUpdateWhileAppointment(BaseModel):
     patientId: Optional[str] = None
     firstName: str  # Required
     lastName: Optional[str] = None
@@ -102,7 +102,6 @@ class PatientInWithId(BaseModel):
     mobile: str  # Required
     gender: Optional[Gender] = None
     address: Optional[str] = None
-    lastVisit: Optional[date] = None
     bloodGroup: Optional[
         Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
     ] = None
