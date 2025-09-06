@@ -38,19 +38,13 @@ router = APIRouter(
 def create_appointment(
         appointment: AppointmentCreate,
         db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        current_user=Depends(get_current_user_payload),
+        doctor_id: UUID = Depends(get_current_doctor_id)
 ):
     """Register a new appointment.
     If enter new mobile number, then it will create under new patients record."""
-    patient_mobile_number = appointment.patient.mobile
-    db_user = db.query(Patient).filter_by(assigned_doctor_id=doctor_id, mobile=patient_mobile_number).first()
-    if db_user:
-        patient_id = db_user.patient_id
-        type = AppointmentType.FOLLOW_UP.value
-    else:
-        # Extract patient data
-        patient_data = appointment.patient.dict()
+    patient_data = appointment.patient.dict()
+    patient_id = patient_data.get("patient_id")
+    if patient_id is None:
         patient_data["assigned_doctor_id"] = doctor_id
 
         valid_keys = {col.name for col in Patient.__table__.columns}
@@ -60,6 +54,13 @@ def create_appointment(
         save_patient_data = save_data_to_db(filtered_data, Patient, db)
         patient_id = save_patient_data.patient_id
         type = AppointmentType.NEW.value
+    else:
+        db_user = db.query(Patient).filter_by(assigned_doctor_id=doctor_id, patient_id=patient_id).first()
+        # patient_id = db_user.patient_id
+        type = AppointmentType.FOLLOW_UP.value
+
+    # patient_mobile_number = appointment.patient.mobile
+
     data = appointment.dict()
     data.update({"doctor_id": doctor_id})
     db_appointment = Appointment(

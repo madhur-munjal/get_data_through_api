@@ -42,6 +42,7 @@ class PatientUpdate(BaseModel):
     bloodPressureLower: Optional[int] = None
     temperature: Optional[float] = None
     temperatureType: Optional[TemperatureUnit] = None
+    patientType: Optional[Literal["new", "existing"]] = None
 
     model_config = {"from_attributes": True}
 
@@ -86,14 +87,29 @@ class PatientOut(BaseModel):
         )
 
 
-class PatientAppointmentResponse(BaseModel):
-    patient_details: PatientRecord
-    list_of_appointments: List
-
-
 class PaginatedPatientResponse(BaseModel):
     page: int
     page_size: int
     total_records: int
     patient_list: List[PatientOut]
 
+
+class PatientInWithId(BaseModel):
+    patient_id: Optional[str] = None
+    firstName: str  # Required
+    lastName: Optional[str] = None
+    age: Optional[int] = None
+    mobile: str  # Required
+    gender: Optional[Gender] = None
+    address: Optional[str] = None
+    lastVisit: Optional[date] = None
+    bloodGroup: Optional[
+        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+    ] = None
+    weight: Optional[float] = None
+    bloodPressureUpper: Optional[int] = None
+    bloodPressureLower: Optional[int] = None
+    temperature: Optional[float] = None
+    temperatureType: Optional[TemperatureUnit] = None
+
+    model_config = {"from_attributes": True}
