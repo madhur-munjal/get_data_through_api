@@ -50,7 +50,7 @@ class AppointmentResponse(BaseModel):
             appointment_id=row.id,
             scheduled_date=row.scheduled_date.strftime("%m/%d/%Y"),
             scheduled_time=row.scheduled_time.strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
-            patient_id=row.patient_id,
+            patient_id=row.patientId,
             mobile=row.patient.mobile,
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
@@ -96,7 +96,7 @@ class AppointmentById(BaseModel):
     @classmethod
     def from_row(cls, row):
         return cls(
-            patient_id=row.patient_id,
+            patient_id=row.patientId,
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             age=row.patient.age,

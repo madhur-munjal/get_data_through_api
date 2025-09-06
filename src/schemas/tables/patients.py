@@ -49,6 +49,6 @@ class Patient(Base):
     appointments = relationship("Appointment", back_populates="patient")
     visits = relationship("Visit", back_populates="patient")
 
-    __table_args__ = (
-        UniqueConstraint("assigned_doctor_id", "mobile", name="uq_doc_patient"),
-    )
+    # __table_args__ = (
+    #     UniqueConstraint("assigned_doctor_id", "mobile", name="uq_doc_patient"),
+    # )

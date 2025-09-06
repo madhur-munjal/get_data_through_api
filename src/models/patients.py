@@ -70,7 +70,7 @@ class PatientOut(BaseModel):
     @classmethod
     def from_row(cls, row):
         return cls(
-            patient_id=row.patient_id,
+            patient_id=row.patientId,
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             age=row.patient.age,
@@ -95,7 +95,7 @@ class PaginatedPatientResponse(BaseModel):
 
 
 class PatientInWithId(BaseModel):
-    patient_id: Optional[str] = None
+    patientId: Optional[str] = None
     firstName: str  # Required
     lastName: Optional[str] = None
     age: Optional[int] = None

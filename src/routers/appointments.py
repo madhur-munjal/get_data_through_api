@@ -1,10 +1,10 @@
+from calendar import month_name
 from datetime import date, datetime
 from uuid import UUID
-from sqlalchemy import or_, extract
-from calendar import month_name
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import desc
+from sqlalchemy import or_, extract
 from sqlalchemy.orm import Session
 
 from src.database import get_db
@@ -42,9 +42,10 @@ def create_appointment(
 ):
     """Register a new appointment.
     If enter new mobile number, then it will create under new patients record."""
-    patient_data = appointment.patient.dict()
-    patient_id = patient_data.get("patient_id")
+    patient_data = appointment.patient.dict(exclude_unset=True)
+    patient_id = patient_data.get("patientId")
     if patient_id is None:
+        type = AppointmentType.NEW.value
         patient_data["assigned_doctor_id"] = doctor_id
 
         valid_keys = {col.name for col in Patient.__table__.columns}
@@ -52,17 +53,16 @@ def create_appointment(
 
         # del patient_data["list_of_appointments"]  # Remove list_of_appointments as it is not present in Patient table.
         save_patient_data = save_data_to_db(filtered_data, Patient, db)
-        patient_id = save_patient_data.patient_id
-        type = AppointmentType.NEW.value
     else:
-        db_user = db.query(Patient).filter_by(assigned_doctor_id=doctor_id, patient_id=patient_id).first()
-        # patient_id = db_user.patient_id
         type = AppointmentType.FOLLOW_UP.value
+        patient = db.query(Patient).filter_by(patient_id=patient_id).first()
+        del patient_data["patientId"]  # Remove patient_id as it won't update as it is primary key.
 
-    # patient_mobile_number = appointment.patient.mobile
+        for field, value in patient_data.items():
+            setattr(patient, field, value)
 
     data = appointment.dict()
-    data.update({"doctor_id": doctor_id})
+    # data.update({"doctor_id": doctor_id})
     db_appointment = Appointment(
         patient_id=patient_id,
         doctor_id=doctor_id,
@@ -154,7 +154,7 @@ def get_appointment_data(
 ):
     offset = (page - 1) * page_size
     query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient)
-# .join(Patient)
+    # .join(Patient)
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:

@@ -91,7 +91,7 @@ class VisitResponse(BaseModel):
     @classmethod
     def from_row(cls, row):
         return cls(
-            patient_id=row.patient_id,
+            patient_id=row.patientId,
             # doctor_id=row.doctor_id,
             # appointment_id=row.doctor_id,
             appointment_date=row.appointments.scheduled_date,
@@ -160,7 +160,7 @@ class VisitAllResponse(BaseModel):
     @classmethod
     def from_visit_row(cls, row):
         return cls(
-            patient_id=row.patient_id,
+            patient_id=row.patientId,
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             age=row.patient.age,
