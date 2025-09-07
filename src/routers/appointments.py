@@ -47,12 +47,8 @@ def create_appointment(
     valid_keys = {col.name for col in Patient.__table__.columns}
     filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
     filtered_data["assigned_doctor_id"] = doctor_id
-
     if patient_id is None:
         type = AppointmentType.NEW.value
-        patient_data["assigned_doctor_id"] = doctor_id
-        # valid_keys = {col.name for col in Patient.__table__.columns}
-        # filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
         save_patient_data = save_data_to_db(filtered_data, Patient, db)
         patient_id = save_patient_data.patient_id
     else:

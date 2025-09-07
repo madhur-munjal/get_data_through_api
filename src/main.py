@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from mangum import Mangum
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.scheduler import update_appointment_status
@@ -114,3 +115,5 @@ def run_scheduler_manually():
 #     import uvicorn
 #     port = int(os.environ.get("PORT", 8000))
 #     uvicorn.run("main:app", host="0.0.0.0", port=port)
+
+handler = Mangum(app)
