@@ -26,7 +26,7 @@ def register(
         doctor_id: UUID = Depends(get_current_doctor_id),
         current_user=Depends(get_current_user_payload),
 ):
-    """Register a new user."""
+    """Register a new staff."""
     db_user = (
         db.query(Staff)
         .filter_by(doc_id=doctor_id)
@@ -79,37 +79,54 @@ def get_staff_list(
     ).model_dump()
 
 
-@router.get("/doc_wise_staff_list", response_model=APIResponse)
-def get_staff_list_by_doc_info(
-        email: Optional[str] = Query(None),
-        mobile: Optional[str] = Query(None),
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        db: Session = Depends(get_db),
+# @router.get("/doc_wise_staff_list", response_model=APIResponse)
+# def get_staff_list_by_doc_info(
+#         email: Optional[str] = Query(None),
+#         mobile: Optional[str] = Query(None),
+#         doctor_id: UUID = Depends(get_current_doctor_id),
+#         db: Session = Depends(get_db),
+# ):
+#     """Fetch staff details on the basis of doctors mobile or email."""
+#     if not email and not mobile:
+#         raise HTTPException(status_code=400, detail="Provide either email or mobile")
+#
+#     # staff_db = db.query(Staff).filter(Staff.doc_id == doctor_id).all()
+#     staff_list = None
+#     if email:
+#         staff_list = db.query(Staff).join(Staff.doctor).filter(
+#             Staff.doc_id == doctor_id,
+#             User.email == email
+#         ).all()
+#     if not staff_list or mobile:
+#         staff_list = db.query(Staff).join(Staff.doctor).filter(
+#             Staff.doc_id == doctor_id,
+#             User.mobile == mobile
+#         ).all()
+#     if not staff_list:
+#         raise HTTPException(status_code=404, detail="No Staff found")
+#
+#     user_dtos = [StaffOut.model_validate(staff) for staff in staff_list]
+#
+#     return APIResponse(
+#         status_code=200,
+#         success=True,
+#         message="successfully fetched staff lists",
+#         data=user_dtos,
+#     ).model_dump()
+
+
+@router.get("/staff_details/{staff_id}", response_model=APIResponse)
+def get_staff_list(
+        staff_id: str,
+        doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
 ):
-    """Fetch staff details on the basis of doctors mobile or email."""
-    if not email and not mobile:
-        raise HTTPException(status_code=400, detail="Provide either email or mobile")
-
-    # staff_db = db.query(Staff).filter(Staff.doc_id == doctor_id).all()
-    staff_list = None
-    if email:
-        staff_list = db.query(Staff).join(Staff.doctor).filter(
-            Staff.doc_id == doctor_id,
-            User.email == email
-        ).all()
-    if not staff_list or mobile:
-        staff_list = db.query(Staff).join(Staff.doctor).filter(
-            Staff.doc_id == doctor_id,
-            User.mobile == mobile
-        ).all()
-    if not staff_list:
-        raise HTTPException(status_code=404, detail="No Staff found")
-
-    user_dtos = [StaffOut.model_validate(staff) for staff in staff_list]
-
+    """Fetch staff details."""
+    staff_detail = db.query(Staff).filter_by(doc_id=doctor_id, id=staff_id).first()
+    if not staff_detail:
+        raise HTTPException(status_code=404, detail="Staff not found")
     return APIResponse(
         status_code=200,
         success=True,
         message="successfully fetched staff lists",
-        data=user_dtos,
+        data=StaffOut.model_validate(staff_detail),
     ).model_dump()

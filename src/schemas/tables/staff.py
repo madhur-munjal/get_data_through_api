@@ -6,9 +6,12 @@ from sqlalchemy import (
     String,
     ForeignKey,
     CheckConstraint,
-UniqueConstraint
+    UniqueConstraint,
+    DateTime
 )
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
 from src.database import Base
 
 
@@ -34,6 +37,8 @@ class Staff(Base):
     password = Column(Text, nullable=False)  # mandatory
     role = Column(String(50), nullable=False, default="staff")  # mandatory
     doc_id = Column(String(36), ForeignKey("users.id"), nullable=False)  # mandatory
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
 
     doctor = relationship("User", back_populates="staff")
 

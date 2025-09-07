@@ -76,7 +76,8 @@ def get_patients_list(
         page_size: int = Query(20, ge=1),
         text: str = Query(None, description="Search by patient's first name, last name or mobile number"),
         # month: str = Query(None, description="Filter by month "),
-        age: int = Query(None, description="Filter by patient age"),
+        minAge: int = Query(None, description="Filter by patient minimum age"),
+        maxAge: int = Query(None, description="Filter by patient maximun age"),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
@@ -91,12 +92,18 @@ def get_patients_list(
                 Patient.mobile.ilike(f"%{text}%")
             )
         )
+
+    if minAge or maxAge:
+        if minAge and maxAge:
+            query = query.filter(Patient.age.between(minAge, maxAge))
+        elif minAge:
+            query = query.filter(Patient.age >= minAge)
+        elif maxAge:
+            query = query.filter(Patient.age <= maxAge)
+
     total_records = db.query(Patient).filter_by(assigned_doctor_id=doctor_id).count()
     results = query.order_by(
         desc(Patient.created_at)).offset(offset).limit(page_size).all()
-
-    # results = db.query(Appointment).filter_by(doctor_id=doctor_id).order_by(
-    #     desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # TODO need to add time as well
     return APIResponse(
         status_code=200,
