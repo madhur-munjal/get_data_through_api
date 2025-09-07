@@ -45,3 +45,22 @@ class StaffOut(BaseModel):
 
 class DeleteStaffRequest(BaseModel):
     id: str
+
+
+class StaffUpdate(BaseModel):
+    id: str
+    firstName: constr(min_length=3, max_length=15)
+    lastName: Optional[constr(min_length=3, max_length=15)] = None
+    email: str
+    country: Optional[str] = None
+    mobile: constr(min_length=5)
+    username: constr(min_length=5, max_length=18)
+    role: str
+    password: Optional[constr(min_length=5)] = None
+    sendToEmail: bool
+
+    model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def validate(cls, values):
+        return validate_user_fields(values, cls)

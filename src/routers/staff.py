@@ -10,7 +10,7 @@ from src.dependencies import get_current_doctor_id
 from src.dependencies import get_current_user_payload, require_owner
 from src.models.response import APIResponse
 # from src.models.users import UserIDRequest, UserOut, UserCreate
-from src.models.staff import StaffCreate, StaffOut, DeleteStaffRequest
+from src.models.staff import StaffCreate, StaffOut, DeleteStaffRequest, StaffUpdate
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
 
@@ -145,4 +145,30 @@ def delete_user(delete_payload: DeleteStaffRequest, doctor_id: UUID = Depends(ge
         success=True,
         message=f"Staff with name {user.firstName} deleted successfully.",
         data=StaffOut.model_validate(user),
+    ).model_dump()
+
+
+@router.put("/update", response_model=APIResponse[StaffOut])
+def update_patent(
+        staff_updated_data: StaffUpdate,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+):
+    """Update staff details."""
+    staff_details = db.query(Staff).filter(Staff.id == staff_updated_data.id).first()
+    if not staff_details:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    for field, value in staff_updated_data.dict(exclude_unset=True).items():
+        if field == "password":
+            value = hash_password(value)
+        if field != "id":
+            setattr(staff_details, field, value)
+
+    db.commit()
+    db.refresh(staff_details)
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="staff details updated successfully.",
+        data=StaffOut.model_validate(staff_details),
     ).model_dump()
