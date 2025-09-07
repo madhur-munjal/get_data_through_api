@@ -134,7 +134,7 @@ def get_staff_detail(
 
 
 @router.post("/delete", response_model=APIResponse)
-def delete_user(delete_payload: DeleteStaffRequest, doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)):
+def delete_staff(delete_payload: DeleteStaffRequest, doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)):
     user = db.query(Staff).filter_by(doc_id=doctor_id, id=delete_payload.id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -148,8 +148,8 @@ def delete_user(delete_payload: DeleteStaffRequest, doctor_id: UUID = Depends(ge
     ).model_dump()
 
 
-@router.put("/update", response_model=APIResponse[StaffOut])
-def update_patent(
+@router.post("/update", response_model=APIResponse[StaffOut])
+def update_staff(
         staff_updated_data: StaffUpdate,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
