@@ -116,7 +116,7 @@ def get_staff_list(
 
 
 @router.get("/staff_details/{staff_id}", response_model=APIResponse)
-def get_staff_list(
+def get_staff_detail(
         staff_id: str,
         doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
 ):
@@ -124,9 +124,25 @@ def get_staff_list(
     staff_detail = db.query(Staff).filter_by(doc_id=doctor_id, id=staff_id).first()
     if not staff_detail:
         raise HTTPException(status_code=404, detail="Staff not found")
+    print([StaffOut.model_validate(staff_detail)])
     return APIResponse(
         status_code=200,
         success=True,
         message="successfully fetched staff lists",
         data=StaffOut.model_validate(staff_detail),
+    ).model_dump()
+
+
+@router.post("/delete", response_model=APIResponse)
+def delete_user(id: str, doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)):
+    user = db.query(Staff).filter_by(doc_id=doctor_id, id=id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(user)
+    db.commit()
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Staff with name {user.firstName} deleted successfully.",
+        data=StaffOut.model_validate(user),
     ).model_dump()
