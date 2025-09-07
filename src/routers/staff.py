@@ -37,10 +37,10 @@ def register(
         return APIResponse(
             status_code=200, success=False, message="Username already exists", data=None
         ).model_dump()
-    if db.query(Staff).filter_by(email=user.email).first():
-        return APIResponse(
-            status_code=200, success=False, message="Email already exists", data=None
-        ).model_dump()
+    # if db.query(Staff).filter_by(email=user.email).first():
+    #     return APIResponse(
+    #         status_code=200, success=False, message="Email already exists", data=None
+    #     ).model_dump()
     # Need to re-validate as in some cases staff will join from one clinic to another
     hashed_pw = hash_password(user.password)
     db_user = Staff(
@@ -52,6 +52,7 @@ def register(
         username=user.username,
         password=hashed_pw,
         doc_id=doctor_id,
+        role=user.role
     )
     db.add(db_user)
     db.commit()
@@ -59,7 +60,7 @@ def register(
     return APIResponse(
         status_code=200,
         success=True,
-        message=f"New staff account created under {current_user.get('sub')} supervision.",
+        message=f"New staff account has been created successfully!",
         data=StaffOut.model_validate(db_user),
     ).model_dump()
 

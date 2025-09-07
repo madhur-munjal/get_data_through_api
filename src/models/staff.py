@@ -18,6 +18,7 @@ class StaffCreate(BaseModel):
     mobile: constr(min_length=5)  # Required
     username: constr(min_length=5, max_length=18)  # Required
     password: constr(min_length=5)  # Required
+    role: str  # Required
 
     model_config = {"from_attributes": True}
 
@@ -61,6 +62,6 @@ class StaffUpdate(BaseModel):
 
     model_config = {"from_attributes": True}
 
-    @model_validator(mode="after")
-    def validate(cls, values):
-        return validate_user_fields(values, cls)
+    # @model_validator(mode="after")
+    # def validate(cls, values):
+    #     return validate_user_fields(values, cls)
