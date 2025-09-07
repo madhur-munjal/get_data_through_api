@@ -41,3 +41,7 @@ class StaffOut(BaseModel):
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
+
+
+class DeleteStaffRequest(BaseModel):
+    id: str

@@ -10,7 +10,7 @@ from src.dependencies import get_current_doctor_id
 from src.dependencies import get_current_user_payload, require_owner
 from src.models.response import APIResponse
 # from src.models.users import UserIDRequest, UserOut, UserCreate
-from src.models.staff import StaffCreate, StaffOut
+from src.models.staff import StaffCreate, StaffOut, DeleteStaffRequest
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
 
@@ -134,8 +134,8 @@ def get_staff_detail(
 
 
 @router.post("/delete", response_model=APIResponse)
-def delete_user(id: str, doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)):
-    user = db.query(Staff).filter_by(doc_id=doctor_id, id=id).first()
+def delete_user(delete_payload: DeleteStaffRequest, doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)):
+    user = db.query(Staff).filter_by(doc_id=doctor_id, id=delete_payload.id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     db.delete(user)
