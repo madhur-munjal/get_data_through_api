@@ -3,13 +3,18 @@ import random
 import re
 import smtplib
 import string
+from datetime import datetime, timezone
 from email.mime.text import MIMEText
+from typing import Optional
 
+import pytz
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from sqlalchemy.exc import IntegrityError
+
+from src.models.enums import AppointmentStatus
 
 load_dotenv()
 
@@ -27,16 +32,32 @@ def send_otp_email(to_email, otp):
     message["From"] = from_email
     message["To"] = to_email
     message["Subject"] = "Smart-Heal, Password Reset OTP"
-    print(f"Sending OTP {otp} to {to_email}")
     smtp_server = "smtpout.secureserver.net"  # 'mail.firsttoothclinic.com'
     server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
     status_code, response = server.ehlo()
-    print(f"SMTP server response: {status_code} {response.decode()}")
     status_code, response = server.login(from_email, os.getenv("email_password"))
-    print(f"Login response: {status_code} {response.decode()}")
     server.sendmail(from_email, to_email, message.as_string())
     server.quit()
 
+
+def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
+    """
+    Send a message to the specified email address.
+    :param to_email:
+    :param message:
+    :return:
+    """
+    message = MIMEText(f"{message}")
+    from_email = os.getenv("from_email_id")
+    message["From"] = from_email
+    message["To"] = to_email
+    message["Subject"] = Subject
+    smtp_server = "smtpout.secureserver.net"
+    server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
+    status_code, response = server.ehlo()
+    status_code, response = server.login(from_email, os.getenv("email_password"))
+    server.sendmail(from_email, to_email, message.as_string())
+    server.quit()
 
 def validate_user_fields(values, cls):
     """
@@ -95,7 +116,7 @@ def validate_user_fields(values, cls):
     return values
 
 
-def save_data_to_db(data, db_model, db_session):
+def save_data_to_db(data: dict, db_model, db_session):
     """
     Save data to the database.
     :param data: Data to save.
@@ -107,9 +128,7 @@ def save_data_to_db(data, db_model, db_session):
         db_object = db_model(**data)
         db_session.add(db_object)
         db_session.commit()
-        print(f"db_object.id before refresh: {db_object.patient_id}")
         db_session.refresh(db_object)
-        print(f"db_object.id: {db_object.patient_id}")
         return db_object
     except IntegrityError as e:
         db_session.rollback()
@@ -119,3 +138,16 @@ def save_data_to_db(data, db_model, db_session):
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+
+def get_appointment_status(appointment_date_time: datetime,
+                           comparision_date_time: Optional[datetime] = None) -> str:
+    if comparision_date_time is None:
+        comparision_date_time = datetime.now(timezone.utc)
+    if appointment_date_time.tzinfo is None or appointment_date_time.tzinfo.utcoffset(appointment_date_time) is None:
+        # It's naive — localize it
+        appointment_date_time = pytz.utc.localize(appointment_date_time)
+    if appointment_date_time > comparision_date_time:
+        return AppointmentStatus.UPCOMING.value
+    else:
+        return AppointmentStatus.NO_SHOW.value
