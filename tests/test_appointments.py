@@ -1,18 +1,19 @@
-from src.main import app
+from datetime import date, time
+from uuid import UUID
+
+from fastapi.testclient import TestClient
+
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from fastapi.testclient import TestClient
+from src.main import app
 from .conftest import MockQueryChain
-from uuid import UUID
 
-
-from uuid import UUID
-from datetime import date, time
 
 class MockPatient:
     def __init__(self, firstName, lastName):
         self.firstName = firstName
         self.lastName = lastName
+
 
 class MockAppointment:
     def __init__(self):
@@ -24,14 +25,18 @@ class MockAppointment:
         self.type = "new"
         self.status = "scheduled"
 
+
 def mock_get_db():
     class MockSession:
         def query(self, model):
             return MockQueryChain([MockAppointment()])
+
     return MockSession()
+
 
 def mock_get_current_doctor_id():
     return UUID("11111111-1111-1111-1111-111111111111")
+
 
 def test_get_appointments_list():
     app.dependency_overrides[get_db] = mock_get_db
@@ -54,17 +59,3 @@ def test_get_appointments_list():
     assert data["data"][0]["status"] == "scheduled"
     assert data["data"][0]["firstName"] == "John"
     assert data["data"][0]["lastName"] == "Doe"
-
-    # assert data["data"][0]["age"] == 30
-    #
-    # {
-    #     "appointment_id": "20e8b7fa-4ec2-4f92-8330-099011dc8c50",
-    #     "scheduled_date": "2025-08-27",
-    #     "scheduled_time": "18:50:33",
-    #     "patient_id": "47663479-d2b1-4e29-a16e-5bb085ed9c95",
-    #     "type": "follow-up",
-    #     "status": "scheduled",
-    #     "firstName": "string",
-    #     "lastName": "string"
-    # },
-
