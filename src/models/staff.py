@@ -57,7 +57,7 @@ class StaffUpdate(BaseModel):
     mobile: constr(min_length=5)
     username: constr(min_length=5, max_length=18)
     role: str
-    password: Optional[constr(min_length=5)] = None
+    # password: Optional[constr(min_length=5)] = None
     sendToEmail: bool
 
     model_config = {"from_attributes": True}

@@ -160,8 +160,6 @@ def update_staff(
     if not staff_details:
         raise HTTPException(status_code=404, detail="Staff not found")
     for field, value in staff_updated_data.dict(exclude_unset=True).items():
-        if field == "password":
-            value = hash_password(value)
         if field != "id":
             setattr(staff_details, field, value)
 
