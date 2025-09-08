@@ -14,8 +14,9 @@ from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
 
 router = APIRouter(
-    prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}},
-    dependencies=[Depends(require_owner)]
+    prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}
+    # ,
+    # dependencies=[Depends(require_owner)]
 
 )
 

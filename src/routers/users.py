@@ -8,7 +8,8 @@ from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.schemas.tables.users import User
 
 router = APIRouter(
-    prefix="/users", tags=["users"], responses={404: {"error": "Not found"}}, dependencies=[Depends(require_owner)]
+    prefix="/users", tags=["users"], responses={404: {"error": "Not found"}}
+    # , dependencies=[Depends(require_owner)]
 )
 
 

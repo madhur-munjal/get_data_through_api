@@ -15,7 +15,8 @@ from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
 
 router = APIRouter(
-    prefix="/staff", tags=["staff"], responses={404: {"error": "Not found"}}, dependencies=[Depends(require_owner)]
+    prefix="/staff", tags=["staff"], responses={404: {"error": "Not found"}}
+    # , dependencies=[Depends(require_owner)]
 )
 
 

@@ -29,8 +29,9 @@ from src.utility import save_data_to_db, get_appointment_status
 router = APIRouter(
     prefix="/appointments",
     tags=["appointments"],
-    responses={404: {"error": "Not found"}},
-    dependencies=[Depends(require_owner)]
+    responses={404: {"error": "Not found"}}
+    # ,
+    # dependencies=[Depends(require_owner)]
 )
 
 
