@@ -4,7 +4,9 @@ from . import patients, users, auth, staff, appointments, visits
 
 router = APIRouter(
     # prefix="/api",
-    responses={404: {"error": "Not found"}},
+    responses={404: {"error": "Not found"}}
+    # ,
+    # dependencies=[Depends(require_owner)]
 )
 
 # List of routers

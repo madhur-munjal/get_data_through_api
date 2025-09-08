@@ -34,3 +34,4 @@ class Visit(Base):
     patient = relationship("Patient", back_populates="visits")
     user = relationship("User", back_populates="visits")
     appointments = relationship("Appointment", back_populates="visits")
+    billing = relationship("Billing", back_populates="visit", uselist=False)

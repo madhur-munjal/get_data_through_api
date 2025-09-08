@@ -3,3 +3,4 @@ from .patients import Patient
 from .users import User
 from .visits import Visit
 from .staff import Staff
+from .billing import Billing
