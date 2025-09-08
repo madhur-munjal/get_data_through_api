@@ -165,6 +165,29 @@ def update_staff(
 
     db.commit()
     db.refresh(staff_details)
+    if staff_updated_data.sendToEmail:
+        # send email to staff with updated details
+        from src.utility import send_msg_on_email as send_email
+        subject = "Your staff account details have been updated"
+        body = f"""
+        Dear {staff_details.firstName},
+
+        Your staff account details have been updated. Here are your updated details:
+
+        First Name: {staff_details.firstName}
+        Last Name: {staff_details.lastName}
+        Email: {staff_details.email}
+        Country: {staff_details.country}
+        Mobile: {staff_details.mobile}
+        Username: {staff_details.username}
+        Role: {staff_details.role}
+
+        If you did not request this change, please contact the administrator immediately.
+
+        Best regards,
+        SmartHealApp Management Team
+        """
+        send_email(to_email=staff_details.email, message=body, Subject=subject)
     return APIResponse(
         status_code=200,
         success=True,

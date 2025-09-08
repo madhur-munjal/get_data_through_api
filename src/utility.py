@@ -40,6 +40,25 @@ def send_otp_email(to_email, otp):
     server.quit()
 
 
+def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
+    """
+    Send a message to the specified email address.
+    :param to_email:
+    :param message:
+    :return:
+    """
+    message = MIMEText(f"{message}")
+    from_email = os.getenv("from_email_id")
+    message["From"] = from_email
+    message["To"] = to_email
+    message["Subject"] = Subject
+    smtp_server = "smtpout.secureserver.net"
+    server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
+    status_code, response = server.ehlo()
+    status_code, response = server.login(from_email, os.getenv("email_password"))
+    server.sendmail(from_email, to_email, message.as_string())
+    server.quit()
+
 def validate_user_fields(values, cls):
     """
     Validate user fields based on the constraints defined in the User model.
