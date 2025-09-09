@@ -1,52 +1,16 @@
-from uuid import UUID
-
-import pytest
+from .mock_tables import MockAppointment, MockPatient, MockVisit
 from fastapi.testclient import TestClient
-
+import pytest
+from src.main import app
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.main import app  # Replace with your actual FastAPI app import
-from src.schemas.tables import Patient  # Your SQLAlchemy model
-
-# Sample UUID for testing
-TEST_DOCTOR_ID = UUID("12345678-1234-5678-1234-567812345678")
-TEST_PATIENT_ID = "patient-123"
-
-
-# Sample patient data
-def mock_patient():
-    return Patient(
-        patient_id=1,
-        firstName="John",
-        age=30,
-        mobile="9999999999",
-        assigned_doctor_id=TEST_DOCTOR_ID
-    )
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
-
-
-@pytest.fixture
-def mock_db_session(mocker):
-    mock_session = mocker.Mock()
-    mock_session.query().filter().all.return_value = [mock_patient()]
-    return mock_session
-
-
-@pytest.fixture
-def override_dependencies(client, mock_db_session):
-    app.dependency_overrides[get_db] = lambda: mock_db_session
-    app.dependency_overrides[get_current_doctor_id] = lambda: TEST_DOCTOR_ID
-    yield
-    app.dependency_overrides.clear()
-
 
 class MockQueryChain:
     def __init__(self, results):
         self._results = results
+        self.joins = []
+        self.count_called = False
+        self.ordering = []
 
     def filter_by(self, **kwargs):
         return self
@@ -54,13 +18,87 @@ class MockQueryChain:
     def offset(self, offset):
         return self
 
+    def outerjoin(self, target, onclause=None, isouter=True, full=False):
+        # Store the join details for inspection if needed
+        self.joins.append({
+            "type": "outerjoin",
+            "target": target,
+            "onclause": onclause,
+            "isouter": isouter,
+            "full": full
+        })
+        return self  # Allow method chaining
+
+    def join(self, target, onclause=None, isouter=False, full=False):
+        self.joins.append({
+            "type": "join",
+            "target": target,
+            "onclause": onclause,
+            "isouter": isouter,
+            "full": full
+        })
+        return self
+
+    def count(self):
+        self.count_called = True
+        return 0  # Return mock count valu
+
+    def order_by(self, *args):
+        self.ordering.extend(args)
+        return self
+
+    def first(self, **kwargs):
+        if self._results:
+            return self._results[0]
+        return None
+
     def limit(self, limit):
         return self
 
     def all(self):
         return self._results
 
+    def add(self, obj):
+        self._results.append(obj)
+
+@pytest.fixture
+def client():
+    app.dependency_overrides[get_db] = mock_get_db
+    app.dependency_overrides[get_current_doctor_id] = mock_get_current_doctor_id
+    return TestClient(app)
+
+def mock_get_db(keep_model_empty=False):
+
+    class MockSession:
+        def __init__(self):
+            self._added_objects = []
+            self._committed = False
+            self._refreshed = False
+
+        def query(self, model):
+            if keep_model_empty:
+                return MockQueryChain([])
+
+            if model.__name__ == "Appointment":
+                return MockQueryChain([MockAppointment()])
+            elif model.__name__ == "Patient":
+                return MockQueryChain([MockPatient()])
+            elif model.__name__ == "Visit":
+                return MockQueryChain([MockVisit()])
+            else:
+                return MockQueryChain([])
+
+        def add(self, obj):
+            self._added_objects.append(obj)
+
+        def commit(self):
+            self._committed = True
+
+        def refresh(self, obj):
+            self._refreshed = True
+
+    return MockSession()
 
 
-
-
+def mock_get_current_doctor_id():
+    return "11111111-1111-1111-1111-111111111111"

@@ -42,7 +42,6 @@ class PatientUpdate(BaseModel):
     bloodPressureLower: Optional[int] = None
     temperature: Optional[float] = None
     temperatureType: Optional[TemperatureUnit] = None
-    patientType: Optional[Literal["new", "existing"]] = None
 
     model_config = {"from_attributes": True}
 
@@ -70,7 +69,7 @@ class PatientOut(BaseModel):
     @classmethod
     def from_row(cls, row):
         return cls(
-            patient_id=row.patientId,
+            patient_id=row.patient_id,
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             age=row.patient.age,
@@ -95,7 +94,7 @@ class PaginatedPatientResponse(BaseModel):
 
 
 class PatientUpdateWhileAppointment(BaseModel):
-    patientId: Optional[str] = None
+    patient_id: Optional[str] = None
     firstName: str  # Required
     lastName: Optional[str] = None
     age: Optional[int] = None

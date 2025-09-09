@@ -1,70 +1,93 @@
-from src.main import app
+from fastapi.testclient import TestClient
+
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from fastapi.testclient import TestClient
-from .conftest import MockQueryChain
-from uuid import UUID
+from src.main import app
+from .conftest import mock_get_db, mock_get_current_doctor_id
+
+client = TestClient(app)
+app.dependency_overrides[get_db] = mock_get_db
+app.dependency_overrides[get_current_doctor_id] = mock_get_current_doctor_id
 
 
-from uuid import UUID
-from datetime import date, time
+def test_create_appointments():
+    payload = {
+        "patient": {
+            "patient_id": "12345678-1234-5678-1234-567812345778",
+            "firstName": "sample_name",
+            "lastName": "string",
+            "age": 25,
+            "mobile": "123456781",
+            "gender": "male",
+            "address": "pune",
+            "bloodGroup": "A+",
+            "weight": 80.5,
+            "bloodPressureUpper": 0,
+            "bloodPressureLower": 0,
+            "temperature": 0,
+            "temperatureType": "celsius"
+        },
+        "scheduled_date": "09/09/2025",
+        "scheduled_time": "10:10:10"
+    }
+    response = client.post("/appointments/create_appointment", json=payload)
+    print(response.json())
+    assert response.status_code == 200
 
-class MockPatient:
-    def __init__(self, firstName, lastName):
-        self.firstName = firstName
-        self.lastName = lastName
+    data = response.json()
 
-class MockAppointment:
-    def __init__(self):
-        self.id = "12345678-1234-5678-1234-567812345678"
-        self.scheduled_date = date(2025, 8, 29)
-        self.scheduled_time = time(10, 0)
-        self.patient_id = "87654321-4321-8765-4321-876543218765"
-        self.patient = MockPatient("John", "Doe")
-        self.type = "new"
-        self.status = "scheduled"
+    assert data["success"] is True
 
-def mock_get_db():
-    class MockSession:
-        def query(self, model):
-            return MockQueryChain([MockAppointment()])
-    return MockSession()
 
-def mock_get_current_doctor_id():
-    return UUID("11111111-1111-1111-1111-111111111111")
+def test_update_appointment():
+    payload = {
+        "scheduled_date": "09/10/2025",
+        "scheduled_time": "11:00:00"
+    }
+    response = client.put("/appointments/update_appointment/123", json=payload)
+    print(response.json())
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["message"] == "Appointment updated successfully."
+    assert data["data"]["scheduled_date"] == "2025-09-10"
+    assert data["data"]["scheduled_time"] == "11:00:00"
 
-def test_get_appointments_list():
-    app.dependency_overrides[get_db] = mock_get_db
-    app.dependency_overrides[get_current_doctor_id] = mock_get_current_doctor_id
 
-    client = TestClient(app)
-
+def test_get_appointments_data():
     response = client.get("/appointments/?page=1&page_size=20")
     assert response.status_code == 200
 
     data = response.json()
     assert data["success"] is True
     assert data["message"] == "Successfully fetched appointment lists."
+    assert isinstance(data["data"], dict)
+    assert data["data"]["appointment_list"][0]["appointment_id"] == "12345678-1234-5678-1234-567812345678"
+    assert data["data"]["appointment_list"][0]["scheduled_date"] == '08/29/2025'  # date(2025, 8, 29)
+    assert data["data"]["appointment_list"][0]["scheduled_time"] == '10:00:00'  # time(10, 0).isoformat()
+    assert data["data"]["appointment_list"][0]["patient_id"] == "12345678-1234-5678-1234-567812345778"
+    assert data["data"]["appointment_list"][0]["type"] == 0
+    assert data["data"]["appointment_list"][0]["status"] == 0
+    assert data["data"]["appointment_list"][0]["firstName"] == "John"
+    assert data["data"]["appointment_list"][0]["lastName"] == "Doe"
+
+
+def test_get_patient_details_through_appointment_id():
+    appointment_id = "12345678-1234-5678-1234-567812345678"  # kept as similar of mock appointment id
+    response = client.get(f"/appointments/{appointment_id}")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["success"] is True
+    assert data["message"] == "successfully fetched visit datails"
+
+
+def test_get_appointments_by_date():
+    response = client.get("/appointments/get_appointment_by_date/2025-09-10")
+    print(response.json())
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert "Successfully fetched appointment lists for date 2025-09-10." in data["message"]
     assert isinstance(data["data"], list)
-    assert data["data"][0]["appointment_id"] == "12345678-1234-5678-1234-567812345678"
-    assert data["data"][0]["scheduled_date"] == date(2025, 8, 29).isoformat()
-    assert data["data"][0]["scheduled_time"] == time(10, 0).isoformat()
-    assert data["data"][0]["patient_id"] == "87654321-4321-8765-4321-876543218765"
-    assert data["data"][0]["type"] == "new"
-    assert data["data"][0]["status"] == "scheduled"
-    assert data["data"][0]["firstName"] == "John"
-    assert data["data"][0]["lastName"] == "Doe"
-
-    # assert data["data"][0]["age"] == 30
-    #
-    # {
-    #     "appointment_id": "20e8b7fa-4ec2-4f92-8330-099011dc8c50",
-    #     "scheduled_date": "2025-08-27",
-    #     "scheduled_time": "18:50:33",
-    #     "patient_id": "47663479-d2b1-4e29-a16e-5bb085ed9c95",
-    #     "type": "follow-up",
-    #     "status": "scheduled",
-    #     "firstName": "string",
-    #     "lastName": "string"
-    # },
-
+    assert data["data"][0]["scheduled_date"] == "08/29/2025"

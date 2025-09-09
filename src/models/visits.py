@@ -91,7 +91,7 @@ class VisitResponse(BaseModel):
     @classmethod
     def from_row(cls, row):
         return cls(
-            patient_id=row.patientId,
+            patient_id=row.patient_id,
             # doctor_id=row.doctor_id,
             # appointment_id=row.doctor_id,
             appointment_date=row.appointments.scheduled_date,

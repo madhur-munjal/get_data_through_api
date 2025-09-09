@@ -55,7 +55,7 @@ def update_patent(
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
-    patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    patient = db.query(Patient).filter_by(patient_id=patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     for field, value in update_data.dict(exclude_unset=True).items():
