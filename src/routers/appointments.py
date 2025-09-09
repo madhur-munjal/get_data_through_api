@@ -44,7 +44,7 @@ def create_appointment(
     """Register a new appointment.
     If enter new mobile number, then it will create under new patients record."""
     patient_data = appointment.patient.dict(exclude_unset=True)
-    patient_id = patient_data.get("patientId")
+    patient_id = patient_data.get("patient_id")
     valid_keys = {col.name for col in Patient.__table__.columns}
     filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
     filtered_data["assigned_doctor_id"] = doctor_id
@@ -61,8 +61,6 @@ def create_appointment(
         patient = db.query(Patient).filter_by(patient_id=patient_id).first()
         for field, value in filtered_data.items():
             setattr(patient, field, value)
-
-
     data = appointment.dict()
     print(f"data: {data}")
     db_appointment = Appointment(
@@ -145,7 +143,7 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
         status_code=200,
         success=True,
         message=f"Appointment updated successfully.",
-        data=AppointmentOut.from_orm(appointment),
+        data=AppointmentOut.model_validate(appointment),
     ).model_dump()
 
 
@@ -250,12 +248,11 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
 
 
 @router.get(
-    "/get_appointment_by_date", response_model=APIResponse[list[AppointmentResponse]]
+    "/get_appointment_by_date/{appointment_date}", response_model=APIResponse[list[AppointmentResponse]]
 )
 def get_appointment_by_date(
-        appointment_date: date = Query(..., description="Date in YYYY-MM-DD format"),
+        appointment_date: str, #date = Query(..., description="Date in YYYY-MM-DD format"),
         db: Session = Depends(get_db),
-        current_user=Depends(get_current_user_payload),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     results = (

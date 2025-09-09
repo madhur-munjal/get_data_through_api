@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import FastAPI
 from sqlalchemy.orm import Session
 from src.schemas.tables.appointments import Appointment  # your SQLAlchemy model
-from database import SessionLocal  # your DB session
+from src.database import SessionLocal  # your DB session
 from src.models.enums import AppointmentStatus  # your enum for statuses
 
 app = FastAPI()
