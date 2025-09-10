@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from src.auth_utils import hash_password
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.dependencies import get_current_user_payload, require_owner
+from src.dependencies import require_owner
 from src.models.response import APIResponse
 # from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.models.staff import StaffCreate, StaffOut, DeleteStaffRequest, StaffUpdate
@@ -25,7 +25,6 @@ def register(
         user: StaffCreate,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
-        current_user=Depends(get_current_user_payload),
 ):
     """Register a new staff."""
     db_user = (

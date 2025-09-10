@@ -35,3 +35,4 @@ class APIResponse(BaseResponse[T]):
 class TokenRevoked(Exception):
     def __init__(self, message: str = "Token revoked", code: int = 401):
         self.response = APIResponse.error(message, code)
+

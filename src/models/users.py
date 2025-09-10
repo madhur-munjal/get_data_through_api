@@ -73,3 +73,17 @@ class VerifyOTPRequest(BaseModel):
 
 class UserIDRequest(BaseModel):
     user_id: str
+
+
+class UpdateLoginRecord(BaseModel):
+    mobile: Optional[str] = None
+    current_password: Optional[str] = None
+    password: Optional[constr(min_length=5)] = None
+    confirm_password: Optional[constr(min_length=5)] = None
+
+    model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def validate(cls, values):
+        return validate_user_fields(values, cls)
+

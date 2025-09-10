@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import patients, users, auth, staff, appointments, visits
+from . import patients, users, auth, staff, appointments, visits, settings
 
 router = APIRouter(
     # prefix="/api",
@@ -17,6 +17,7 @@ routers = [
     staff.router,
     appointments.router,
     visits.router,
+    settings.router,
 ]
 
 # Include all routers
