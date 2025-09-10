@@ -12,6 +12,7 @@ from src.models.patients import PatientRecord, PatientUpdate, PatientOut, Pagina
 from src.models.response import APIResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
+from src.schemas.tables.visits import Visit
 
 router = APIRouter(
     prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}
@@ -134,11 +135,13 @@ def get_patients_details_with_appointment_list(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    appointment_details = db.query(Appointment).filter_by(doctor_id=doctor_id, patient_id=patient_id).all()
+    # appointment_details = db.query(Appointment).filter_by(doctor_id=doctor_id, patient_id=patient_id).all()
+
+    visit_details = db.query(Visit).filter_by(doctor_id=doctor_id, patient_id=patient_id).all()
 
     # def to_dict(obj):
     final_data = {column.name: getattr(patient, column.name) for column in patient.__table__.columns}
-    final_data["list_of_appointments"] = [row.scheduled_date for row in appointment_details]
+    final_data["list_of_appointments"] = [row.appointments.scheduled_date for row in visit_details]
 
     return APIResponse(
         status_code=200,
