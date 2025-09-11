@@ -188,7 +188,7 @@ def get_appointment_data(
         status_db_value = status_enum.value
         query = query.filter(Appointment.status == int(status_db_value))
 
-    total_records = db.query(Appointment).filter_by(doctor_id=doctor_id).count()
+    total_records = query.count()
     results = query.order_by(
         desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # TODO need to add time as well

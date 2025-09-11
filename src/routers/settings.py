@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 
-@router.post("/update_login_user") #, response_model=APIResponse[StaffOut])
+@router.post("/general") #, response_model=APIResponse[StaffOut])
 def update_login_user(
         updated_login_data: UpdateLoginRecord,
         db: Session = Depends(get_db),
