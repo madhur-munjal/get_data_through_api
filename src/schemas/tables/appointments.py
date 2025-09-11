@@ -18,7 +18,7 @@ class Appointment(Base):
     scheduled_time = Column(Time, nullable=False)
     type = Column(Integer, nullable=False, default=AppointmentType.NEW)
     status = Column(Integer, nullable=False, default=AppointmentStatus.UPCOMING)
-    payment_status = Column(Integer, nullable=False, default=PaymentStatus.UNPAID)
+    payment_status = Column(Integer, nullable=False, default=PaymentStatus.UNPAID.value)
     bloodGroup = Column(
         String(5), nullable=True
     )  # e.g., "A+", "O-", etc.

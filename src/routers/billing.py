@@ -47,16 +47,17 @@ def create_billing(
         appointment_id = billing_dict.pop("appointment_id", None)
 
         db_billing = Billing(**billing_details.model_dump())
-        save_billing_data = save_data_to_db(billing_details.dict(), Billing, db)
-        visit = db.query(Visit).filter_by(appointment_id=billing_details.appointment_id).first()
-        visit.type = PaymentStatus.PAID.value
+        # save_billing_data = save_data_to_db(billing_details.dict(), Billing, db)
+        appointment_db = db.query(Appointment).filter_by(id=billing_details.appointment_id).first()
+        appointment_db.payment_status = PaymentStatus.PAID.value
+        db.add(db_billing)
         db.commit()
-        # db.refresh(db_appointment)
+        db.refresh(db_billing)
         return APIResponse(
             status_code=200,
             success=True,
-            message=f"New Appointment created.",
-            data=BillingOut.model_validate(save_billing_data),
+            message=f"New Billing created.",
+            data=None, # BillingOut.model_validate(save_billing_data)
         ).model_dump()
     except Exception as e:
         db.rollback()

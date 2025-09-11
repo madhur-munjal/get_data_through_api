@@ -49,6 +49,7 @@ class MockAppointment:
         self.patient = MockPatient()
         self.type = 0
         self.status = 0
+        self.payment_status = 0
 
 
 class MockVisit:

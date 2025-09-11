@@ -5,8 +5,7 @@ from pydantic import BaseModel, Field
 
 from src.models.patients import PatientUpdateWhileAppointment
 from src.utility import get_appointment_status
-from .enums import AppointmentStatus
-from .enums import Gender, TemperatureUnit
+from .enums import AppointmentStatus, PaymentStatus, Gender, TemperatureUnit
 
 
 class AppointmentCreate(BaseModel):
@@ -36,9 +35,10 @@ class AppointmentResponse(BaseModel):
     scheduled_date: str
     scheduled_time: str
     patient_id: str
-    mobile: str  # Required
+    mobile: str
     type: int
-    status: int  # AppointmentStatus
+    status: int
+    paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)
     firstName: Optional[str] = None
     lastName: Optional[str] = None
 
@@ -55,7 +55,8 @@ class AppointmentResponse(BaseModel):
             firstName=row.patient.firstName,
             lastName=row.patient.lastName,
             type=row.type,
-            status=row.status
+            status=row.status,
+            paymentStatus=row.payment_status
         # get_appointment_status(
         #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
         #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
@@ -90,6 +91,7 @@ class AppointmentById(BaseModel):
     # patient: PatientOut
     type: int
     status: int
+    paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)
 
     model_config = {"from_attributes": True}
 
@@ -111,7 +113,8 @@ class AppointmentById(BaseModel):
             temperature=row.patient.temperature,
             temperatureType=row.patient.temperatureType,
             type=row.type,
-            status=row.status
+            status=row.status,
+            paymentStatus=row.payment_status
         )
 
 
