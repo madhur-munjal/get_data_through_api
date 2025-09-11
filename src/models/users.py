@@ -79,7 +79,7 @@ class UpdateLoginRecord(BaseModel):
     mobile: Optional[str] = None
     current_password: Optional[str] = None
     password: Optional[constr(min_length=5)] = None
-    confirm_password: Optional[constr(min_length=5)] = None
+    # confirm_password: Optional[constr(min_length=5)] = None
 
     model_config = {"from_attributes": True}
 

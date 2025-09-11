@@ -99,7 +99,10 @@ def validate_user_fields(values, cls):
         )
 
     # Password validation
-    if "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
+    # password can be NOne in setting page, as user onlu update mobile
+    if "password" in cls.model_fields and values.password is None:
+        return values
+    elif "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError(
