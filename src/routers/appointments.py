@@ -8,7 +8,7 @@ from sqlalchemy import or_, extract
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.dependencies import get_current_doctor_id, require_owner
+from src.dependencies import get_current_doctor_id
 from src.models.appointments import (
     AppointmentCreate,
     AppointmentOut,
@@ -156,7 +156,7 @@ def get_appointment_data(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
-    query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient)
+    query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient).outerjoin(Appointment.billing)
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:
@@ -249,7 +249,7 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
     "/get_appointment_by_date/{appointment_date}", response_model=APIResponse[list[AppointmentResponse]]
 )
 def get_appointment_by_date(
-        appointment_date: str, #date = Query(..., description="Date in YYYY-MM-DD format"),
+        appointment_date: str,  # date = Query(..., description="Date in YYYY-MM-DD format"),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
