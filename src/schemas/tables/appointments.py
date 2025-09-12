@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time, Enum, Integer, Float
 from sqlalchemy.orm import relationship
-from src.models.enums import AppointmentStatus, AppointmentType
+from src.models.enums import AppointmentStatus, AppointmentType, PaymentStatus
 from src.database import Base
 from src.models.enums import TemperatureUnit
 
@@ -18,6 +18,7 @@ class Appointment(Base):
     scheduled_time = Column(Time, nullable=False)
     type = Column(Integer, nullable=False, default=AppointmentType.NEW)
     status = Column(Integer, nullable=False, default=AppointmentStatus.UPCOMING)
+    payment_status = Column(Integer, nullable=False, default=PaymentStatus.UNPAID.value)
     bloodGroup = Column(
         String(5), nullable=True
     )  # e.g., "A+", "O-", etc.

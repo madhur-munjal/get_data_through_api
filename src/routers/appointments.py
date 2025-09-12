@@ -61,7 +61,6 @@ def create_appointment(
         for field, value in filtered_data.items():
             setattr(patient, field, value)
     data = appointment.dict()
-    print(f"data: {data}")
     db_appointment = Appointment(
         patient_id=patient_id,
         doctor_id=doctor_id,
