@@ -39,9 +39,18 @@ def update_login_user(
     if not login_details:
         raise HTTPException(status_code=404, detail="login username does not found in staff and user table.")
 
-    if updated_login_data.password:
+    if updated_login_data.current_password is None and updated_login_data.password:
+        raise HTTPException(status_code=400, detail="Current password is required to set a new password.")
+
+    if updated_login_data.password is None and updated_login_data.current_password:
+        raise HTTPException(status_code=400, detail="password is required to set a new password.")
+
+    if updated_login_data.current_password:
         if not pwd_context.verify(updated_login_data.current_password, login_details.password):
             raise HTTPException(status_code=400, detail="Current password is incorrect.")
+        if updated_login_data.password:
+            hashed_pw = hash_password(updated_login_data.password)
+            login_details.password = hashed_pw
 
     # if updated_login_data.password != updated_login_data.confirm_password:
     #     raise HTTPException(status_code=400, detail="New password and confirm password do not match.")
@@ -49,9 +58,6 @@ def update_login_user(
     if updated_login_data.mobile:
         login_details.mobile = updated_login_data.mobile
 
-    if updated_login_data.password:
-        hashed_pw = hash_password(updated_login_data.password)
-        login_details.password = hashed_pw
     db.commit()
     db.refresh(login_details)
     return APIResponse(
