@@ -29,15 +29,13 @@ def update_login_user(
         current_user=Depends(get_current_user_payload),
 ):
     """Used to update data of login user(doctor/staff)."""
-    # print("****** Updated Login Data *****", updated_login_data)
-    # print(current_user)
     username = current_user.get("sub")
     login_details = db.query(Staff).filter_by(username=username).first()
     if login_details is None:
         login_details = db.query(User).filter_by(username=username).first()
 
     if not login_details:
-        raise HTTPException(status_code=404, detail="login username does not found in staff and user table.")
+        raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
 
     if updated_login_data.password:
         if not pwd_context.verify(updated_login_data.current_password, login_details.password):
