@@ -190,10 +190,6 @@ def get_appointment_data(
     total_records = query.count()
     results = query.order_by(
         desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
-    print("********")
-    c = [AppointmentResponse.from_row(p) for p in query.all()]
-    print(c[0])
-    print("********")
     # TODO need to add time as well
     return APIResponse(
         status_code=200,
