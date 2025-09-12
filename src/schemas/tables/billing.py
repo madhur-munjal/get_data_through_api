@@ -11,8 +11,8 @@ class Billing(Base):
     __tablename__ = "billing"
 
     billing_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    appointment_id = Column(String(36), ForeignKey("visits.appointment_id"), nullable=False)
-    #We need to make sure that more than one appointment id should not present in visit, means patient booked one appointment and had visited twice.
+    appointment_id = Column(String(36), ForeignKey("appointments.id"), nullable=False)
+    # We need to make sure that more than one appointment id should not present in visit, means patient booked one appointment and had visited twice.
     # patient_id = Column(String(36), ForeignKey("patients.patient_id"), nullable=False)
     # invoice_number = Column(String(36), unique=True)
     type = Column(Enum("Cash", "Card", "UPI", "Insurance", name="billing_type_enum"))
@@ -24,4 +24,4 @@ class Billing(Base):
     # payment_status = Column(Enum("Pending", "Paid", "Partial", name="payment_status_enum"))
     notes = Column(Text, nullable=True)
 
-    visit = relationship("Visit", back_populates="billing")
+    appointment = relationship("Appointment", back_populates="billing")

@@ -1,10 +1,9 @@
-from datetime import date, time, datetime
+from datetime import date, time
 from typing import Optional, Literal, List
 
 from pydantic import BaseModel, Field
 
 from src.models.patients import PatientUpdateWhileAppointment
-from src.utility import get_appointment_status
 from .enums import AppointmentStatus, PaymentStatus, Gender, TemperatureUnit
 
 
@@ -41,6 +40,8 @@ class AppointmentResponse(BaseModel):
     paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)
     firstName: Optional[str] = None
     lastName: Optional[str] = None
+    paymentType: Optional[str] = None
+    amount: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
@@ -56,11 +57,13 @@ class AppointmentResponse(BaseModel):
             lastName=row.patient.lastName,
             type=row.type,
             status=row.status,
-            paymentStatus=row.payment_status
-        # get_appointment_status(
-        #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
-        #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
-        #     # status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(
+            paymentStatus=row.payment_status,
+            paymentType=row.billing.type if row.billing else None,
+            amount=row.billing.amount if row.billing else None,
+            # get_appointment_status(
+            #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
+            #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
+            #     # status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(
             #     row.status) != AppointmentStatus.COMPLETED.value else row.status
         )
 
