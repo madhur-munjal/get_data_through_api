@@ -1,9 +1,9 @@
 from datetime import date
 from typing import Literal, Union, Optional, List, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from .enums import Gender, TemperatureUnit
+from .enums import Gender, TemperatureUnit, PaymentStatus
 
 
 class MedicationDetails(BaseModel):
@@ -128,34 +128,46 @@ class VisitAllResponse(BaseModel):
     temperatureType: Optional[TemperatureUnit] = None
     type: int
     status: int
+    paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)
+    paymentType: Optional[str] = None
+    amount: Optional[float] = None
     analysis: Optional[str] = None
     advice: Optional[str] = None
     tests: Optional[str] = None  # or define a TestDetails model if structured
     followUpVisit: Optional[str] = None
-    medicationDetails: Any  # Optional[List[MedicationDetails]] = None  # Optional[List[MedicationDetails]] = None
+    medicationDetails: Optional[
+        Any] = None  # Optional[List[MedicationDetails]] = None  # Optional[List[MedicationDetails]] = None
 
     model_config = {"from_attributes": True}
 
-    # @classmethod
-    # def from_row(cls, row):
-    #     return cls(
-    #         patient_id=row.patient_id,
-    #         firstName=row.patient.firstName,
-    #         lastName=row.patient.lastName,
-    #         age=row.patient.age,
-    #         mobile=row.patient.mobile,
-    #         gender=row.patient.gender,
-    #         address=row.patient.address,
-    #         lastVisit=row.patient.lastVisit,
-    #         bloodGroup=row.patient.bloodGroup,
-    #         weight=row.patient.weight,
-    #         bloodPressureUpper=row.patient.bloodPressureUpper,
-    #         bloodPressureLower=row.patient.bloodPressureLower,
-    #         temperature=row.patient.temperature,
-    #         temperatureType=row.patient.temperatureType,
-    #         type=row.type,
-    #         status=row.status
-    #     )
+    @classmethod
+    def from_appointment_row(cls, row):
+        return cls(
+            patient_id=row.patient_id,
+            firstName=row.patient.firstName,
+            lastName=row.patient.lastName,
+            age=row.patient.age,
+            mobile=row.patient.mobile,
+            gender=row.patient.gender,
+            address=row.patient.address,
+            lastVisit=row.patient.lastVisit,
+            bloodGroup=row.patient.bloodGroup,
+            weight=row.patient.weight,
+            bloodPressureUpper=row.patient.bloodPressureUpper,
+            bloodPressureLower=row.patient.bloodPressureLower,
+            temperature=row.patient.temperature,
+            temperatureType=row.patient.temperatureType,
+            type=row.type,
+            status=row.status,
+            # analysis=row.analysis,
+            # advice=row.advice,
+            # tests=row.tests,
+            # followUpVisit=row.followUpVisit,
+            # medicationDetails=row.medicationDetails,
+            paymentStatus=row.payment_status,
+            paymentType=row.billing.type if row.billing else None,
+            amount=row.billing.amount if row.billing else None
+        )
 
     @classmethod
     def from_visit_row(cls, row):
@@ -181,14 +193,7 @@ class VisitAllResponse(BaseModel):
             tests=row.tests,
             followUpVisit=row.followUpVisit,
             medicationDetails=row.medicationDetails,
-            # scheduled_date=row.appointments.scheduled_date.strftime("%m/%d/%Y"),
-            # scheduled_time=row.appointments.scheduled_time.strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
-            # mobile=row.patient.mobile,
-            # type=row.appointments.type,
-            # status=row.appointments.status,
-            # analysis=row.analysis,
-            # advice=row.advice,
-            # tests=row.tests,
-            # followUpVisit=row.followUpVisit,
-            # medicationDetails=row.medicationDetails
+            paymentStatus=row.appointments.payment_status,
+            paymentType=row.appointments.billing.type if row.appointments.billing else None,
+            amount=row.appointments.billing.amount if row.appointments.billing else None,
         )

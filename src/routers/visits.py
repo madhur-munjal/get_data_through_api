@@ -91,7 +91,7 @@ def get_visits_by_patient_id(
     return APIResponse(
         status_code=200,
         success=True,
-        message="successfully fetched visits",
+        message="Successfully fetched visits",
         data=visit_details,
     ).model_dump()
 
@@ -123,7 +123,7 @@ def get_visit_details(
     return APIResponse(
         status_code=200,
         success=True,
-        message="successfully fetched visit datails",
+        message="Successfully fetched visit details",
         data=VisitAllResponse.from_visit_row(visit),
     ).model_dump()
 
@@ -146,7 +146,7 @@ def get_patient_details_with_visits_dates(
     return APIResponse(
         status_code=200,
         success=True,
-        message="successfully fetched patients details with visits date",
+        message="Successfully fetched patients details with visits date",
         data={'patient_details': patient_details, 'visit_dates_details': visit_dates_details},
     ).model_dump()
 
@@ -174,6 +174,6 @@ def get_date_patient_wise_visit_details(
     return APIResponse(
         status_code=200,
         success=True,
-        message="successfully fetched patients details with visits date",
+        message="Successfully fetched patients details with visits date",
         data=VisitAllResponse.from_visit_row(visits),
     ).model_dump()
