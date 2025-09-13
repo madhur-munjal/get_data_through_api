@@ -233,7 +233,7 @@ def get_appointment_data(
 #         # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
 #     ).model_dump()
 
-@router.get("/{appointment_id}", response_model=APIResponse)  # Check to return from two response
+@router.get("/{appointment_id}", response_model=APIResponse[VisitAllResponse])
 def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
     visit = db.query(Visit).filter_by(appointment_id=appointment_id).first()
     if not visit:
@@ -244,19 +244,13 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
             status_code=200,
             success=True,
             message=f"Successfully fetched appointment details.",
-            data=AppointmentById.from_row(appointment_details)
-            # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
+            data=VisitAllResponse.from_appointment_row(appointment_details)
         ).model_dump()
-        # raise HTTPException(
-        #     status_code=404, detail=f"No visit found by Appointment id {appointment_id}"
-        # )
-    # visit_details = [VisitResponse.from_row(row) for row in visits]
-    # visit_patient_details = [{row.created_at.date(): row.id} for row in visits]
     else:
         return APIResponse(
             status_code=200,
             success=True,
-            message="successfully fetched visit datails",
+            message="Successfully fetched visit details",
             data=VisitAllResponse.from_visit_row(visit),
         ).model_dump()
 
