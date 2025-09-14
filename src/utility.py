@@ -179,10 +179,11 @@ def get_appointment_summary(rows_as_query, doctor_id: str):
             summary[appointment.id]["appointment"].pop("_sa_instance_state", None)
             summary[appointment.id]["patient"].pop("_sa_instance_state", None)
 
-        summary[appointment.id]["billings"].append({
-            "type": pay_type,
-            "amount": amount
-        })
-        summary[appointment.id]["total_amount"] += amount
+        if amount:
+            summary[appointment.id]["billings"].append({
+                "type": pay_type,
+                "amount": amount
+            })
+            summary[appointment.id]["total_amount"] += amount
 
     return list(summary.values())
