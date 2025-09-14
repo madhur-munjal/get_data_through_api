@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 
-@router.post("/search")  # , response_model=APIResponse[AppointmentOut]
+@router.get("/search")  # , response_model=APIResponse[AppointmentOut]
 def get_patient_staff_details(
         text: str = Query(...),
         db: Session = Depends(get_db),
