@@ -1,19 +1,17 @@
+from datetime import datetime
 from uuid import UUID
-from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import desc
-from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy import desc, or_, func
+from sqlalchemy.orm import Session, aliased
 
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.dependencies import require_owner
 from src.models.patients import PatientRecord, PatientUpdate, PatientOut, PaginatedPatientResponse
 from src.models.response import APIResponse
+from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
-from src.schemas.tables.appointments import Appointment
 
 router = APIRouter(
     prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}
@@ -81,16 +79,17 @@ def get_patients_list(
         # month: str = Query(None, description="Filter by month "),
         minAge: int = Query(None, description="Filter by patient minimum age"),
         maxAge: int = Query(None, description="Filter by patient maximum age"),
-        startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"), # these dates used for appointments
+        startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
+        # these dates used for appointments
         endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
-    query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
+    patient_query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
 
     if text:
-        query = query.filter(
+        patient_query = patient_query.filter(
             or_(
                 Patient.firstName.ilike(f"%{text}%"),
                 Patient.lastName.ilike(f"%{text}%"),
@@ -100,29 +99,54 @@ def get_patients_list(
 
     if minAge or maxAge:
         if minAge and maxAge:
-            query = query.filter(Patient.age.between(minAge, maxAge))
+            patient_query = patient_query.filter(Patient.age.between(minAge, maxAge))
         elif minAge:
-            query = query.filter(Patient.age >= minAge)
+            patient_query = patient_query.filter(Patient.age >= minAge)
         elif maxAge:
-            query = query.filter(Patient.age <= maxAge)
+            patient_query = patient_query.filter(Patient.age <= maxAge)
 
-    # 📆 Date range filter: match between startDate and endDate of thir appointments
+    # 📆 Date range filter: match between startDate and endDate of their appointments
     if startDate and endDate:
         try:
             start_date_obj = datetime.strptime(startDate, "%Y-%m-%d").date()
             end_date_obj = datetime.strptime(endDate, "%Y-%m-%d").date()
-            query = query.join(Appointment, Patient.patient_id == Appointment.patient_id).filter(Appointment.scheduled_date.between(start_date_obj, end_date_obj))
+            patient_query = patient_query.join(Appointment, Patient.patient_id == Appointment.patient_id).filter(
+                Appointment.scheduled_date.between(start_date_obj, end_date_obj))
         except ValueError:
             return APIResponse(
-        status_code=200,
-        success=True,
-        message=f"ValueError wile filtering from startDate and EndDate.",
-        data=None
-    ).model_dump()
+                status_code=200,
+                success=True,
+                message=f"ValueError wile filtering from startDate and EndDate.",
+                data=None
+            ).model_dump()
 
+    latest_date_subq = (
+        db.query(
+            Appointment.patient_id,
+            func.max(Appointment.created_at).label("latest_date")
+        )
+        .group_by(Appointment.patient_id)
+        .subquery()
+    )
+    # Alias the Appointment table
+    LatestAppointment = aliased(Appointment)
 
-    total_records = query.count()
-    results = query.order_by(
+    # Subquery to get patient_id and type from latest appointment
+    get_type = (
+        db.query(
+            LatestAppointment.patient_id,
+            LatestAppointment.type
+        )
+        .join(
+            latest_date_subq,
+            (LatestAppointment.patient_id == latest_date_subq.c.patient_id) &
+            (LatestAppointment.created_at == latest_date_subq.c.latest_date)
+        )
+        .subquery()
+    )
+    patient_query = patient_query.join(get_type, Patient.patient_id == get_type.c.patient_id).add_columns(get_type.c.type.label("latest_appointment_type"))
+    total_records = patient_query.count()
+    results = patient_query.order_by(
         desc(Patient.created_at)).offset(offset).limit(page_size).all()
     # TODO need to add time as well
     return APIResponse(
@@ -130,7 +154,7 @@ def get_patients_list(
         success=True,
         message=f"Successfully fetched patient lists.",
         data={"page": page, "page_size": page_size, "total_records": total_records,
-              "patient_list": [PatientOut.model_validate(p) for p in results]}
+              "patient_list": [PatientOut.from_row(p) for p in results]}
     ).model_dump()
 
     # patients = db.query(Patient).filter(Patient.assigned_doctor_id == doctor_id).all()
@@ -169,27 +193,27 @@ def get_patients_details_with_appointment_list(
     ).model_dump()
 
 
-@router.get("/get_patients_list_on_basis_of_mobile/{mobile}", response_model=APIResponse)
-def get_patients_list_on_basis_of_mobile(
-        mobile: str,  # = mobile_no,  # Query(None, description="Search by patient's mobile number"),
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id)
-):
-    query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
-
-    if mobile:
-        query = query.filter(
-            or_(
-                Patient.mobile.ilike(f"%{mobile}%")
-            )
-        )
-    results = query.all()
-    # final_data = {column.name: getattr(Patient, column.name) for column in Patient.__table__.columns}
-    # print(results)
-    # print([PatientOut.model_validate(p) for p in results])
-    return APIResponse(
-        status_code=200,
-        success=True,
-        message=f"Successfully fetched patients lists.",
-        data={"patient_list": [PatientOut.model_validate(row) for row in results]}
-    ).model_dump()
+# @router.get("/get_patients_list_on_basis_of_mobile/{mobile}", response_model=APIResponse)
+# def get_patients_list_on_basis_of_mobile(
+#         mobile: str,  # = mobile_no,  # Query(None, description="Search by patient's mobile number"),
+#         db: Session = Depends(get_db),
+#         doctor_id: UUID = Depends(get_current_doctor_id)
+# ):
+#     query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
+#
+#     if mobile:
+#         query = query.filter(
+#             or_(
+#                 Patient.mobile.ilike(f"%{mobile}%")
+#             )
+#         )
+#     results = query.all()
+#     # final_data = {column.name: getattr(Patient, column.name) for column in Patient.__table__.columns}
+#     # print(results)
+#     # print([PatientOut.model_validate(p) for p in results])
+#     return APIResponse(
+#         status_code=200,
+#         success=True,
+#         message=f"Successfully fetched patients lists.",
+#         data={"patient_list": [PatientOut.model_validate(row) for row in results]}
+#     ).model_dump()

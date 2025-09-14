@@ -63,26 +63,28 @@ class PatientOut(BaseModel):
     bloodPressureLower: Optional[int] = None
     temperature: Optional[float] = None
     temperatureType: Optional[TemperatureUnit] = None
+    type: Optional[int] = None
 
     model_config = {"from_attributes": True}
 
     @classmethod
     def from_row(cls, row):
         return cls(
-            patient_id=row.patient_id,
-            firstName=row.patient.firstName,
-            lastName=row.patient.lastName,
-            age=row.patient.age,
-            mobile=row.patient.mobile,
-            gender=row.patient.gender,
-            address=row.patient.address,
-            lastVisit=row.patient.lastVisit,
-            bloodGroup=row.patient.bloodGroup,
-            weight=row.patient.weight,
-            bloodPressureUpper=row.patient.bloodPressureUpper,
-            bloodPressureLower=row.patient.bloodPressureLower,
-            temperature=row.patient.temperature,
-            temperatureType=row.patient.temperatureType
+            patient_id=row.Patient.patient_id,
+            firstName=row.Patient.firstName,
+            lastName=row.Patient.lastName,
+            age=row.Patient.age,
+            mobile=row.Patient.mobile,
+            gender=row.Patient.gender,
+            address=row.Patient.address,
+            lastVisit=row.Patient.lastVisit,
+            bloodGroup=row.Patient.bloodGroup,
+            weight=row.Patient.weight,
+            bloodPressureUpper=row.Patient.bloodPressureUpper,
+            bloodPressureLower=row.Patient.bloodPressureLower,
+            temperature=row.Patient.temperature,
+            temperatureType=row.Patient.temperatureType,
+            type=row.latest_appointment_type
         )
 
 

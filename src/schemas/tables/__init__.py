@@ -4,3 +4,4 @@ from .users import User
 from .visits import Visit
 from .staff import Staff
 from .billing import Billing
+from .doctor_payment_details import DoctorPaymentDetails

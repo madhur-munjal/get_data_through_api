@@ -3,14 +3,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from src.auth_utils import hash_password
-from src.auth_utils import pwd_context
+from src.auth_utils import hash_password, pwd_context
 from src.database import get_db
-from src.dependencies import get_current_doctor_id
-from src.dependencies import get_current_user_payload
+from src.dependencies import get_current_doctor_id, get_current_user_payload
+from src.models.billing import DoctorsBillingInput
 from src.models.response import APIResponse
 from src.models.staff import StaffOut
 from src.models.users import UserOut, UpdateLoginRecord
+from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
 
@@ -60,4 +60,33 @@ def update_login_user(
         message="Login user details updated successfully.",
         data=UserOut.model_validate(login_details) if isinstance(login_details, User) else StaffOut.model_validate(
             login_details),
+    ).model_dump()
+
+
+@router.post("/billing")  # , response_model=APIResponse[StaffOut])
+def upsert_billing(data: DoctorsBillingInput,
+                   db: Session = Depends(get_db),
+                   doctor_id: UUID = Depends(get_current_doctor_id),
+                   current_user=Depends(get_current_user_payload),
+                   ):
+    existing = db.query(DoctorPaymentDetails).filter_by(doctor_id=doctor_id).first()
+    if existing:
+        # Update existing billing record
+        existing.name = data.name
+        existing.upi_id = data.upi_id
+        existing.currency = data.currency
+    else:
+        # Create new billing record
+        billing_data = data.model_dump()
+        billing_data['doctor_id'] = doctor_id
+        # import pdb; pdb.set_trace()
+        new_billing = DoctorPaymentDetails(**billing_data)
+        db.add(new_billing)
+
+    db.commit()
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="Billing details were updated successfully.",
+        data=None
     ).model_dump()

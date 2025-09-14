@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+
 from .enums import BillingTypeEnum
 
 
@@ -18,5 +19,22 @@ class BillingOut(BaseModel):
     appointment_id: str
     type: str  # e.g., "cash", "card", "upi", "insurance"
     amount: float
+
+    model_config = {"from_attributes": True}
+
+
+class DoctorsBillingInput(BaseModel):
+    name: str
+    upi_id: str
+    currency: str
+
+    model_config = {"from_attributes": True}
+
+
+class DoctorsBillingSave(BaseModel):
+    doctor_id: str
+    name: str
+    upi_id: str
+    currency: str
 
     model_config = {"from_attributes": True}
