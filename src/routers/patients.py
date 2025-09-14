@@ -103,7 +103,7 @@ def get_patients_list(
         elif maxAge:
             query = query.filter(Patient.age <= maxAge)
 
-    total_records = db.query(Patient).filter_by(assigned_doctor_id=doctor_id).count()
+    total_records = query.count()
     results = query.order_by(
         desc(Patient.created_at)).offset(offset).limit(page_size).all()
     # TODO need to add time as well

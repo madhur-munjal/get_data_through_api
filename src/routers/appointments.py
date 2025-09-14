@@ -7,8 +7,9 @@ from sqlalchemy import desc
 from sqlalchemy import or_, extract
 from sqlalchemy.orm import Session
 
+from src.utility import get_appointment_summary
 from src.database import get_db
-from src.dependencies import get_current_doctor_id, require_owner
+from src.dependencies import get_current_doctor_id
 from src.models.appointments import (
     AppointmentCreate,
     AppointmentOut,
@@ -23,7 +24,10 @@ from src.models.visits import VisitAllResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
+from src.schemas.tables.billing import Billing
 from src.utility import save_data_to_db, get_appointment_status
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import func
 
 router = APIRouter(
     prefix="/appointments",
@@ -61,7 +65,6 @@ def create_appointment(
         for field, value in filtered_data.items():
             setattr(patient, field, value)
     data = appointment.dict()
-    print(f"data: {data}")
     db_appointment = Appointment(
         patient_id=patient_id,
         doctor_id=doctor_id,
@@ -153,11 +156,23 @@ def get_appointment_data(
         text: str = Query(None, description="Search by patient's first name, last name or mobile number"),
         month: str = Query(None, description="Filter by month "),
         status: str = Query(None, description="Filter by appointment status"),
+        startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
+        endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
-    query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient)
+    # # query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient).outerjoin(Appointment.billing)
+    query = (
+        db.query(
+            Appointment,
+            Patient,
+            Billing.type,
+            Billing.amount
+        ).filter_by(doctor_id=doctor_id)
+        .join(Patient, Appointment.patient_id == Patient.patient_id)
+        .join(Billing, Appointment.id == Billing.appointment_id)
+    )
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:
@@ -188,16 +203,34 @@ def get_appointment_data(
         status_db_value = status_enum.value
         query = query.filter(Appointment.status == int(status_db_value))
 
-    total_records = query.count()
+    # 📆 Date range filter: match between startDate and endDate
+    if startDate and endDate:
+        try:
+            start_date_obj = datetime.strptime(startDate, "%Y-%m-%d").date()
+            end_date_obj = datetime.strptime(endDate, "%Y-%m-%d").date()
+            query = query.filter(Appointment.scheduled_date.between(start_date_obj, end_date_obj))
+        except ValueError:
+            return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"ValueError wile filtering from startDate and EndDate.",
+        data=None
+    ).model_dump()
+
     results = query.order_by(
         desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
+
+    results_with_group_billing = get_appointment_summary(results, doctor_id=doctor_id)
+
+    total_records = len(results_with_group_billing)
+
     # TODO need to add time as well
     return APIResponse(
         status_code=200,
         success=True,
         message=f"Successfully fetched appointment lists.",
         data={"page": page, "page_size": page_size, "total_records": total_records,
-              "appointment_list": [AppointmentResponse.from_row(p) for p in results]}
+              "appointment_list": [AppointmentResponse.from_row(p) for p in results_with_group_billing]}
     ).model_dump()
 
 
@@ -218,7 +251,7 @@ def get_appointment_data(
 #         # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
 #     ).model_dump()
 
-@router.get("/{appointment_id}", response_model=APIResponse)  # Check to return from two response
+@router.get("/{appointment_id}", response_model=APIResponse[VisitAllResponse])
 def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
     visit = db.query(Visit).filter_by(appointment_id=appointment_id).first()
     if not visit:
@@ -229,19 +262,13 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
             status_code=200,
             success=True,
             message=f"Successfully fetched appointment details.",
-            data=AppointmentById.from_row(appointment_details)
-            # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
+            data=VisitAllResponse.from_appointment_row(appointment_details)
         ).model_dump()
-        # raise HTTPException(
-        #     status_code=404, detail=f"No visit found by Appointment id {appointment_id}"
-        # )
-    # visit_details = [VisitResponse.from_row(row) for row in visits]
-    # visit_patient_details = [{row.created_at.date(): row.id} for row in visits]
     else:
         return APIResponse(
             status_code=200,
             success=True,
-            message="successfully fetched visit datails",
+            message="Successfully fetched visit details",
             data=VisitAllResponse.from_visit_row(visit),
         ).model_dump()
 
@@ -250,7 +277,7 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
     "/get_appointment_by_date/{appointment_date}", response_model=APIResponse[list[AppointmentResponse]]
 )
 def get_appointment_by_date(
-        appointment_date: str, #date = Query(..., description="Date in YYYY-MM-DD format"),
+        appointment_date: str,  # date = Query(..., description="Date in YYYY-MM-DD format"),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):

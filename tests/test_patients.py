@@ -67,6 +67,7 @@ def test_update_patent_success(client):
     assert data["message"] == "Patient updated successfully."
     assert data["data"] is None
 
+
 def test_update_patient_not_found(client):
     # app.dependency_overrides[get_db] = lambda: MockSession(patients=[])
     app.dependency_overrides[get_db] = lambda: mock_get_db(keep_model_empty=True)
@@ -78,6 +79,7 @@ def test_update_patient_not_found(client):
     assert response.status_code == 404
     data = response.json()
     assert data["message"] == "Patient not found"
+
 
 def test_get_patients_list(client):
     response = client.get("/patients/?page=1&page_size=10")

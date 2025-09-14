@@ -22,3 +22,14 @@ class Gender(str, Enum):
 class TemperatureUnit(str, Enum):
     celsius = "celsius"
     fahrenheit = "fahrenheit"
+
+
+class PaymentStatus(str, Enum):
+    UNPAID = 0
+    PAID = 1
+
+class BillingTypeEnum(str, Enum):
+    Cash = "Cash"
+    Card = "Card"
+    UPI = "UPI"
+    Insurance = "Insurance"

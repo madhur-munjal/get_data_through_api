@@ -1,12 +1,10 @@
-from datetime import date, time, datetime
+from datetime import date, time
 from typing import Optional, Literal, List
 
 from pydantic import BaseModel, Field
 
 from src.models.patients import PatientUpdateWhileAppointment
-from src.utility import get_appointment_status
-from .enums import AppointmentStatus
-from .enums import Gender, TemperatureUnit
+from .enums import AppointmentStatus, PaymentStatus, Gender, TemperatureUnit
 
 
 class AppointmentCreate(BaseModel):
@@ -36,30 +34,36 @@ class AppointmentResponse(BaseModel):
     scheduled_date: str
     scheduled_time: str
     patient_id: str
-    mobile: str  # Required
-    type: int
-    status: int  # AppointmentStatus
+    mobile: str
+    type: int # New Patient, Follow-up
+    status: int  # Completed, Upcoming, Cancelled
+    paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)  # Paid, Unpaid
     firstName: Optional[str] = None
     lastName: Optional[str] = None
+    paymentDetails: Optional[list] = None
+    amount: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
     @classmethod
     def from_row(cls, row):
         return cls(
-            appointment_id=row.id,
-            scheduled_date=row.scheduled_date.strftime("%m/%d/%Y"),
-            scheduled_time=row.scheduled_time.strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
-            patient_id=row.patient_id,
-            mobile=row.patient.mobile,
-            firstName=row.patient.firstName,
-            lastName=row.patient.lastName,
-            type=row.type,
-            status=row.status
-        # get_appointment_status(
-        #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
-        #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
-        #     # status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(
+            appointment_id=row['appointment']['id'],
+            scheduled_date=row['appointment']['scheduled_date'].strftime("%m/%d/%Y"),
+            scheduled_time=row['appointment']['scheduled_time'].strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
+            patient_id=row['appointment']['patient_id'],
+            mobile=row['patient']['mobile'],
+            firstName=row['patient']['firstName'],
+            lastName=row['patient']['lastName'],
+            type=row['appointment']['type'],
+            status=row['appointment']['status'],
+            paymentStatus=row['appointment']['payment_status'],
+            paymentDetails=row['billings'],
+            amount=row['total_amount'],
+            # get_appointment_status(
+            #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
+            #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
+            #     # status=get_appointment_status(datetime.combine(row.scheduled_date, row.scheduled_time)) if str(
             #     row.status) != AppointmentStatus.COMPLETED.value else row.status
         )
 
@@ -90,6 +94,7 @@ class AppointmentById(BaseModel):
     # patient: PatientOut
     type: int
     status: int
+    paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)
 
     model_config = {"from_attributes": True}
 
@@ -111,7 +116,8 @@ class AppointmentById(BaseModel):
             temperature=row.patient.temperature,
             temperatureType=row.patient.temperatureType,
             type=row.type,
-            status=row.status
+            status=row.status,
+            paymentStatus=row.payment_status
         )
 
 

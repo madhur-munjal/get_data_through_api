@@ -75,7 +75,7 @@ def get_staff_list(
     return APIResponse(
         status_code=200,
         success=True,
-        message="successfully fetched staff lists",
+        message="Successfully fetched staff lists",
         data=user_dtos,
     ).model_dump()
 
@@ -129,7 +129,7 @@ def get_staff_detail(
     return APIResponse(
         status_code=200,
         success=True,
-        message="successfully fetched staff lists",
+        message="Successfully fetched staff lists",
         data=StaffOut.model_validate(staff_detail),
     ).model_dump()
 
@@ -191,6 +191,6 @@ def update_staff(
     return APIResponse(
         status_code=200,
         success=True,
-        message="staff details updated successfully.",
+        message="Staff details updated successfully.",
         data=StaffOut.model_validate(staff_details),
     ).model_dump()
