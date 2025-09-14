@@ -1,4 +1,5 @@
 from uuid import UUID
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc
@@ -10,9 +11,9 @@ from src.dependencies import get_current_doctor_id
 from src.dependencies import require_owner
 from src.models.patients import PatientRecord, PatientUpdate, PatientOut, PaginatedPatientResponse
 from src.models.response import APIResponse
-from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
+from src.schemas.tables.appointments import Appointment
 
 router = APIRouter(
     prefix="/patients", tags=["patients"], responses={404: {"error": "Not found"}}
@@ -79,7 +80,9 @@ def get_patients_list(
         text: str = Query(None, description="Search by patient's first name, last name or mobile number"),
         # month: str = Query(None, description="Filter by month "),
         minAge: int = Query(None, description="Filter by patient minimum age"),
-        maxAge: int = Query(None, description="Filter by patient maximun age"),
+        maxAge: int = Query(None, description="Filter by patient maximum age"),
+        startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"), # these dates used for appointments
+        endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
@@ -103,6 +106,21 @@ def get_patients_list(
         elif maxAge:
             query = query.filter(Patient.age <= maxAge)
 
+    # 📆 Date range filter: match between startDate and endDate of thir appointments
+    if startDate and endDate:
+        try:
+            start_date_obj = datetime.strptime(startDate, "%Y-%m-%d").date()
+            end_date_obj = datetime.strptime(endDate, "%Y-%m-%d").date()
+            query = query.join(Appointment, Patient.patient_id == Appointment.patient_id).filter(Appointment.scheduled_date.between(start_date_obj, end_date_obj))
+        except ValueError:
+            return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"ValueError wile filtering from startDate and EndDate.",
+        data=None
+    ).model_dump()
+
+
     total_records = query.count()
     results = query.order_by(
         desc(Patient.created_at)).offset(offset).limit(page_size).all()
@@ -110,7 +128,7 @@ def get_patients_list(
     return APIResponse(
         status_code=200,
         success=True,
-        message=f"Successfully fetched appointment lists.",
+        message=f"Successfully fetched patient lists.",
         data={"page": page, "page_size": page_size, "total_records": total_records,
               "patient_list": [PatientOut.model_validate(p) for p in results]}
     ).model_dump()

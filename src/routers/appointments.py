@@ -224,7 +224,6 @@ def get_appointment_data(
 
     total_records = len(results_with_group_billing)
 
-    # TODO need to add time as well
     return APIResponse(
         status_code=200,
         success=True,

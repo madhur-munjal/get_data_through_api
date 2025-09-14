@@ -160,10 +160,6 @@ def get_appointment_status(appointment_date_time: datetime,
         return AppointmentStatus.NO_SHOW.value
 
 
-from src.schemas.tables.appointments import Appointment
-from src.schemas.tables.patients import Patient
-from src.schemas.tables.billing import Billing
-
 def get_appointment_summary(rows_as_query, doctor_id: str):
 
     # Group by appointment
