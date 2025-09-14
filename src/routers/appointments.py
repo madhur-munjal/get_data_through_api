@@ -7,6 +7,7 @@ from sqlalchemy import desc
 from sqlalchemy import or_, extract
 from sqlalchemy.orm import Session
 
+from src.utility import get_appointment_summary
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.models.appointments import (
@@ -23,7 +24,10 @@ from src.models.visits import VisitAllResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
+from src.schemas.tables.billing import Billing
 from src.utility import save_data_to_db, get_appointment_status
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import func
 
 router = APIRouter(
     prefix="/appointments",
@@ -158,7 +162,17 @@ def get_appointment_data(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     offset = (page - 1) * page_size
-    query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient).outerjoin(Appointment.billing)
+    # # query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient).outerjoin(Appointment.billing)
+    query = (
+        db.query(
+            Appointment,
+            Patient,
+            Billing.type,
+            Billing.amount
+        ).filter_by(doctor_id=doctor_id)
+        .join(Patient, Appointment.patient_id == Patient.patient_id)
+        .join(Billing, Appointment.id == Billing.appointment_id)
+    )
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:
@@ -203,16 +217,20 @@ def get_appointment_data(
         data=None
     ).model_dump()
 
-    total_records = query.count()
     results = query.order_by(
         desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
+
+    results_with_group_billing = get_appointment_summary(results, doctor_id=doctor_id)
+
+    total_records = len(results_with_group_billing)
+
     # TODO need to add time as well
     return APIResponse(
         status_code=200,
         success=True,
         message=f"Successfully fetched appointment lists.",
         data={"page": page, "page_size": page_size, "total_records": total_records,
-              "appointment_list": [AppointmentResponse.from_row(p) for p in results]}
+              "appointment_list": [AppointmentResponse.from_row(p) for p in results_with_group_billing]}
     ).model_dump()
 
 

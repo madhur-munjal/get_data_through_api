@@ -35,12 +35,12 @@ class AppointmentResponse(BaseModel):
     scheduled_time: str
     patient_id: str
     mobile: str
-    type: int
-    status: int
-    paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)
+    type: int # New Patient, Follow-up
+    status: int  # Completed, Upcoming, Cancelled
+    paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)  # Paid, Unpaid
     firstName: Optional[str] = None
     lastName: Optional[str] = None
-    paymentType: Optional[str] = None
+    paymentDetails: Optional[list] = None
     amount: Optional[float] = None
 
     model_config = {"from_attributes": True}
@@ -48,18 +48,18 @@ class AppointmentResponse(BaseModel):
     @classmethod
     def from_row(cls, row):
         return cls(
-            appointment_id=row.id,
-            scheduled_date=row.scheduled_date.strftime("%m/%d/%Y"),
-            scheduled_time=row.scheduled_time.strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
-            patient_id=row.patient_id,
-            mobile=row.patient.mobile,
-            firstName=row.patient.firstName,
-            lastName=row.patient.lastName,
-            type=row.type,
-            status=row.status,
-            paymentStatus=row.payment_status,
-            paymentType=row.billing.type if row.billing else None,
-            amount=row.billing.amount if row.billing else None,
+            appointment_id=row['appointment']['id'],
+            scheduled_date=row['appointment']['scheduled_date'].strftime("%m/%d/%Y"),
+            scheduled_time=row['appointment']['scheduled_time'].strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
+            patient_id=row['appointment']['patient_id'],
+            mobile=row['patient']['mobile'],
+            firstName=row['patient']['firstName'],
+            lastName=row['patient']['lastName'],
+            type=row['appointment']['type'],
+            status=row['appointment']['status'],
+            paymentStatus=row['appointment']['payment_status'],
+            paymentDetails=row['billings'],
+            amount=row['total_amount'],
             # get_appointment_status(
             #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
             #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
