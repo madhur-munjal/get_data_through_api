@@ -7,7 +7,6 @@ from sqlalchemy import desc
 from sqlalchemy import or_, extract
 from sqlalchemy.orm import Session
 
-from src.utility import get_appointment_summary
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.models.appointments import (
@@ -15,19 +14,17 @@ from src.models.appointments import (
     AppointmentOut,
     AppointmentResponse,
     AppointmentUpdate,
-    AppointmentById,
     PaginatedAppointmentResponse
 )
 from src.models.enums import AppointmentType, AppointmentStatus
 from src.models.response import APIResponse
 from src.models.visits import VisitAllResponse
 from src.schemas.tables.appointments import Appointment
+from src.schemas.tables.billing import Billing
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
-from src.schemas.tables.billing import Billing
+from src.utility import get_appointment_summary
 from src.utility import save_data_to_db, get_appointment_status
-from sqlalchemy.orm import aliased
-from sqlalchemy.sql import func
 
 router = APIRouter(
     prefix="/appointments",
@@ -171,8 +168,11 @@ def get_appointment_data(
             Billing.amount
         ).filter_by(doctor_id=doctor_id)
         .join(Patient, Appointment.patient_id == Patient.patient_id)
-        .join(Billing, Appointment.id == Billing.appointment_id)
+        .outerjoin(Billing, Appointment.id == Billing.appointment_id)
+        .filter(Appointment.id.isnot(None))
     )
+    import pdb;
+    pdb.set_trace()
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:
@@ -211,11 +211,11 @@ def get_appointment_data(
             query = query.filter(Appointment.scheduled_date.between(start_date_obj, end_date_obj))
         except ValueError:
             return APIResponse(
-        status_code=200,
-        success=True,
-        message=f"ValueError wile filtering from startDate and EndDate.",
-        data=None
-    ).model_dump()
+                status_code=200,
+                success=True,
+                message=f"ValueError wile filtering from startDate and EndDate.",
+                data=None
+            ).model_dump()
 
     results = query.order_by(
         desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
