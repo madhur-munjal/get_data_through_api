@@ -15,6 +15,9 @@ from pydantic_core import InitErrorDetails, PydanticCustomError
 from sqlalchemy.exc import IntegrityError
 
 from src.models.enums import AppointmentStatus
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
 
 load_dotenv()
 
@@ -58,6 +61,7 @@ def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
     status_code, response = server.login(from_email, os.getenv("email_password"))
     server.sendmail(from_email, to_email, message.as_string())
     server.quit()
+
 
 def validate_user_fields(values, cls):
     """
@@ -154,3 +158,31 @@ def get_appointment_status(appointment_date_time: datetime,
         return AppointmentStatus.UPCOMING.value
     else:
         return AppointmentStatus.NO_SHOW.value
+
+
+from src.schemas.tables.appointments import Appointment
+from src.schemas.tables.patients import Patient
+from src.schemas.tables.billing import Billing
+
+def get_appointment_summary(rows_as_query, doctor_id: str):
+
+    # Group by appointment
+    summary = {}
+    for appointment, patient, pay_type, amount in rows_as_query:
+        if appointment.id not in summary:
+            summary[appointment.id] = {
+                "appointment": {c.name: getattr(appointment, c.name) for c in appointment.__table__.columns},
+                "patient": {c.name: getattr(patient, c.name) for c in patient.__table__.columns},
+                "billings": [],
+                "total_amount": 0
+            }
+            summary[appointment.id]["appointment"].pop("_sa_instance_state", None)
+            summary[appointment.id]["patient"].pop("_sa_instance_state", None)
+
+        summary[appointment.id]["billings"].append({
+            "type": pay_type,
+            "amount": amount
+        })
+        summary[appointment.id]["total_amount"] += amount
+
+    return list(summary.values())

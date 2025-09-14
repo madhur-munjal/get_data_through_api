@@ -16,8 +16,8 @@ class Appointment(Base):
     # scheduled_date_time = Column(DateTime, nullable=False)
     scheduled_date = Column(Date, nullable=False)
     scheduled_time = Column(Time, nullable=False)
-    type = Column(Integer, nullable=False, default=AppointmentType.NEW)
-    status = Column(Integer, nullable=False, default=AppointmentStatus.UPCOMING)
+    type = Column(Integer, nullable=False, default=AppointmentType.NEW.value)
+    status = Column(Integer, nullable=False, default=AppointmentStatus.UPCOMING.value)
     payment_status = Column(Integer, nullable=False, default=PaymentStatus.UNPAID.value)
     bloodGroup = Column(
         String(5), nullable=True
