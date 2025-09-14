@@ -171,8 +171,6 @@ def get_appointment_data(
         .outerjoin(Billing, Appointment.id == Billing.appointment_id)
         .filter(Appointment.id.isnot(None))
     )
-    import pdb;
-    pdb.set_trace()
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:
