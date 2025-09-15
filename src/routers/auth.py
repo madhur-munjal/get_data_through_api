@@ -17,6 +17,8 @@ from src.auth_utils import (
     hash_password,
 )
 from src.database import get_db
+from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
+from src.models.billing import DoctorsBillingSave
 from src.models.response import APIResponse
 from src.models.users import (
     ForgotPasswordRequest,
@@ -26,8 +28,8 @@ from src.models.users import (
     UserLogin,
     UserOut,
 )
-# from src.dependencies import blacklist_token
 from src.redis_client import get_redis_client
+from src.schemas.tables.billing import Billing
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
 from src.utility import generate_otp, send_otp_email, otp_store
@@ -108,10 +110,17 @@ def login(
             status_code=200, success=False, message="Incorrect password.", data=None
         )
     db_user = doc_db_user or staff_db_user
+    billing_details_db = db.query(DoctorPaymentDetails).filter_by(doctor_id=doc_id).first()
+    if billing_details_db:
+        billing_details = DoctorsBillingSave(doctor_id=doc_id, upi_id=billing_details_db.upi_id,
+                                             name=billing_details_db.name,
+                                             currency=billing_details_db.currency).model_dump()
+    else:
+        billing_details = None
     # TODO: add id in below
     access_token = create_access_token(
         {"sub": username, "doc_id": doc_id, "role": db_user.role, "firstName": db_user.firstName,
-         "lastName": db_user.lastName}, request=request
+         "lastName": db_user.lastName, "billingDetails": billing_details}, request=request
     )
     refresh_token = create_refresh_token(username)
     response.set_cookie(

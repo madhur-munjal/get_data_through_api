@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 
-from .enums import BillingTypeEnum
 from typing import Optional, Literal, List
 
 
