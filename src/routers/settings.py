@@ -63,7 +63,7 @@ def update_login_user(
     ).model_dump()
 
 
-@router.post("/billing")  # , response_model=APIResponse[StaffOut])
+@router.post("/upi")  # , response_model=APIResponse[StaffOut])
 def upsert_billing(data: DoctorsBillingInput,
                    db: Session = Depends(get_db),
                    doctor_id: UUID = Depends(get_current_doctor_id),
@@ -87,6 +87,6 @@ def upsert_billing(data: DoctorsBillingInput,
     return APIResponse(
         status_code=200,
         success=True,
-        message="Billing details were updated successfully.",
+        message="UPI details were updated successfully.",
         data=None
     ).model_dump()
