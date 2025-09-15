@@ -8,7 +8,7 @@ from sqlalchemy import or_, extract
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.dependencies import get_current_doctor_id
+from src.dependencies import get_current_doctor_id, get_current_user_payload
 from src.models.appointments import (
     AppointmentCreate,
     AppointmentOut,
@@ -21,6 +21,7 @@ from src.models.response import APIResponse
 from src.models.visits import VisitAllResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.billing import Billing
+from src.schemas.tables.notifications import Notification
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
 from src.utility import get_appointment_summary
@@ -39,7 +40,8 @@ router = APIRouter(
 def create_appointment(
         appointment: AppointmentCreate,
         db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id)
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        current_user=Depends(get_current_user_payload),
 ):
     """Register a new appointment.
     If enter new mobile number, then it will create under new patients record."""
@@ -62,6 +64,11 @@ def create_appointment(
         for field, value in filtered_data.items():
             setattr(patient, field, value)
     data = appointment.dict()
+    updated_by = current_user.get('firstName') + " " + current_user.get('lastName') if current_user.get('lastName') else current_user.get('firstName')
+    notification_data = {'firstName': patient_data.get('firstName'), 'lastName': patient_data.get('lastName'),
+                         'type': 'appointment', 'message': 'appointment created', 'updated_by': updated_by
+                         }
+    save_data_to_db(notification_data, Notification, db)
     db_appointment = Appointment(
         patient_id=patient_id,
         doctor_id=doctor_id,

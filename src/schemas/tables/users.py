@@ -5,9 +5,10 @@ from sqlalchemy import (
     Text,
     String,
     CheckConstraint,
+    DateTime
 )
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.sql import func
 from src.database import Base
 
 
@@ -31,6 +32,7 @@ class User(Base):
     password = Column(Text, nullable=False)  # mandatory
     role = Column(String(50), nullable=False,
                   default="admin")  # mandatory e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
+    created_at = Column(DateTime, server_default=func.now())
     visits = relationship("Visit", back_populates="user")
     appointments = relationship("Appointment", back_populates="user")
     staff = relationship("Staff", back_populates="doctor")

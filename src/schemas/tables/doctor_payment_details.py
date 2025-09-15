@@ -1,6 +1,6 @@
 import uuid
-
-from sqlalchemy import Boolean, Column, String, ForeignKey
+from datetime import datetime
+from sqlalchemy import Boolean, Column, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from src.database import Base
 
@@ -19,6 +19,7 @@ class DoctorPaymentDetails(Base):
 
     upi_id = Column(String(50), nullable=False)
     currency = Column(String(6), default="INR")  # 💱 e.g., 'INR', 'USD', 'EUR'
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     # preferred_mode = Column(String, nullable=True)  # e.g., 'UPI', 'Bank Transfer'
     # is_active = Column(Boolean, default=True)

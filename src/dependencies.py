@@ -80,7 +80,6 @@ def blacklist_token(redis: Redis, token: str, expiry_seconds: int):
 
 
 def require_owner(user_payload=Depends(get_current_user_payload)):
-    print(user_payload, type(user_payload))
     if user_payload.get("role") != "owner":
         raise HTTPException(status_code=403, detail="Permission denied.")
     return user_payload

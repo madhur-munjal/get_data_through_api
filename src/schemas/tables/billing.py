@@ -23,5 +23,6 @@ class Billing(Base):
     # amount_paid = Column(Float, default=0.0)
     # payment_status = Column(Enum("Pending", "Paid", "Partial", name="payment_status_enum"))
     notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     appointment = relationship("Appointment", back_populates="billing")

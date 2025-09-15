@@ -26,7 +26,6 @@ from src.models.users import (
     UserLogin,
     UserOut,
 )
-
 # from src.dependencies import blacklist_token
 from src.redis_client import get_redis_client
 from src.schemas.tables.staff import Staff
@@ -75,7 +74,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=APIResponse)
 def login(
-    request: Request, user: UserLogin, response: Response, db: Session = Depends(get_db)
+        request: Request, user: UserLogin, response: Response, db: Session = Depends(get_db)
 ):
     """Login a user and return an access token."""
     username = user.username
@@ -111,7 +110,8 @@ def login(
     db_user = doc_db_user or staff_db_user
     # TODO: add id in below
     access_token = create_access_token(
-        {"sub": username, "doc_id": doc_id, "role":db_user.role}, request=request
+        {"sub": username, "doc_id": doc_id, "role": db_user.role, "firstName": db_user.firstName,
+         "lastName": db_user.lastName}, request=request
     )
     refresh_token = create_refresh_token(username)
     response.set_cookie(
@@ -167,8 +167,8 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
 
 @router.post("/logout")
 def logout(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    redis=Depends(get_redis_client),
+        credentials: HTTPAuthorizationCredentials = Depends(security),
+        redis=Depends(get_redis_client),
 ):
     token = credentials.credentials
     payload = jwt.decode(
@@ -256,7 +256,7 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
 
 @router.put("/config/token-expiry")
 def update_token_expiry(
-    minutes: int, request: Request, redis: Redis = Depends(get_redis_client)
+        minutes: int, request: Request, redis: Redis = Depends(get_redis_client)
 ):
     if minutes <= 0 or minutes > 1440:
         return APIResponse(
