@@ -178,10 +178,8 @@ def get_patients_details_with_appointment_list(
         raise HTTPException(status_code=404, detail="Patient not found")
 
     # appointment_details = db.query(Appointment).filter_by(doctor_id=doctor_id, patient_id=patient_id).all()
-
     visit_details = db.query(Visit).filter_by(doctor_id=doctor_id, patient_id=patient_id).all()
 
-    # def to_dict(obj):
     final_data = {column.name: getattr(patient, column.name) for column in patient.__table__.columns}
     final_data["list_of_appointments"] = [row.appointments.scheduled_date for row in visit_details]
 
@@ -193,27 +191,27 @@ def get_patients_details_with_appointment_list(
     ).model_dump()
 
 
-# @router.get("/get_patients_list_on_basis_of_mobile/{mobile}", response_model=APIResponse)
-# def get_patients_list_on_basis_of_mobile(
-#         mobile: str,  # = mobile_no,  # Query(None, description="Search by patient's mobile number"),
-#         db: Session = Depends(get_db),
-#         doctor_id: UUID = Depends(get_current_doctor_id)
-# ):
-#     query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
-#
-#     if mobile:
-#         query = query.filter(
-#             or_(
-#                 Patient.mobile.ilike(f"%{mobile}%")
-#             )
-#         )
-#     results = query.all()
-#     # final_data = {column.name: getattr(Patient, column.name) for column in Patient.__table__.columns}
-#     # print(results)
-#     # print([PatientOut.model_validate(p) for p in results])
-#     return APIResponse(
-#         status_code=200,
-#         success=True,
-#         message=f"Successfully fetched patients lists.",
-#         data={"patient_list": [PatientOut.model_validate(row) for row in results]}
-#     ).model_dump()
+@router.get("/get_patients_list_on_basis_of_mobile/{mobile}", response_model=APIResponse)
+def get_patients_list_on_basis_of_mobile(
+        mobile: str,  # = mobile_no,  # Query(None, description="Search by patient's mobile number"),
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id)
+):
+    query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
+
+    if mobile:
+        query = query.filter(
+            or_(
+                Patient.mobile.ilike(f"%{mobile}%")
+            )
+        )
+    results = query.all()
+    # final_data = {column.name: getattr(Patient, column.name) for column in Patient.__table__.columns}
+    # print(results)
+    # print([PatientOut.model_validate(p) for p in results])
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched patients lists.",
+        data={"patient_list": [PatientOut.model_validate(row) for row in results]}
+    ).model_dump()

@@ -61,14 +61,11 @@ def create_appointment(
     else:
         type = AppointmentType.FOLLOW_UP.value
         patient = db.query(Patient).filter_by(patient_id=patient_id).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail=f"Patient not found with the id {patient_id}")
         for field, value in filtered_data.items():
             setattr(patient, field, value)
     data = appointment.dict()
-    updated_by = current_user.get('firstName') + " " + current_user.get('lastName') if current_user.get('lastName') else current_user.get('firstName')
-    notification_data = {'firstName': patient_data.get('firstName'), 'lastName': patient_data.get('lastName'),
-                         'type': 'appointment', 'message': 'appointment created', 'updated_by': updated_by
-                         }
-    save_data_to_db(notification_data, Notification, db)
     db_appointment = Appointment(
         patient_id=patient_id,
         doctor_id=doctor_id,
@@ -88,6 +85,16 @@ def create_appointment(
     db.add(db_appointment)
     db.commit()
     db.refresh(db_appointment)
+    created_appointment_id = db_appointment.id
+    updated_by = current_user.get('firstName') + " " + current_user.get('lastName') if current_user.get(
+        'lastName') else current_user.get('firstName')
+    notification_data = {'doctor_id':doctor_id,'appointment_id': created_appointment_id, 'firstName': patient_data.get('firstName'),
+                         'lastName': patient_data.get(
+                             'lastName'),
+                         'type': 'appointment', 'message': 'appointment created', 'updated_by': updated_by
+                         }
+    save_data_to_db(notification_data, Notification, db)
+
     return APIResponse(
         status_code=200,
         success=True,

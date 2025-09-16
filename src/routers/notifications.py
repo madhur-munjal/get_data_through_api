@@ -1,8 +1,13 @@
+from datetime import datetime
+from typing import Optional
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Query
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.dependencies import get_current_user_payload
+from src.dependencies import get_current_user_payload, get_current_doctor_id
 from src.models.notifications import NotificationUpdateRequest
 from src.models.response import APIResponse
 from src.schemas.tables.notifications import Notification
@@ -43,12 +48,47 @@ def mark_as_read(
         raise HTTPException(status_code=500, detail=f"Update failed: {str(e)}")
 
 
-@router.get("/unread")
-def get_unread_notifications(db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)):
-    unread = db.query(Notification).filter_by(read=False).all()
+@router.get("")
+def get_notifications(status: Optional[str] = Query(None),
+                      startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
+                      endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
+                      db: Session = Depends(get_db),
+                      doctor_id: UUID = Depends(get_current_doctor_id),
+                      ):
+    """Fetch notifications, with optional filtering by type and date range."""
+    query = db.query(Notification).filter_by(doctor_id=doctor_id)
+
+    try:
+        start_dt = datetime.fromisoformat(startDate)
+        end_dt = datetime.fromisoformat(endDate)
+        query = query.filter(Notification.created_at.between(start_dt, end_dt))
+    except Exception as ex:
+        return APIResponse(
+            status_code=200,
+            success=True,
+            message=f"Invalid date format. Please use YYYY-MM-DD, {str(ex)}",
+            data=None
+        ).model_dump()
+
+    if status is None:
+        msg = "all"
+        query = query.all()
+    elif status.lower() == "read":
+        msg = "read"
+        query = query.filter_by(read=1).all()
+    elif status.lower() == "unread":
+        msg = "unread"
+        query = query.filter_by(read=0).all()
+    else:  # if status.lower() in [None, ""]:
+        msg = "all"
+        query = query.all()
+
+        # pass  # No filter applied; return both read and unread
+
+    # unread = db.query(Notification).filter_by(read=False).all()
     return APIResponse(
         status_code=200,
         success=True,
-        message=f"successfully fetched unread notifications",
-        data=unread
+        message=f"successfully fetched {msg} notifications",
+        data=query
     ).model_dump()
