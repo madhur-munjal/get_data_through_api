@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import desc
 from sqlalchemy import or_, extract
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import aliased
 
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, get_current_user_payload
@@ -88,7 +89,8 @@ def create_appointment(
     created_appointment_id = db_appointment.id
     updated_by = current_user.get('firstName') + " " + current_user.get('lastName') if current_user.get(
         'lastName') else current_user.get('firstName')
-    notification_data = {'doctor_id':doctor_id,'appointment_id': created_appointment_id, 'firstName': patient_data.get('firstName'),
+    notification_data = {'doctor_id': doctor_id, 'appointment_id': created_appointment_id,
+                         'firstName': patient_data.get('firstName'),
                          'lastName': patient_data.get(
                              'lastName'),
                          'type': 'appointment', 'message': 'appointment created', 'updated_by': updated_by
@@ -174,25 +176,46 @@ def get_appointment_data(
 ):
     offset = (page - 1) * page_size
     # # query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient).outerjoin(Appointment.billing)
+
+    A = aliased(Appointment)
+    P = aliased(Patient)
+    B = aliased(Billing)
+
     query = (
         db.query(
-            Appointment,
-            Patient,
-            Billing.type,
-            Billing.amount
-        ).filter_by(doctor_id=doctor_id)
-        .join(Patient, Appointment.patient_id == Patient.patient_id)
-        .outerjoin(Billing, Appointment.id == Billing.appointment_id)
-        .filter(Appointment.id.isnot(None))
+            A,
+            P,
+            B
+            # A.id.label("appointment_id"),
+            # A.scheduled_date,
+            # A.scheduled_time,
+            # A.type.label("appointment_type"),
+            # A.status.label("appointment_status"),
+            # A.payment_status,
+            # P.patient_id,
+            # P.mobile,
+            # P.firstName,
+            # P.lastName,
+            # B.type.label("billing_type"),
+            # B.amount
+            # Appointment,
+            # Patient,
+            # Billing.type.label("billing_type"),
+            # # # Billing.type,
+            # Billing.amount
+        )
+        .outerjoin(P)  # , A.patient_id == P.patient_id)
+        .outerjoin(B)  # , A.id == B.appointment_id)
+        .filter(A.doctor_id == doctor_id, A.id.isnot(None))
     )
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:
         query = query.filter(
             or_(
-                Patient.firstName.ilike(f"%{text}%"),
-                Patient.lastName.ilike(f"%{text}%"),
-                Patient.mobile.ilike(f"%{text}%")
+                P.firstName.ilike(f"%{text}%"),
+                P.lastName.ilike(f"%{text}%"),
+                P.mobile.ilike(f"%{text}%")
             )
         )
 
@@ -200,7 +223,7 @@ def get_appointment_data(
     if month:
         try:
             month_number = list(month_name).index(month.capitalize())  # January = 1
-            query = query.filter(extract("month", Appointment.scheduled_date) == month_number)
+            query = query.filter(extract("month", A.scheduled_date) == month_number)
         except ValueError:
             pass  # Invalid month name, skip filter
 
@@ -213,14 +236,14 @@ def get_appointment_data(
         }
         status_enum = STATUS_LOOKUP.get(status)
         status_db_value = status_enum.value
-        query = query.filter(Appointment.status == int(status_db_value))
+        query = query.filter(A.status == int(status_db_value))
 
     # 📆 Date range filter: match between startDate and endDate
     if startDate and endDate:
         try:
             start_date_obj = datetime.strptime(startDate, "%Y-%m-%d").date()
             end_date_obj = datetime.strptime(endDate, "%Y-%m-%d").date()
-            query = query.filter(Appointment.scheduled_date.between(start_date_obj, end_date_obj))
+            query = query.filter(A.scheduled_date.between(start_date_obj, end_date_obj))
         except ValueError:
             return APIResponse(
                 status_code=200,
@@ -229,11 +252,15 @@ def get_appointment_data(
                 data=None
             ).model_dump()
 
-    results = query.order_by(
-        desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
+    # column_names = [col['name'] for col in query.column_descriptions]
+    # print(column_names)
+    # for row in query.all():
+    #     row_dict = dict(zip(column_names, row))
+    #     print(row_dict)
 
-    results_with_group_billing = get_appointment_summary(results, doctor_id=doctor_id)
+    results = query.order_by(desc(A.scheduled_date)).offset(offset).limit(page_size).all()
 
+    results_with_group_billing = get_appointment_summary(results)
     total_records = len(results_with_group_billing)
 
     return APIResponse(

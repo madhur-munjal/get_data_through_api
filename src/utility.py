@@ -160,11 +160,10 @@ def get_appointment_status(appointment_date_time: datetime,
         return AppointmentStatus.NO_SHOW.value
 
 
-def get_appointment_summary(rows_as_query, doctor_id: str):
-
+def get_appointment_summary(rows_as_query):
     # Group by appointment
     summary = {}
-    for appointment, patient, pay_type, amount in rows_as_query:
+    for appointment, patient, billing in rows_as_query:
         if appointment.id not in summary:
             summary[appointment.id] = {
                 "appointment": {c.name: getattr(appointment, c.name) for c in appointment.__table__.columns},
@@ -175,11 +174,33 @@ def get_appointment_summary(rows_as_query, doctor_id: str):
             summary[appointment.id]["appointment"].pop("_sa_instance_state", None)
             summary[appointment.id]["patient"].pop("_sa_instance_state", None)
 
-        if amount:
+        if billing: #.amount:
             summary[appointment.id]["billings"].append({
-                "type": pay_type,
-                "amount": amount
+                "type": billing.type,
+                "amount": billing.amount
             })
-            summary[appointment.id]["total_amount"] += amount
+            # {"3a65d550-1612-4913-8819-4bb42f916744":{"billings":[{"type":"Cash"}]}}
+            summary[appointment.id]["total_amount"] += billing.amount
+
+
+    # # Group by appointment
+    # summary = {}
+    # for appointment, patient, pay_type, amount in rows_as_query:
+    #     if appointment.id not in summary:
+    #         summary[appointment.id] = {
+    #             "appointment": {c.name: getattr(appointment, c.name) for c in appointment.__table__.columns},
+    #             "patient": {c.name: getattr(patient, c.name) for c in patient.__table__.columns},
+    #             "billings": [],
+    #             "total_amount": 0
+    #         }
+    #         summary[appointment.id]["appointment"].pop("_sa_instance_state", None)
+    #         summary[appointment.id]["patient"].pop("_sa_instance_state", None)
+    #
+    #     if amount:
+    #         summary[appointment.id]["billings"].append({
+    #             "type": pay_type,
+    #             "amount": amount
+    #         })
+    #         summary[appointment.id]["total_amount"] += amount
 
     return list(summary.values())

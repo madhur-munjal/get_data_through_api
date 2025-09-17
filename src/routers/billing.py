@@ -1,6 +1,8 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from uuid import UUID
+
 from src.database import get_db
 from src.dependencies import get_current_user_payload, get_current_doctor_id
 from src.models.billing import BillingCreate, BillingOut
@@ -38,9 +40,11 @@ def create_billing(
         db.commit()
         db.refresh(db_billing)
         created_billing_id = db_billing.billing_id
+        created_appointment_id = db_billing.appointment.id
         updated_by = current_user.get('firstName') + " " + current_user.get('lastName') if current_user.get(
             'lastName') else current_user.get('firstName')
-        notification_data = {'doctor_id':doctor_id,'billing_id': created_billing_id, 'firstName': appointment_db.patient.firstName,
+        notification_data = {'doctor_id': doctor_id, 'appointment_id': created_appointment_id,
+                             'billing_id': created_billing_id, 'firstName': appointment_db.patient.firstName,
                              'lastName': appointment_db.patient.lastName,
                              'type': "payment", 'message': 'Payment Received', 'updated_by': updated_by,
                              }
