@@ -90,3 +90,22 @@ def upsert_billing(data: DoctorsBillingInput,
         message="UPI details were updated successfully.",
         data=None
     ).model_dump()
+
+
+@router.get("/upi-configuration")
+def get_doctor_billing_details(db: Session = Depends(get_db),doctor_id: UUID = Depends(get_current_doctor_id),):
+    upi_details = db.query(DoctorPaymentDetails).filter_by(doctor_id=doctor_id).first()
+    if not upi_details:
+        return APIResponse(
+            status_code=200,
+            success=True,
+            message="No UPI details found.",
+            data=None
+        ).model_dump()
+    else:
+        return APIResponse(
+            status_code=200,
+            success=True,
+            message="UPI details fetched successfully.",
+            data=DoctorsBillingInput.model_validate(upi_details)
+        ).model_dump()
