@@ -25,15 +25,15 @@ router = APIRouter(
 def mark_as_read(
         payload: NotificationUpdateRequest,
         db: Session = Depends(get_db),
-        current_user=Depends(get_current_user_payload)
+        doctor_id: UUID = Depends(get_current_doctor_id)
 ):
     """"""
     try:
         if payload.mark_all_as_read:
-            db.query(Notification).update({Notification.read: True})
+            db.query(Notification).filter_by(doctor_id=doctor_id).update({Notification.read: True})
         else:
             if payload.id:
-                db.query(Notification).filter(Notification.id.in_(payload.id)).update(
+                db.query(Notification).filter(Notification.doctor_id == doctor_id, Notification.id.in_(payload.id)).update(
                     {Notification.read: True}, synchronize_session=False
                 )
         db.commit()
