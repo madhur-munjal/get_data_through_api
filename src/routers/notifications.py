@@ -61,6 +61,7 @@ def get_notifications(status: Optional[str] = Query(None),
     try:
         start_dt = datetime.fromisoformat(startDate)
         end_dt = datetime.fromisoformat(endDate)
+        end_dt = end_dt.replace(hour=23, minute=59, second=59)
         query = query.filter(Notification.created_at.between(start_dt, end_dt))
     except Exception as ex:
         return APIResponse(
