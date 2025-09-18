@@ -288,7 +288,7 @@ def get_appointment_data(
         # billing_map.setdefault(appointment_id, []).append(
         #     {"type": btype, "amount": amt}
         # )
-    import pdb;pdb.set_trace()
+    # import pdb;pdb.set_trace()
 
 
 
@@ -302,7 +302,7 @@ def get_appointment_data(
         })
 
 
-    pdb.set_trace()
+    # pdb.set_trace()
     # results_with_group_billing = get_appointment_summary(results)
     # total_records = len(results_with_group_billing)
 
