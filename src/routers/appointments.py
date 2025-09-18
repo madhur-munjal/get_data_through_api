@@ -6,8 +6,6 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import desc
 from sqlalchemy import or_, extract
 from sqlalchemy.sql import func
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import aliased
 
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, get_current_user_payload
@@ -26,7 +24,6 @@ from src.schemas.tables.billing import Billing
 from src.schemas.tables.notifications import Notification
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
-from src.utility import get_appointment_summary
 from src.utility import save_data_to_db, get_appointment_status
 
 router = APIRouter(
@@ -39,9 +36,51 @@ router = APIRouter(
 
 from sqlalchemy.orm import Session, joinedload
 
-def build_appointments_query(db: Session):
+
+def build_appointments_query(db: Session, doctor_id: UUID):
     """Base query for appointments with patient preloaded."""
-    return db.query(Appointment).options(joinedload(Appointment.patient))
+    return (db.query(Appointment)
+            .join(Appointment.patient)
+            .options(joinedload(Appointment.patient))
+            .filter(Appointment.doctor_id == doctor_id)
+            )
+
+
+
+
+def get_appointment_with_billing_per_row(db: Session, results):
+    appt_ids = [a.id for a in results]
+    billing_data = (
+        db.query(Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt"))
+        .filter(Billing.appointment_id.in_(appt_ids))
+        .group_by(Billing.appointment_id, Billing.type)
+        .all()
+    )
+
+    billing_map = {}
+    for appointment_id, btype, amt in billing_data:
+        if appointment_id not in billing_map:
+            billing_map[appointment_id] = {"billing_summary": [], "total_amount": 0}
+        billing_map[appointment_id]["billing_summary"].append({"type": btype, "amount": amt})
+        billing_map[appointment_id]["total_amount"] += amt
+        # billing_map.setdefault(appointment_id, []).append(
+        #     {"type": btype, "amount": amt}
+        # )
+    # import pdb;pdb.set_trace()
+
+    result = []
+    for appt in results:
+        patient = appt.patient
+        result.append({
+            "appointment": appt,
+            "patient": patient,
+            "billing": billing_map.get(appt.id, dict())
+        })
+    return result
+
+    # pdb.set_trace()
+    # results_with_group_billing = get_appointment_summary(results)
+    # total_records = len(results_with_group_billing)
 
 
 @router.post("/create_appointment", response_model=APIResponse[AppointmentOut])
@@ -181,7 +220,7 @@ def get_appointment_data(
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
-    query = build_appointments_query(db).filter_by(doctor_id=doctor_id)
+    query = build_appointments_query(db, doctor_id)
     total_records = len(query.all())
 
     # A = aliased(Appointment)
@@ -223,9 +262,9 @@ def get_appointment_data(
     if text:
         query = query.filter(
             or_(
-                Appointment.patient.firstName.ilike(f"%{text}%"),
-                Appointment.patient.lastName.ilike(f"%{text}%"),
-                Appointment.patient.mobile.ilike(f"%{text}%")
+                Patient.firstName.ilike(f"%{text}%"),
+                Patient.lastName.ilike(f"%{text}%"),
+                Patient.mobile.ilike(f"%{text}%")
             )
         )
 
@@ -271,48 +310,14 @@ def get_appointment_data(
     results = query.order_by(desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # Appointment.scheduled_date.desc()
 
-
-    appt_ids = [a.id for a in results]
-    billing_data = (
-        db.query(Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt"))
-        .filter(Billing.appointment_id.in_(appt_ids))
-        .group_by(Billing.appointment_id, Billing.type)
-        .all()
-    )
-
-    billing_map = {}
-    for appointment_id, btype, amt in billing_data:
-        if appointment_id not in billing_map:
-            billing_map[appointment_id] = {"billing_summary": [], "total_amount": 0}
-        billing_map[appointment_id]["billing_summary"].append({"type": btype, "amount": amt})
-        billing_map[appointment_id]["total_amount"] += amt
-        # billing_map.setdefault(appointment_id, []).append(
-        #     {"type": btype, "amount": amt}
-        # )
-    # import pdb;pdb.set_trace()
-
-
-
-    result = []
-    for appt in results:
-        patient = appt.patient
-        result.append({
-            "appointment": appt,
-            "patient": patient,
-            "billing": billing_map.get(appt.id, dict())
-        })
-
-
-    # pdb.set_trace()
-    # results_with_group_billing = get_appointment_summary(results)
-    # total_records = len(results_with_group_billing)
+    final_result = get_appointment_with_billing_per_row(db, results)
 
     return APIResponse(
         status_code=200,
         success=True,
         message=f"Successfully fetched appointment lists.",
         data={"page": page, "page_size": page_size, "total_records": total_records,
-              "appointment_list": [AppointmentResponse.from_row(p) for p in result]}
+              "appointment_list": [AppointmentResponse.from_row(p) for p in final_result]}
     ).model_dump()
 
 
