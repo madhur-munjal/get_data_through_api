@@ -181,7 +181,7 @@ def get_appointment_data(
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
-    query = build_appointments_query(db)
+    query = build_appointments_query(db).filter_by(doctor_id=doctor_id)
 
     # A = aliased(Appointment)
     # P = aliased(Patient)
