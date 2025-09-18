@@ -182,6 +182,7 @@ def get_appointment_data(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     query = build_appointments_query(db).filter_by(doctor_id=doctor_id)
+    total_records = len(query.all())
 
     # A = aliased(Appointment)
     # P = aliased(Patient)
@@ -270,7 +271,7 @@ def get_appointment_data(
     results = query.order_by(desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # Appointment.scheduled_date.desc()
 
-    total_records = len(results)
+
     appt_ids = [a.id for a in results]
     billing_data = (
         db.query(Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt"))
