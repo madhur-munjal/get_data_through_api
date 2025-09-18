@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import desc
 from sqlalchemy import or_, extract
+from sqlalchemy.sql import func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import aliased
 
@@ -35,6 +36,12 @@ router = APIRouter(
     # ,
     # dependencies=[Depends(require_owner)]
 )
+
+from sqlalchemy.orm import Session, joinedload
+
+def build_appointments_query(db: Session):
+    """Base query for appointments with patient preloaded."""
+    return db.query(Appointment).options(joinedload(Appointment.patient))
 
 
 @router.post("/create_appointment", response_model=APIResponse[AppointmentOut])
@@ -174,48 +181,50 @@ def get_appointment_data(
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
-    offset = (page - 1) * page_size
-    # # query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient).outerjoin(Appointment.billing)
+    query = build_appointments_query(db)
 
-    A = aliased(Appointment)
-    P = aliased(Patient)
-    B = aliased(Billing)
-
-    query = (
-        db.query(
-            A,
-            P,
-            B
-            # A.id.label("appointment_id"),
-            # A.scheduled_date,
-            # A.scheduled_time,
-            # A.type.label("appointment_type"),
-            # A.status.label("appointment_status"),
-            # A.payment_status,
-            # P.patient_id,
-            # P.mobile,
-            # P.firstName,
-            # P.lastName,
-            # B.type.label("billing_type"),
-            # B.amount
-            # Appointment,
-            # Patient,
-            # Billing.type.label("billing_type"),
-            # # # Billing.type,
-            # Billing.amount
-        )
-        .outerjoin(P)  # , A.patient_id == P.patient_id)
-        .outerjoin(B)  # , A.id == B.appointment_id)
-        .filter(A.doctor_id == doctor_id, A.id.isnot(None))
-    )
+    # A = aliased(Appointment)
+    # P = aliased(Patient)
+    # B = aliased(Billing)
+    #
+    # # # query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient).outerjoin(Appointment.billing)
+    #
+    #
+    # query = (
+    #     db.query(
+    #         A,
+    #         P,
+    #         B
+    #         # A.id.label("appointment_id"),
+    #         # A.scheduled_date,
+    #         # A.scheduled_time,
+    #         # A.type.label("appointment_type"),
+    #         # A.status.label("appointment_status"),
+    #         # A.payment_status,
+    #         # P.patient_id,
+    #         # P.mobile,
+    #         # P.firstName,
+    #         # P.lastName,
+    #         # B.type.label("billing_type"),
+    #         # B.amount
+    #         # Appointment,
+    #         # Patient,
+    #         # Billing.type.label("billing_type"),
+    #         # # # Billing.type,
+    #         # Billing.amount
+    #     )
+    #     .outerjoin(P)  # , A.patient_id == P.patient_id)
+    #     .outerjoin(B)  # , A.id == B.appointment_id)
+    #     .filter(A.doctor_id == doctor_id, A.id.isnot(None))
+    # )
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:
         query = query.filter(
             or_(
-                P.firstName.ilike(f"%{text}%"),
-                P.lastName.ilike(f"%{text}%"),
-                P.mobile.ilike(f"%{text}%")
+                Appointment.patient.firstName.ilike(f"%{text}%"),
+                Appointment.patient.lastName.ilike(f"%{text}%"),
+                Appointment.patient.mobile.ilike(f"%{text}%")
             )
         )
 
@@ -223,7 +232,7 @@ def get_appointment_data(
     if month:
         try:
             month_number = list(month_name).index(month.capitalize())  # January = 1
-            query = query.filter(extract("month", A.scheduled_date) == month_number)
+            query = query.filter(extract("month", Appointment.scheduled_date) == month_number)
         except ValueError:
             pass  # Invalid month name, skip filter
 
@@ -236,14 +245,14 @@ def get_appointment_data(
         }
         status_enum = STATUS_LOOKUP.get(status)
         status_db_value = status_enum.value
-        query = query.filter(A.status == int(status_db_value))
+        query = query.filter(Appointment.status == int(status_db_value))
 
     # 📆 Date range filter: match between startDate and endDate
     if startDate and endDate:
         try:
             start_date_obj = datetime.strptime(startDate, "%Y-%m-%d").date()
             end_date_obj = datetime.strptime(endDate, "%Y-%m-%d").date()
-            query = query.filter(A.scheduled_date.between(start_date_obj, end_date_obj))
+            query = query.filter(Appointment.scheduled_date.between(start_date_obj, end_date_obj))
         except ValueError:
             return APIResponse(
                 status_code=200,
@@ -257,18 +266,52 @@ def get_appointment_data(
     # for row in query.all():
     #     row_dict = dict(zip(column_names, row))
     #     print(row_dict)
+    offset = (page - 1) * page_size
+    results = query.order_by(desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
+    # Appointment.scheduled_date.desc()
 
-    results = query.order_by(desc(A.scheduled_date)).offset(offset).limit(page_size).all()
+    total_records = len(results)
+    appt_ids = [a.id for a in results]
+    billing_data = (
+        db.query(Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt"))
+        .filter(Billing.appointment_id.in_(appt_ids))
+        .group_by(Billing.appointment_id, Billing.type)
+        .all()
+    )
 
-    results_with_group_billing = get_appointment_summary(results)
-    total_records = len(results_with_group_billing)
+    billing_map = {}
+    for appointment_id, btype, amt in billing_data:
+        if appointment_id not in billing_map:
+            billing_map[appointment_id] = {"billing_summary": [], "total_amount": 0}
+        billing_map[appointment_id]["billing_summary"].append({"type": btype, "amount": amt})
+        billing_map[appointment_id]["total_amount"] += amt
+        # billing_map.setdefault(appointment_id, []).append(
+        #     {"type": btype, "amount": amt}
+        # )
+    import pdb;pdb.set_trace()
+
+
+
+    result = []
+    for appt in results:
+        patient = appt.patient
+        result.append({
+            "appointment": appt,
+            "patient": patient,
+            "billing": billing_map.get(appt.id, dict())
+        })
+
+
+    pdb.set_trace()
+    # results_with_group_billing = get_appointment_summary(results)
+    # total_records = len(results_with_group_billing)
 
     return APIResponse(
         status_code=200,
         success=True,
         message=f"Successfully fetched appointment lists.",
         data={"page": page, "page_size": page_size, "total_records": total_records,
-              "appointment_list": [AppointmentResponse.from_row(p) for p in results_with_group_billing]}
+              "appointment_list": [AppointmentResponse.from_row(p) for p in result]}
     ).model_dump()
 
 
