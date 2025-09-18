@@ -46,6 +46,25 @@ def build_appointments_query(db: Session, doctor_id: UUID):
             )
 
 
+def get_appointment_with_billing_per_appointment_id(db: Session, appointment_id):
+    billing_data = (
+        db.query(Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt"))
+        .filter(Billing.appointment_id == appointment_id)
+        .group_by(Billing.appointment_id, Billing.type)
+        .all()
+    )
+
+    billing_map = {}
+    for appointment_id, btype, amt in billing_data:
+        if appointment_id not in billing_map:
+            billing_map[appointment_id] = {"billing_summary": [], "total_amount": 0}
+        billing_map[appointment_id]["billing_summary"].append({"type": btype, "amount": amt})
+        billing_map[appointment_id]["total_amount"] += amt
+
+    if billing_map:
+        return billing_map[appointment_id]
+    return dict()
+
 
 
 def get_appointment_with_billing_per_row(db: Session, results):
@@ -221,42 +240,8 @@ def get_appointment_data(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     query = build_appointments_query(db, doctor_id)
-    total_records = len(query.all())
+    # total_records = len(query.all())
 
-    # A = aliased(Appointment)
-    # P = aliased(Patient)
-    # B = aliased(Billing)
-    #
-    # # # query = db.query(Appointment).filter_by(doctor_id=doctor_id).outerjoin(Appointment.patient).outerjoin(Appointment.billing)
-    #
-    #
-    # query = (
-    #     db.query(
-    #         A,
-    #         P,
-    #         B
-    #         # A.id.label("appointment_id"),
-    #         # A.scheduled_date,
-    #         # A.scheduled_time,
-    #         # A.type.label("appointment_type"),
-    #         # A.status.label("appointment_status"),
-    #         # A.payment_status,
-    #         # P.patient_id,
-    #         # P.mobile,
-    #         # P.firstName,
-    #         # P.lastName,
-    #         # B.type.label("billing_type"),
-    #         # B.amount
-    #         # Appointment,
-    #         # Patient,
-    #         # Billing.type.label("billing_type"),
-    #         # # # Billing.type,
-    #         # Billing.amount
-    #     )
-    #     .outerjoin(P)  # , A.patient_id == P.patient_id)
-    #     .outerjoin(B)  # , A.id == B.appointment_id)
-    #     .filter(A.doctor_id == doctor_id, A.id.isnot(None))
-    # )
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:
@@ -306,6 +291,8 @@ def get_appointment_data(
     # for row in query.all():
     #     row_dict = dict(zip(column_names, row))
     #     print(row_dict)
+
+    total_records = query.count()
     offset = (page - 1) * page_size
     results = query.order_by(desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
     # Appointment.scheduled_date.desc()
@@ -345,6 +332,8 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
         appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
         if not appointment_details:
             raise HTTPException(status_code=404, detail="Appointment not found")
+        billing_data = get_appointment_with_billing_per_appointment_id(db, appointment_details.id)
+        appointment_details.payment_details = billing_data.get("billing_summary")
         return APIResponse(
             status_code=200,
             success=True,
@@ -352,6 +341,12 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
             data=VisitAllResponse.from_appointment_row(appointment_details)
         ).model_dump()
     else:
+        # appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id)
+        # final_result = get_appointment_with_billing_per_row(db, appointment_details.all())
+        # print(final_result)
+        # import pdb;pdb.set_trace()
+        billing_data = get_appointment_with_billing_per_appointment_id(db, visit.appointment_id)
+        visit.payment_details = billing_data.get("billing_summary")
         return APIResponse(
             status_code=200,
             success=True,

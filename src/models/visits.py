@@ -137,6 +137,7 @@ class VisitAllResponse(BaseModel):
     followUpVisit: Optional[str] = None
     medicationDetails: Optional[
         Any] = None  # Optional[List[MedicationDetails]] = None  # Optional[List[MedicationDetails]] = None
+    paymentDetails: Optional[list] = None
 
     model_config = {"from_attributes": True}
 
@@ -159,6 +160,7 @@ class VisitAllResponse(BaseModel):
             temperatureType=row.patient.temperatureType,
             type=row.type,
             status=row.status,
+            paymentDetails=row.payment_details,
             # analysis=row.analysis,
             # advice=row.advice,
             # tests=row.tests,
@@ -196,4 +198,5 @@ class VisitAllResponse(BaseModel):
             paymentStatus=row.appointments.payment_status,
             paymentType=row.appointments.billing.type if row.appointments.billing else None,
             amount=row.appointments.billing.amount if row.appointments.billing else None,
+            paymentDetails=row.payment_details
         )

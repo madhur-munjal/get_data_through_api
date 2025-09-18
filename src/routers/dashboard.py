@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 from sqlalchemy.orm import Session
 
 from src.database import get_db
@@ -50,12 +50,14 @@ def get_patient_staff_details(
     # Search Patients
     print(text)
     print("*****")
+    text = " ".join(text.strip().split()).lower()
     patient_results = db.query(Patient).filter(
         and_(Patient.assigned_doctor_id == doctor_id,
         or_(
             Patient.firstName.ilike(f"%{text}%"),
             Patient.lastName.ilike(f"%{text}%"),
-            Patient.mobile.ilike(f"%{text}%")
+            Patient.mobile.ilike(f"%{text}%"),
+            func.concat(Patient.firstName, " ", Patient.lastName).ilike(f"%{text}%")
         )
              )
     ).all()

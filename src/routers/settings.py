@@ -93,7 +93,7 @@ def upsert_billing(data: DoctorsBillingInput,
 
 
 @router.get("/upi-configuration")
-def get_doctor_billing_details(db: Session = Depends(get_db),doctor_id: UUID = Depends(get_current_doctor_id),):
+def get_doctor_billing_details(db: Session = Depends(get_db), doctor_id: UUID = Depends(get_current_doctor_id),):
     upi_details = db.query(DoctorPaymentDetails).filter_by(doctor_id=doctor_id).first()
     if not upi_details:
         return APIResponse(
