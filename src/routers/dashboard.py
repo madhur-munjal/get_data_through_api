@@ -48,8 +48,6 @@ def get_patient_staff_details(
             ]
     """
     # Search Patients
-    print(text)
-    print("*****")
     text = " ".join(text.strip().split()).lower()
     patient_results = db.query(Patient).filter(
         and_(Patient.assigned_doctor_id == doctor_id,

@@ -92,20 +92,47 @@ def upsert_billing(data: DoctorsBillingInput,
     ).model_dump()
 
 
-@router.get("/upi-configuration")
-def get_doctor_billing_details(db: Session = Depends(get_db), doctor_id: UUID = Depends(get_current_doctor_id),):
+@router.get("/upi/configuration")
+def get_doctor_billing_details(db: Session = Depends(get_db),
+                               doctor_id: UUID = Depends(get_current_doctor_id),
+                               current_user=Depends(get_current_user_payload),
+                               ):
+    # Get general details
+    username = current_user.get("sub")
+    login_details = db.query(Staff).filter_by(username=username).first()
+    if login_details is None:
+        login_details = db.query(User).filter_by(username=username).first()
+
+    if not login_details:
+        raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
+    print("************")
+    print(UserOut.model_validate(login_details))
+    final_data = dict()
+    final_data['general'] = UserOut.model_validate(login_details)
+
+
+    # Get UPI Details
     upi_details = db.query(DoctorPaymentDetails).filter_by(doctor_id=doctor_id).first()
-    if not upi_details:
-        return APIResponse(
+    print(DoctorsBillingInput.model_validate(upi_details))
+    final_data['upi'] = DoctorsBillingInput.model_validate(upi_details) if upi_details else None
+    return APIResponse(
             status_code=200,
             success=True,
-            message="No UPI details found.",
-            data=None
+            message="Successfully fetched user details.",
+            data=final_data
         ).model_dump()
-    else:
-        return APIResponse(
-            status_code=200,
-            success=True,
-            message="UPI details fetched successfully.",
-            data=DoctorsBillingInput.model_validate(upi_details)
-        ).model_dump()
+
+    # if not upi_details:
+    #     return APIResponse(
+    #         status_code=200,
+    #         success=True,
+    #         message="No UPI details found.",
+    #         data=None
+    #     ).model_dump()
+    # else:
+    #     return APIResponse(
+    #         status_code=200,
+    #         success=True,
+    #         message="UPI details fetched successfully.",
+    #         data=DoctorsBillingInput.model_validate(upi_details)
+    #     ).model_dump()
