@@ -12,6 +12,7 @@ class Billing(Base):
 
     billing_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     appointment_id = Column(String(36), ForeignKey("appointments.id"), nullable=False)
+    # doctor_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     # We need to make sure that more than one appointment id should not present in visit, means patient booked one appointment and had visited twice.
     # patient_id = Column(String(36), ForeignKey("patients.patient_id"), nullable=False)
     # invoice_number = Column(String(36), unique=True)
@@ -24,5 +25,6 @@ class Billing(Base):
     # payment_status = Column(Enum("Pending", "Paid", "Partial", name="payment_status_enum"))
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(String(100), nullable=True)
 
     appointment = relationship("Appointment", back_populates="billing")

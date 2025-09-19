@@ -1,3 +1,5 @@
+import datetime
+from typing import Optional
 from pydantic import BaseModel
 
 from .enums import BillingTypeEnum
@@ -38,3 +40,27 @@ class DoctorsBillingSave(BaseModel):
     currency: str
 
     model_config = {"from_attributes": True}
+
+
+class BillingDetails(BaseModel):
+    patient_firstName: str
+    patient_lastName: Optional[str]
+    billing_id: str
+    BillingDate: datetime.date
+    BillingType: str  # e.g., "cash", "card", "upi", "insurance"
+    ReceivedBy: Optional[str]
+    amount: float
+
+    model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_billing_row(cls, row):
+        return cls(
+            patient_firstName=row.appointment.patient.firstName,
+            patient_lastName=row.appointment.patient.lastName,
+            billing_id=row.billing_id,
+            BillingDate=row.created_at.date(),
+            BillingType=row.type,
+            ReceivedBy=row.created_by,
+            amount=row.amount,
+        )
