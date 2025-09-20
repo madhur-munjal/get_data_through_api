@@ -92,7 +92,7 @@ def upsert_billing(data: DoctorsBillingInput,
     ).model_dump()
 
 
-@router.get("/upi/configuration")
+@router.get("/configuration")
 def get_doctor_billing_details(db: Session = Depends(get_db),
                                doctor_id: UUID = Depends(get_current_doctor_id),
                                current_user=Depends(get_current_user_payload),
