@@ -1,8 +1,10 @@
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, distinct
 from sqlalchemy.orm import Session
-from datetime import datetime
+
 from src.database import get_db
 from src.dependencies import get_current_user_payload, get_current_doctor_id
 from src.models.billing import BillingCreate, BillingOut, BillingDetails
@@ -12,8 +14,6 @@ from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.billing import Billing
 from src.schemas.tables.notifications import Notification
 from src.utility import save_data_to_db
-from sqlalchemy import func
-
 
 router = APIRouter(
     prefix="/billings",
@@ -61,16 +61,18 @@ def create_billing(
         raise HTTPException(status_code=500, detail=f"Update failed: {str(e)}")
 
 
-@router.get("/billing_summary")
+@router.get("/billing_details")
 def get_billing_details(
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
         startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
         endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
-        type: str = Query(None, description="what type of transaction, cash, card, upi etc.")
+        type: str = Query(None, description="what type of transaction, cash, card, upi etc."),
+        page: int = Query(1, ge=1),
+        page_size: int = Query(20, ge=1),
+
 ):
     """Get billing details."""
-
     query = db.query(Billing).join(Billing.appointment).filter(Appointment.doctor_id == doctor_id)
     if not query:
         raise HTTPException(status_code=404, detail="Billing details not found.")
@@ -95,10 +97,70 @@ def get_billing_details(
 
     if type:
         query = query.filter(Billing.type.ilike(type))  # (func.lower(Billing.type) == type.lower())
-    query = query.order_by(Billing.created_at.desc())
+    # query = query.order_by(Billing.created_at.desc())
+    total_records = query.count()
+    offset = (page - 1) * page_size
+    query = query.order_by(Billing.created_at.desc()).offset(offset).limit(page_size).all()
+
     return APIResponse(
         status_code=200,
         success=True,
         message="Billing details fetched successfully.",
-        data=[BillingDetails.from_billing_row(row) for row in query.all()]
+        data={"page": page, "page_size": page_size, "total_records": total_records,
+              "billing_list": [BillingDetails.from_billing_row(row) for row in query]}
     ).model_dump()
+
+
+@router.get("/billing_summary")
+def get_billing_summary(
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        # startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
+        # endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
+        # type: str = Query(None, description="what type of transaction, cash, card, upi etc."),
+        # page: int = Query(1, ge=1),
+        # page_size: int = Query(20, ge=1),
+):
+    """
+    # 1) Total Earning
+    # 2) Pending Payment
+    # 3) Completed Payment
+    # 4) Payment details(cash, upi , card)
+    """
+    query = db.query(Appointment).filter(Appointment.doctor_id == doctor_id).outerjoin(Appointment.billing)
+    # query = db.query(Billing).join(Billing.appointment).filter(Appointment.doctor_id == doctor_id)
+    if not query:
+        raise HTTPException(status_code=404, detail="No Appointment details found.")
+    try:
+        total_earning = query.with_entities(func.coalesce(func.sum(Billing.amount), 0)).scalar()
+        completed_payment_ids = query.filter(Appointment.payment_status == PaymentStatus.PAID.value).with_entities(distinct(Appointment.id))
+        # print(completed_payment_ids)
+        completed_payment = completed_payment_ids.count()
+        # with_entities(
+        #     func.count(Billing.billing_id)).scalar()
+
+        # query.filter(Appointment.payment_status == PaymentStatus.PAID.value).with_entities(
+        #             func.coalesce(func.sum(Billing.amount), 0)).scalar()
+        pending_payment = query.filter(Appointment.payment_status == PaymentStatus.UNPAID.value,).with_entities(distinct(Appointment.id)).count()
+            # func.count(Billing.billing_id)).scalar()
+            # (
+            # query.filter(Appointment.payment_status == PaymentStatus.UNPAID.value).with_entities(
+            # func.coalesce(func.sum(Billing.amount), 0)).scalar())
+        payment_details = query.with_entities(Billing.type, func.coalesce(func.sum(Billing.amount), 0).label('total')) \
+            .group_by(Billing.type).having(func.sum(Billing.amount) > 0).all()
+
+        payment_summary = {ptype: total for ptype, total in payment_details}
+
+        return APIResponse(
+            status_code=200,
+            success=True,
+            message="Billing summary fetched successfully.",
+            data={
+                "totalEarning": total_earning,
+                "completedPayment": completed_payment,
+                "pendingPayment": pending_payment,
+                "paymentDetails": payment_summary
+            }
+        ).model_dump()
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Error fetching billing summary: {str(ex)}")

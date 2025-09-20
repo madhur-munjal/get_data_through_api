@@ -43,12 +43,12 @@ class DoctorsBillingSave(BaseModel):
 
 
 class BillingDetails(BaseModel):
-    patient_firstName: str
-    patient_lastName: Optional[str]
+    firstName: str
+    lastName: Optional[str]
     billing_id: str
-    BillingDate: datetime.date
-    BillingType: str  # e.g., "cash", "card", "upi", "insurance"
-    ReceivedBy: Optional[str]
+    billingDate: datetime.date
+    billingType: str  # e.g., "cash", "card", "upi", "insurance"
+    receivedBy: Optional[str]
     amount: float
 
     model_config = {"from_attributes": True}
@@ -56,11 +56,11 @@ class BillingDetails(BaseModel):
     @classmethod
     def from_billing_row(cls, row):
         return cls(
-            patient_firstName=row.appointment.patient.firstName,
-            patient_lastName=row.appointment.patient.lastName,
+            firstName=row.appointment.patient.firstName,
+            lastName=row.appointment.patient.lastName,
             billing_id=row.billing_id,
-            BillingDate=row.created_at.date(),
-            BillingType=row.type,
-            ReceivedBy=row.created_by,
+            billingDate=row.created_at.date(),
+            billingType=row.type,
+            receivedBy=row.created_by,
             amount=row.amount,
         )
