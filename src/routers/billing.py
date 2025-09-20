@@ -115,22 +115,30 @@ def get_billing_details(
 def get_billing_summary(
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
-        # startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
-        # endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
+        startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
+        endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
         # type: str = Query(None, description="what type of transaction, cash, card, upi etc."),
         # page: int = Query(1, ge=1),
         # page_size: int = Query(20, ge=1),
 ):
-    """
-    # 1) Total Earning
-    # 2) Pending Payment
-    # 3) Completed Payment
-    # 4) Payment details(cash, upi , card)
-    """
     query = db.query(Appointment).filter(Appointment.doctor_id == doctor_id).outerjoin(Appointment.billing)
     # query = db.query(Billing).join(Billing.appointment).filter(Appointment.doctor_id == doctor_id)
     if not query:
         raise HTTPException(status_code=404, detail="No Appointment details found.")
+    if startDate and endDate:
+        try:
+            start_dt = datetime.fromisoformat(startDate)
+            end_dt = datetime.fromisoformat(endDate)
+            end_dt = end_dt.replace(hour=23, minute=59, second=59)
+            query = query.filter(Billing.created_at.between(start_dt, end_dt))
+        except ValueError:
+            return APIResponse(
+                status_code=200,
+                success=True,
+                message=f"ValueError wile filtering from startDate and EndDate.",
+                data=None
+            ).model_dump()
+
     try:
         total_earning = query.with_entities(func.coalesce(func.sum(Billing.amount), 0)).scalar()
         completed_payment_ids = query.filter(Appointment.payment_status == PaymentStatus.PAID.value).with_entities(distinct(Appointment.id))
