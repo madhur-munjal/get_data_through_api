@@ -135,7 +135,7 @@ def get_billing_summary(
             return APIResponse(
                 status_code=200,
                 success=True,
-                message=f"ValueError wile filtering from startDate and EndDate.",
+                message=f"Error while filtering from startDate and EndDate.",
                 data=None
             ).model_dump()
 
