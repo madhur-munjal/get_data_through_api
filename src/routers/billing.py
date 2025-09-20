@@ -159,6 +159,9 @@ def get_billing_summary(
 
         payment_summary = {ptype: total for ptype, total in payment_details}
 
+        fixed_types = ["Cash", "Card", "UPI"]
+        final_result = [{"type": t, "total": payment_summary.get(t, 0)} for t in fixed_types]
+
         return APIResponse(
             status_code=200,
             success=True,
@@ -167,7 +170,7 @@ def get_billing_summary(
                 "totalEarning": total_earning,
                 "completedPayment": completed_payment,
                 "pendingPayment": pending_payment,
-                "paymentDetails": payment_summary
+                "paymentDetails": final_result
             }
         ).model_dump()
     except Exception as ex:
