@@ -1,8 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-
+from datetime import datetime
 from src.database import get_db
 from src.dependencies import get_current_user_payload, get_current_doctor_id
 from src.models.billing import BillingCreate, BillingOut, BillingDetails
@@ -12,6 +12,8 @@ from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.billing import Billing
 from src.schemas.tables.notifications import Notification
 from src.utility import save_data_to_db
+from sqlalchemy import func
+
 
 router = APIRouter(
     prefix="/billings",
@@ -59,19 +61,44 @@ def create_billing(
         raise HTTPException(status_code=500, detail=f"Update failed: {str(e)}")
 
 
-@router.get("/billing_details")
+@router.get("/billing_summary")
 def get_billing_details(
         db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id)
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
+        endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
+        type: str = Query(None, description="what type of transaction, cash, card, upi etc.")
 ):
     """Get billing details."""
-    billing_details = db.query(Billing).join(Billing.appointment).filter(Appointment.doctor_id == doctor_id).all()
-    # patient_billing_details = billing_details
-    if not billing_details:
+
+    query = db.query(Billing).join(Billing.appointment).filter(Appointment.doctor_id == doctor_id)
+    if not query:
         raise HTTPException(status_code=404, detail="Billing details not found.")
+
+    # 📆 Date range filter: match between startDate and endDate
+    if startDate and endDate:
+        try:
+            start_dt = datetime.fromisoformat(startDate)
+            end_dt = datetime.fromisoformat(endDate)
+            end_dt = end_dt.replace(hour=23, minute=59, second=59)
+
+            # start_date_obj = datetime.strptime(startDate, "%Y-%m-%d").date()
+            # end_date_obj = datetime.strptime(endDate, "%Y-%m-%d").date()
+            query = query.filter(Billing.created_at.between(start_dt, end_dt))
+        except ValueError:
+            return APIResponse(
+                status_code=200,
+                success=True,
+                message=f"ValueError wile filtering from startDate and EndDate.",
+                data=None
+            ).model_dump()
+
+    if type:
+        query = query.filter(Billing.type.ilike(type))  # (func.lower(Billing.type) == type.lower())
+    query = query.order_by(Billing.created_at.desc())
     return APIResponse(
         status_code=200,
         success=True,
         message="Billing details fetched successfully.",
-        data=[BillingDetails.from_billing_row(row) for row in billing_details]
+        data=[BillingDetails.from_billing_row(row) for row in query.all()]
     ).model_dump()
