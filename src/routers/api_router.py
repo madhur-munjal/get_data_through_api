@@ -22,7 +22,7 @@ routers = [
     dashboard.router,
     notifications.router,
     subscription.router,
-    upload_images.router
+    # upload_images.router
 ]
 
 # Include all routers
