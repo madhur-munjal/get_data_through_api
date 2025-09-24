@@ -1,6 +1,7 @@
 from uuid import UUID
-
-from fastapi import APIRouter, Depends, HTTPException
+import os
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from typing import Optional
 from sqlalchemy.orm import Session
 
 from src.auth_utils import hash_password, pwd_context
@@ -23,6 +24,7 @@ router = APIRouter(
 @router.post("/general")  # , response_model=APIResponse[StaffOut])
 def update_login_user(
         updated_login_data: UpdateLoginRecord,
+        image: Optional[UploadFile] = File(None),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
         current_user=Depends(get_current_user_payload),
@@ -30,11 +32,31 @@ def update_login_user(
     """Used to update data of login user(doctor/staff)."""
     username = current_user.get("sub")
     login_details = db.query(Staff).filter_by(username=username).first()
+
     if login_details is None:
         login_details = db.query(User).filter_by(username=username).first()
 
     if not login_details:
         raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
+
+    if image:
+        UPLOAD_DIR = "uploads"
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+        if not image.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File must be an image")
+
+        # Generate unique filename
+        file_ext = os.path.splitext(image.filename)[1]
+        unique_filename = f"{login_details.id}{file_ext}"
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+        # Save the file
+        with open(file_path, "wb") as f:
+            f.write(image.read())
+
+        return {"filename": unique_filename, "url": f"/profile-images/{unique_filename}"}
+
 
     if updated_login_data.current_password is None and updated_login_data.password:
         raise HTTPException(status_code=400, detail="Current password is required to set a new password.")
