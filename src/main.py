@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.scheduler import update_appointment_status
@@ -38,6 +39,8 @@ app = FastAPI(
     redoc_url="/redoc-ui",
 )
 app.include_router(api_router.router)
+
+app.mount("/images", StaticFiles(directory=os.path.join(os.getcwd(), "uploads")), name="images")
 
 
 @app.on_event("startup")
