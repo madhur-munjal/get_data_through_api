@@ -32,6 +32,7 @@ class User(Base):
     password = Column(Text, nullable=False)  # mandatory
     role = Column(String(50), nullable=False,
                   default="admin")  # mandatory e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
+    profile_image_url = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     visits = relationship("Visit", back_populates="user")
     appointments = relationship("Appointment", back_populates="user")

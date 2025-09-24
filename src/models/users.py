@@ -1,6 +1,6 @@
 from typing import Annotated, Optional
 from uuid import UUID
-
+from fastapi import File, UploadFile, Form
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, model_validator
 
 from src.utility import validate_user_fields
@@ -40,6 +40,7 @@ class UserOut(BaseModel):
     mobile: constr(min_length=5)
     username: constr(min_length=5, max_length=18)
     role: str
+    profile_image_url: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -76,9 +77,15 @@ class UserIDRequest(BaseModel):
 
 
 class UpdateLoginRecord(BaseModel):
-    mobile: Optional[str] = None
-    current_password: Optional[str] = None
-    password: Optional[constr(min_length=5)] = None
+    mobile: Optional[str] = Form(None),
+    current_password: Optional[str] = Form(None),
+    password: Optional[constr(min_length=5)] = Form(None),
+    image: Optional[UploadFile] = File(None)
+
+    # mobile: Optional[str] = None
+    # current_password: Optional[str] = None
+    # password: Optional[constr(min_length=5)] = None
+    # image: Optional[UploadFile] = File(None)
     # confirm_password: Optional[constr(min_length=5)] = None
 
     model_config = {"from_attributes": True}

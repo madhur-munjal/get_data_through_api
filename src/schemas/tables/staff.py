@@ -37,6 +37,7 @@ class Staff(Base):
     password = Column(Text, nullable=False)  # mandatory
     role = Column(String(50), nullable=False, default="staff")  # mandatory
     doc_id = Column(String(36), ForeignKey("users.id"), nullable=False)  # mandatory
+    profile_image_url = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
