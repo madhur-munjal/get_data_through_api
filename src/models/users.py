@@ -2,8 +2,9 @@ from typing import Annotated, Optional
 from uuid import UUID
 from fastapi import File, UploadFile, Form
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, model_validator
-
+from pydantic import HttpUrl
 from src.utility import validate_user_fields
+from fastapi import Request
 
 ContactStr = Annotated[str, StringConstraints(pattern=r"^[6-9]\d{9}$")]
 
@@ -42,11 +43,30 @@ class UserOut(BaseModel):
     role: str
     profile_image_url: Optional[str] = None
 
-    model_config = {"from_attributes": True}
+
 
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
+
+    @staticmethod
+    def build_image_url(user_obj) -> Optional[str]:
+        image_filename = user_obj.profile_image_url  # e.g., "id.jpg"
+        if image_filename:
+            # base_url = request.base_url._url.rstrip("/")
+            # return base_url + f"/static/{image_filename}"
+            return f"https://smarthealapp.com/images/{image_filename}"
+        # if filename:
+        #     return f"https://smarthealapp.com/static/{filename}"
+        return None
+
+    @classmethod
+    def from_orm_with_image(cls, user_obj):
+        data = user_obj.__dict__.copy()
+        data["profile_image_url"] = cls.build_image_url(user_obj)
+        return cls(**data)
+
+    model_config = {"from_attributes": True}
 
 
 class ForgotPasswordRequest(BaseModel):

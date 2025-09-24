@@ -98,7 +98,7 @@ async def update_login_user(
         status_code=200,
         success=True,
         message=message,
-        data=UserOut.model_validate(login_details) if isinstance(login_details, User) else StaffOut.model_validate(
+        data=UserOut.from_orm_with_image(login_details) if isinstance(login_details, User) else StaffOut.from_orm_with_image(
             login_details),
     ).model_dump()
 
@@ -136,6 +136,7 @@ def upsert_billing(data: DoctorsBillingInput,
 def get_doctor_billing_details(db: Session = Depends(get_db),
                                doctor_id: UUID = Depends(get_current_doctor_id),
                                current_user=Depends(get_current_user_payload),
+                                # request: Request = None
                                ):
     # Get general details
     username = current_user.get("sub")
@@ -148,7 +149,9 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     print("************")
     print(UserOut.model_validate(login_details))
     final_data = dict()
-    final_data['general'] = UserOut.model_validate(login_details)
+    # final_data['general'] = UserOut.model_validate(login_details)
+
+    final_data['general'] = UserOut.from_orm_with_image(login_details) if isinstance(login_details, User) else StaffOut.from_orm_with_image(login_details)
 
 
     # Get UPI Details
