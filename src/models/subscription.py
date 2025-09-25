@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class SubscriptionSchema(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    plan_name: str
+    plan_id: str
     start_date: str  # datetime = Field(default_factory=datetime.utcnow)
     end_date: str  # Optional[datetime] = None
     is_active: bool = True
@@ -20,8 +20,8 @@ class SubscriptionSchema(BaseModel):
 
 
 class SubscriptionCreate(BaseModel):
-    user_id: str
-    plan_name: str
+    # user_id: str
+    plan_id: str
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     auto_renew: bool = False
@@ -30,4 +30,10 @@ class SubscriptionCreate(BaseModel):
 
 
 class SubscriptionRead(SubscriptionSchema):
-    pass
+    plan_id: str
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    auto_renew: bool = False
+
+    model_config = {"from_attributes": True}
+
