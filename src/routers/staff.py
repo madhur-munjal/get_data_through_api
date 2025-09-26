@@ -125,7 +125,7 @@ def get_staff_detail(
     staff_detail = db.query(Staff).filter_by(doc_id=doctor_id, id=staff_id).first()
     if not staff_detail:
         raise HTTPException(status_code=404, detail="Staff not found")
-    print([StaffOut.model_validate(staff_detail)])
+    # print([StaffOut.model_validate(staff_detail)])
     return APIResponse(
         status_code=200,
         success=True,

@@ -7,3 +7,4 @@ from .billing import Billing
 from .doctor_payment_details import DoctorPaymentDetails
 from .notifications import Notification
 from .subscription import Subscription
+from .plans import Plan
