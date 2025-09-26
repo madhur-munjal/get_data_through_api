@@ -81,26 +81,21 @@ def send_subscription_details_on_mail(plan_id, db: Session = Depends(get_db),
 
 
     Subscription Details:
-    TODO
-     Type: [e.g., Premium, Annual, Trial]
-    - Notes: [Any additional context or user comments]
+    - Name: {plan_details.name}
+    - Description: {plan_details.description}
+    - Price: {plan_details.price}
+    - Currency: {plan_details.currency}
     
     Next Steps:
     - [ ] Send follow-up email
     - [ ] Assign to sales/support team
     - [ ] Add to CRM or lead tracker
     
-    Logged by: [Your Name or System ID]
-    Your staff account details have been updated. Here are your updated details:
-
-
-    If you did not request this change, please contact the administrator immediately.
-
+    Thank you,
     Best regards,
     SmartHealApp Management Team
     """
     send_email(to_email=os.getenv("from_email_id"), message=body, Subject=subject)
-
     return APIResponse(
         status_code=200,
         success=True,
