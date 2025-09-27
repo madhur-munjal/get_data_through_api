@@ -14,6 +14,7 @@ from src.models.users import UserOut, UpdateLoginRecord
 from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
+from src.schemas.tables.subscription import Subscription
 from fastapi.responses import FileResponse
 
 router = APIRouter(
@@ -30,16 +31,19 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def update_login_user(
         mobile: Optional[str] = Form(None),
         current_password: Optional[str] = Form(None),
-        password: Optional[constr(min_length=5)] = Form(None),
+        password: Optional[str] = Form(None),
         image: Optional[UploadFile] = File(None),
-
-        # updated_login_data: UpdateLoginRecord,
-        # # image: Optional[UploadFile] = File(None),
         db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+        # doctor_id: UUID = Depends(get_current_doctor_id),
         current_user=Depends(get_current_user_payload),
 ):
     """Used to update data of login user(doctor/staff)."""
+    print("************")
+    print(image)
+    print(type(image))
+    print(password)
+    print(type(password))
+    print("************")
     updated_login_data = {
         "mobile": mobile,
         "current_password": current_password,
@@ -71,26 +75,28 @@ async def update_login_user(
         message = "Image and login user details updated successfully."
         login_details.profile_image_url = unique_filename
 
-        # return {"filename": unique_filename, "url": f"/profile-images/{unique_filename}"}
     else:
         message = "Login user details updated successfully."
 
+    current_password = updated_login_data.get('current_password')
+    password = updated_login_data.get('password')
 
-    if updated_login_data.get('current_password') is None and updated_login_data.get('password'):
+    if current_password is None and password:
         raise HTTPException(status_code=400, detail="Current password is required to set a new password.")
 
-    if updated_login_data.get('password') is None and updated_login_data.get('current_password'):
+    if password is None and current_password:
         raise HTTPException(status_code=400, detail="password is required to set a new password.")
 
-    if updated_login_data.get('current_password'):
-        if not pwd_context.verify(updated_login_data.get('current_password'), login_details.password):
+    if current_password:
+        if not pwd_context.verify(current_password, login_details.password):
             raise HTTPException(status_code=400, detail="Current password is incorrect.")
-        if updated_login_data.get('password'):
-            hashed_pw = hash_password(updated_login_data.get('password'))
-            login_details.password = hashed_pw
 
-    if updated_login_data.get('mobile'):
-        login_details.mobile = updated_login_data.get('mobile')
+        if password:
+            hashed_pw = hash_password(password)
+            login_details.password = hashed_pw
+    mobile = updated_login_data.get('mobile')
+    if mobile:
+        login_details.mobile = mobile
 
     db.commit()
     db.refresh(login_details)
@@ -146,18 +152,17 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
 
     if not login_details:
         raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
-    print("************")
-    print(UserOut.model_validate(login_details))
     final_data = dict()
-    # final_data['general'] = UserOut.model_validate(login_details)
-
     final_data['general'] = UserOut.from_orm_with_image(login_details) if isinstance(login_details, User) else StaffOut.from_orm_with_image(login_details)
-
 
     # Get UPI Details
     upi_details = db.query(DoctorPaymentDetails).filter_by(doctor_id=doctor_id).first()
-    print(DoctorsBillingInput.model_validate(upi_details))
     final_data['upi'] = DoctorsBillingInput.model_validate(upi_details) if upi_details else None
+
+    #Get Subscription Details
+    subscription_details = db.query(Subscription).filter_by(user_id=doctor_id, is_active=True).all() # order_by(Subscription.start_date.desc())
+    final_data['subscription'] = [sub for sub in subscription_details] if subscription_details else []
+
     return APIResponse(
             status_code=200,
             success=True,

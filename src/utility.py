@@ -17,6 +17,8 @@ from sqlalchemy.exc import IntegrityError
 from src.models.enums import AppointmentStatus
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from fastapi import File, UploadFile, Depends
+from typing import Optional
 
 
 load_dotenv()
@@ -204,3 +206,4 @@ def get_appointment_summary(rows_as_query):
     #         summary[appointment.id]["total_amount"] += amount
 
     return list(summary.values())
+
