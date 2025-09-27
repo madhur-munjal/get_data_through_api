@@ -9,7 +9,7 @@ from src.schemas.tables.plans import Plan
 router = APIRouter(prefix="/plans", tags=["Plans"])
 
 
-@router.post("/", response_model=APIResponse[PlanOut])
+@router.post("", response_model=APIResponse[PlanOut])
 def create_plan(plan: PlanCreate, db: Session = Depends(get_db)):
     existing = db.query(Plan).filter_by(name=plan.name).first()
     if existing:
@@ -26,7 +26,7 @@ def create_plan(plan: PlanCreate, db: Session = Depends(get_db)):
     ).model_dump()
 
 
-@router.get("/", response_model=APIResponse)
+@router.get("", response_model=APIResponse)
 def list_plans(db: Session = Depends(get_db)):
     all_plan_details = db.query(Plan).all()
     return APIResponse(

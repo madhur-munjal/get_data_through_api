@@ -21,7 +21,7 @@ router = APIRouter(
 
 
 # 📥 Create a new subscription
-@router.post("/", response_model=APIResponse[SubscriptionRead])
+@router.post("", response_model=APIResponse[SubscriptionRead])
 def create_subscription(subscription: SubscriptionCreate, db: Session = Depends(get_db),
                         doctor_id: UUID = Depends(get_current_doctor_id)):
     input_data = subscription.dict()
@@ -41,8 +41,8 @@ def create_subscription(subscription: SubscriptionCreate, db: Session = Depends(
     ).model_dump()
 
 
-@router.post("/send_subscription_details_on_mail/{plan_id}", response_model=APIResponse[SubscriptionRead])
-def send_subscription_details_on_mail(plan_id, db: Session = Depends(get_db),
+@router.post("/send_subscription_details_on_mail", response_model=APIResponse[SubscriptionRead])
+def send_subscription_details_on_mail(plan_id: str, db: Session = Depends(get_db),
                         doctor_id: UUID = Depends(get_current_doctor_id)):
     db_user = (
         db.query(User)
