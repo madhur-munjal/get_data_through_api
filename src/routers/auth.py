@@ -8,7 +8,7 @@ from jose import jwt
 from passlib.context import CryptContext
 from redis import Redis
 from sqlalchemy.orm import Session
-
+from src.models.subscription import SubscriptionCreate
 from src.auth_utils import SECRET_KEY, ALGORITHM
 from src.auth_utils import (
     create_access_token,
@@ -17,7 +17,6 @@ from src.auth_utils import (
     hash_password,
 )
 from src.database import get_db
-from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
 from src.models.billing import DoctorsBillingSave
 from src.models.response import APIResponse
 from src.models.users import (
@@ -29,7 +28,7 @@ from src.models.users import (
     UserOut,
 )
 from src.redis_client import get_redis_client
-from src.schemas.tables.billing import Billing
+from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
 from src.utility import generate_otp, send_otp_email, otp_store
@@ -66,6 +65,19 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    from src.routers.subscription import create_subscription
+    from datetime import date, timedelta
+
+    start_date = date.today()
+    end_date = start_date + timedelta(days=180)
+    subscription_data = SubscriptionCreate(
+        user_id = db_user.id,
+        plan_id= "7d6c3a9a-3907-448e-aa38-effc448007ab",  # id of free plan
+        start_date= start_date,  # .isoformat() + "T07:11:38.682Z",
+        end_date= end_date,  # "2025-12-28T07:11:38.682Z",
+        auto_renew= False
+    )
+    create_subscription(subscription=subscription_data, db=db)
     return APIResponse(
         status_code=200,
         success=True,
