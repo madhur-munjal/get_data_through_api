@@ -1,18 +1,20 @@
-from uuid import UUID
+import os
+from datetime import date
 from datetime import datetime
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-import os
+
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.models.response import APIResponse
-from src.models.users import UserOut
 from src.models.plans import PlanOut
+from src.models.response import APIResponse
 from src.models.subscription import SubscriptionCreate, SubscriptionRead  # Pydantic models
+from src.models.users import UserOut
+from src.schemas.tables.plans import Plan
 from src.schemas.tables.subscription import Subscription  # SQLAlchemy model
 from src.schemas.tables.users import User
-from src.schemas.tables.plans import Plan
-from datetime import date
 
 router = APIRouter(
     prefix="/subscriptions", tags=["Subscriptions"], responses={404: {"error": "Not found"}}
@@ -43,7 +45,7 @@ def create_subscription(subscription: SubscriptionCreate, db: Session = Depends(
 
 @router.post("/send_subscription_details_on_mail", response_model=APIResponse[SubscriptionRead])
 def send_subscription_details_on_mail(plan_id: str, db: Session = Depends(get_db),
-                        doctor_id: UUID = Depends(get_current_doctor_id)):
+                                      doctor_id: UUID = Depends(get_current_doctor_id)):
     db_user = (
         db.query(User)
         .filter_by(id=doctor_id)
@@ -110,7 +112,7 @@ def send_subscription_details_on_mail(plan_id: str, db: Session = Depends(get_db
 
 @router.post("/sync_subscriptions", response_model=APIResponse[SubscriptionRead])
 def update_subscription_data(db: Session = Depends(get_db),
-                        doctor_id: UUID = Depends(get_current_doctor_id)):
+                             doctor_id: UUID = Depends(get_current_doctor_id)):
     today = date.today()
 
     # Step 1: Deactivate expired subscriptions
@@ -147,6 +149,21 @@ def update_subscription_data(db: Session = Depends(get_db),
         data=None,
     ).model_dump()
 
+
+@router.get("/get_subscription_billing", response_model=APIResponse)
+def get_subscription_billing(db: Session = Depends(get_db),
+                             doctor_id: UUID = Depends(get_current_doctor_id)):
+    all_subscription_details = db.query(Subscription).join(Plan, Subscription.plan_id == Plan.id).filter(
+        Subscription.user_id == doctor_id).all()
+    op = [i.__dict__ for i in all_subscription_details]
+    for item in op:
+        item.pop('_sa_instance_state', None)
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched the subscription data!",
+        data=op,
+    ).model_dump()
 
 # # 📄 Get all subscriptions
 # @router.get("/", response_model=list[SubscriptionRead])
@@ -208,4 +225,3 @@ def update_subscription_data(db: Session = Depends(get_db),
 #         message=f"New staff account has been created successfully!",
 #         data=sub,
 #     ).model_dump()
-
