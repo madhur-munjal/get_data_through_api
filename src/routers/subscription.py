@@ -1,6 +1,5 @@
 import os
-from datetime import date
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,6 +14,7 @@ from src.models.users import UserOut
 from src.schemas.tables.plans import Plan
 from src.schemas.tables.subscription import Subscription  # SQLAlchemy model
 from src.schemas.tables.users import User
+from src.utility import update_subscription_data
 
 router = APIRouter(
     prefix="/subscriptions", tags=["Subscriptions"], responses={404: {"error": "Not found"}}
@@ -35,6 +35,7 @@ def create_subscription(subscription: SubscriptionCreate, db: Session = Depends(
     db.add(new_sub)
     db.commit()
     db.refresh(new_sub)
+    update_subscription_data()
     return APIResponse(
         status_code=200,
         success=True,
@@ -110,44 +111,44 @@ def send_subscription_details_on_mail(plan_id: str, db: Session = Depends(get_db
     ).model_dump()
 
 
-@router.post("/sync_subscriptions", response_model=APIResponse[SubscriptionRead])
-def update_subscription_data(db: Session = Depends(get_db),
-                             doctor_id: UUID = Depends(get_current_doctor_id)):
-    today = date.today()
-
-    # Step 1: Deactivate expired subscriptions
-    expired = db.query(Subscription).filter(Subscription.end_date < today, Subscription.is_active == True).all()
-    for sub in expired:
-        sub.is_active = False
-
-    # Step 2: For each doc_id, activate only the latest valid subscription
-    user_ids = db.query(Subscription.user_id).distinct().all()
-    for (user_id,) in user_ids:
-        latest = (
-            db.query(Subscription)
-            .filter(Subscription.user_id == user_id, Subscription.end_date >= today)
-            .order_by(Subscription.end_date.desc())
-            .first()
-        )
-        if latest:
-            latest.is_active = True
-
-        # Deactivate others for this doc_id
-        others = (
-            db.query(Subscription)
-            .filter(Subscription.user_id == user_id, Subscription.id != latest.id if latest else True)
-            .all()
-        )
-        for sub in others:
-            sub.is_active = False
-
-    db.commit()
-    return APIResponse(
-        status_code=200,
-        success=True,
-        message=f"Subscription data has been synced successfully!",
-        data=None,
-    ).model_dump()
+# @router.post("/sync_subscriptions", response_model=APIResponse[SubscriptionRead])
+# def update_subscription_data(db: Session = Depends(get_db),
+#                              doctor_id: UUID = Depends(get_current_doctor_id)):
+#     today = date.today()
+#
+#     # Step 1: Deactivate expired subscriptions
+#     expired = db.query(Subscription).filter(Subscription.end_date < today, Subscription.is_active == True).all()
+#     for sub in expired:
+#         sub.is_active = False
+#
+#     # Step 2: For each doc_id, activate only the latest valid subscription
+#     user_ids = db.query(Subscription.user_id).distinct().all()
+#     for (user_id,) in user_ids:
+#         latest = (
+#             db.query(Subscription)
+#             .filter(Subscription.user_id == user_id, Subscription.end_date >= today)
+#             .order_by(Subscription.end_date.desc())
+#             .first()
+#         )
+#         if latest:
+#             latest.is_active = True
+#
+#         # Deactivate others for this doc_id
+#         others = (
+#             db.query(Subscription)
+#             .filter(Subscription.user_id == user_id, Subscription.id != latest.id if latest else True)
+#             .all()
+#         )
+#         for sub in others:
+#             sub.is_active = False
+#
+#     db.commit()
+#     return APIResponse(
+#         status_code=200,
+#         success=True,
+#         message=f"Subscription data has been synced successfully!",
+#         data=None,
+#     ).model_dump()
 
 
 @router.get("/get_subscription_billing", response_model=APIResponse)

@@ -15,6 +15,6 @@ pytest-mock
 pytest-cov
 httpx==0.28.1
 redis==6.4.0
-pytz
-apscheduler
-python-multipart
+pytz==2025.2
+apscheduler==3.11.0
+python-multipart==0.0.20

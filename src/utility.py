@@ -6,6 +6,7 @@ import string
 from datetime import datetime, timezone
 from email.mime.text import MIMEText
 from typing import Optional
+from sqlalchemy.orm import Session
 
 import pytz
 from dotenv import load_dotenv
@@ -19,7 +20,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import File, UploadFile, Depends
 from typing import Optional
-
+from src.schemas.tables.appointments import Appointment
+from src.database import SessionLocal
 
 load_dotenv()
 
@@ -176,14 +178,13 @@ def get_appointment_summary(rows_as_query):
             summary[appointment.id]["appointment"].pop("_sa_instance_state", None)
             summary[appointment.id]["patient"].pop("_sa_instance_state", None)
 
-        if billing: #.amount:
+        if billing:  # .amount:
             summary[appointment.id]["billings"].append({
                 "type": billing.type,
                 "amount": billing.amount
             })
             # {"3a65d550-1612-4913-8819-4bb42f916744":{"billings":[{"type":"Cash"}]}}
             summary[appointment.id]["total_amount"] += billing.amount
-
 
     # # Group by appointment
     # summary = {}
@@ -207,3 +208,61 @@ def get_appointment_summary(rows_as_query):
 
     return list(summary.values())
 
+
+def update_appointment_status():
+    db: Session = SessionLocal()
+    now = datetime.now()
+
+    appointments = db.query(Appointment).filter(Appointment.status == 0).all()  # 0 = UPCOMING
+
+    for appt in appointments:
+        scheduled_dt = datetime.combine(appt.scheduled_date, appt.scheduled_time)
+        if now >= scheduled_dt:
+            appt.status = AppointmentStatus.NO_SHOW.value  # 2 = NO_SHOW
+            db.add(appt)
+
+    db.commit()
+    db.close()
+
+
+from datetime import date
+from src.schemas.tables.subscription import Subscription
+
+
+def update_subscription_data(doctor_id=None):
+    print("************************************898")
+    db: Session = SessionLocal()
+    today = date.today()
+
+    # Step 1: Deactivate expired subscriptions
+    if doctor_id:
+        expired = db.query(Subscription).filter(Subscription.user_id == doctor_id, Subscription.end_date < today,
+                                                Subscription.is_active == True).all()
+    else:
+        expired = db.query(Subscription).filter(Subscription.end_date < today, Subscription.is_active == True).all()
+    for sub in expired:
+        sub.is_active = False
+
+    # Step 2: For each doc_id, activate only the latest valid subscription
+    user_ids = db.query(Subscription.user_id).distinct().all()
+    for (user_id,) in user_ids:
+        latest = (
+            db.query(Subscription)
+            .filter(Subscription.user_id == user_id, Subscription.end_date >= today)
+            .order_by(Subscription.end_date.desc())
+            .first()
+        )
+        if latest:
+            latest.is_active = True
+
+        # Deactivate others for this doc_id
+        others = (
+            db.query(Subscription)
+            .filter(Subscription.user_id == user_id, Subscription.id != latest.id if latest else True)
+            .all()
+        )
+        for sub in others:
+            sub.is_active = False
+
+    db.commit()
+    db.close()
