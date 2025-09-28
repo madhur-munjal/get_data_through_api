@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.dependencies import get_current_doctor_id
+from src.dependencies import get_current_doctor_id, require_owner
 from src.models.plans import PlanOut
 from src.models.response import APIResponse
 from src.models.subscription import SubscriptionCreate, SubscriptionRead  # Pydantic models
@@ -25,7 +25,8 @@ router = APIRouter(
 # 📥 Create a new subscription
 @router.post("", response_model=APIResponse[SubscriptionRead])
 def create_subscription(subscription: SubscriptionCreate, db: Session = Depends(get_db),
-                        doctor_id: UUID = Depends(get_current_doctor_id)):
+                        doctor_id: UUID = Depends(get_current_doctor_id),
+                        dependencies=Depends(require_owner)):
     input_data = subscription.dict()
     if subscription.user_id is None:
         input_data["user_id"] = str(doctor_id)
