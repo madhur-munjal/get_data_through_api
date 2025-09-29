@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
 from src.models.plans import PlanOut, PlanDetailsOnMail
+from src.models.subscription import SubscriptionOutWithPlan
 
 from src.models.response import APIResponse
 from src.models.subscription import SubscriptionCreate, SubscriptionRead  # Pydantic models
@@ -152,16 +153,22 @@ def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Sessi
 @router.get("/get_subscription_billing", response_model=APIResponse)
 def get_subscription_billing(db: Session = Depends(get_db),
                              doctor_id: UUID = Depends(get_current_doctor_id)):
-    all_subscription_details = db.query(Subscription).join(Plan, Subscription.plan_id == Plan.id).filter(
+    all_subscription_details = db.query(Subscription, Plan).join(Plan, Subscription.plan_id == Plan.id).filter(
         Subscription.user_id == doctor_id).all()
-    op = [i.__dict__ for i in all_subscription_details]
-    for item in op:
-        item.pop('_sa_instance_state', None)
+
+    # print(all_subscription_details)
+    # print(type(all_subscription_details))
+    # print([(subscription.id, plan.id) for subscription, plan in all_subscription_details])
+    # import pdb;pdb.set_trace()
+    # print([SubscriptionOutWithPlan.from_orm(subscription, plan) for subscription, plan in all_subscription_details])
+    # op = [i.__dict__ for i in all_subscription_details]
+    # for item in op:
+    #     item.pop('_sa_instance_state', None)
     return APIResponse(
         status_code=200,
         success=True,
         message=f"Successfully fetched the subscription data!",
-        data=op,
+        data=[SubscriptionOutWithPlan.from_orm(subscription, plan) for subscription, plan in all_subscription_details],
     ).model_dump()
 
 # # 📄 Get all subscriptions
