@@ -13,10 +13,12 @@ from src.models.billing import DoctorsBillingInput
 from src.models.response import APIResponse
 from src.models.staff import StaffOut
 from src.models.users import UserOut
+from src.models.subscription import SubscriptionOutWithPlan
 from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.subscription import Subscription
 from src.schemas.tables.users import User
+from src.schemas.tables.plans import Plan
 
 router = APIRouter(
     prefix="/settings", tags=["settings"], responses={404: {"error": "Not found"}}
@@ -38,12 +40,6 @@ async def update_login_user(
         current_user=Depends(get_current_user_payload),
 ):
     """Used to update data of login user(doctor/staff)."""
-    print("************")
-    print(image)
-    print(type(image))
-    print(password)
-    print(type(password))
-    print("************")
     updated_login_data = {
         "mobile": mobile,
         "current_password": current_password,
@@ -163,9 +159,13 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     final_data['upi'] = DoctorsBillingInput.model_validate(upi_details) if upi_details else None
 
     # Get Subscription Details
-    subscription_details = db.query(Subscription).filter_by(user_id=doctor_id, is_active=True).order_by(
-        Subscription.created_at.desc()).first()  # order_by(Subscription.start_date.desc())
-    final_data['subscription'] = subscription_details # [sub for sub in subscription_details] if subscription_details else []
+    # subscription_details = db.query(Subscription).filter_by(user_id=doctor_id, is_active=True).order_by(
+    #     Subscription.created_at.desc()).first()  # order_by(Subscription.start_date.desc())
+    # final_data['subscription'] = subscription_details # [sub for sub in subscription_details] if subscription_details else []
+    subscription, plan = db.query(Subscription, Plan).join(Plan, Subscription.plan_id == Plan.id).filter(
+        Subscription.user_id == doctor_id).order_by(
+        Subscription.created_at.desc()).first()
+    final_data['subscription'] = [SubscriptionOutWithPlan.from_orm(subscription, plan)] # for subscription, plan in all_subscription_details],
 
     return APIResponse(
         status_code=200,

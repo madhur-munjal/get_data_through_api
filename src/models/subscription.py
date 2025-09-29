@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -66,8 +66,8 @@ class SubscriptionOutWithPlan(BaseModel):
     plan_description: Optional[list] = None
     plan_price: float
     plan_currency: str
-    start_date: datetime
-    end_date: datetime
+    start_date: date
+    end_date: date
     is_active: bool
     auto_renew: bool
 
@@ -83,8 +83,8 @@ class SubscriptionOutWithPlan(BaseModel):
             plan_description=[description.strip() for description in plan.description.split(",")],
             plan_price=plan.price,
             plan_currency=plan.currency,
-            start_date=subscription.start_date,
-            end_date=subscription.end_date,
+            start_date=subscription.start_date.date(),
+            end_date=subscription.end_date.date() if subscription.end_date else None,
             is_active=subscription.is_active,
             auto_renew=subscription.auto_renew,
             created_at=subscription.created_at,

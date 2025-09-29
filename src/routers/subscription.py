@@ -151,15 +151,6 @@ def get_subscription_billing(db: Session = Depends(get_db),
                              doctor_id: UUID = Depends(get_current_doctor_id)):
     all_subscription_details = db.query(Subscription, Plan).join(Plan, Subscription.plan_id == Plan.id).filter(
         Subscription.user_id == doctor_id).all()
-
-    # print(all_subscription_details)
-    # print(type(all_subscription_details))
-    # print([(subscription.id, plan.id) for subscription, plan in all_subscription_details])
-    # import pdb;pdb.set_trace()
-    # print([SubscriptionOutWithPlan.from_orm(subscription, plan) for subscription, plan in all_subscription_details])
-    # op = [i.__dict__ for i in all_subscription_details]
-    # for item in op:
-    #     item.pop('_sa_instance_state', None)
     return APIResponse(
         status_code=200,
         success=True,
