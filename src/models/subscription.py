@@ -80,7 +80,7 @@ class SubscriptionOutWithPlan(BaseModel):
             user_id=subscription.user_id,
             plan_id=subscription.plan.id,
             plan_name=plan.name,
-            plan_description=[description for description in plan.description.split(",")],
+            plan_description=[description.strip() for description in plan.description.split(",")],
             plan_price=plan.price,
             plan_currency=plan.currency,
             start_date=subscription.start_date,

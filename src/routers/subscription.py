@@ -56,10 +56,6 @@ def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Sessi
     )
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    print("user details")
-    print([UserOut.model_validate(db_user)])
-    print("*************")
-
     plan_details = (
         db.query(Plan)
         .filter_by(id=plan_details.plan_id)
@@ -105,7 +101,7 @@ def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Sessi
     return APIResponse(
         status_code=200,
         success=True,
-        message=f"Smart-Heal management team will get back to you shortly!",
+        message=f"Thank you for showing interest on Smart Heal. Smart-Heal support team will get back to you shortly!",
         # data=None,
     ).model_dump()
 
