@@ -1,21 +1,22 @@
-from uuid import UUID
 import os
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from typing import Optional
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from pydantic import constr
+
 from src.auth_utils import hash_password, pwd_context
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, get_current_user_payload
 from src.models.billing import DoctorsBillingInput
 from src.models.response import APIResponse
 from src.models.staff import StaffOut
-from src.models.users import UserOut, UpdateLoginRecord
+from src.models.users import UserOut
 from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
 from src.schemas.tables.staff import Staff
-from src.schemas.tables.users import User
 from src.schemas.tables.subscription import Subscription
-from fastapi.responses import FileResponse
+from src.schemas.tables.users import User
 
 router = APIRouter(
     prefix="/settings", tags=["settings"], responses={404: {"error": "Not found"}}
@@ -24,7 +25,6 @@ router = APIRouter(
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 
 
 @router.post("/general")  # , response_model=APIResponse[StaffOut])
@@ -104,7 +104,8 @@ async def update_login_user(
         status_code=200,
         success=True,
         message=message,
-        data=UserOut.from_orm_with_image(login_details) if isinstance(login_details, User) else StaffOut.from_orm_with_image(
+        data=UserOut.from_orm_with_image(login_details) if isinstance(login_details,
+                                                                      User) else StaffOut.from_orm_with_image(
             login_details),
     ).model_dump()
 
@@ -142,7 +143,7 @@ def upsert_billing(data: DoctorsBillingInput,
 def get_doctor_billing_details(db: Session = Depends(get_db),
                                doctor_id: UUID = Depends(get_current_doctor_id),
                                current_user=Depends(get_current_user_payload),
-                                # request: Request = None
+                               # request: Request = None
                                ):
     # Get general details
     username = current_user.get("sub")
@@ -153,22 +154,25 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     if not login_details:
         raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
     final_data = dict()
-    final_data['general'] = UserOut.from_orm_with_image(login_details) if isinstance(login_details, User) else StaffOut.from_orm_with_image(login_details)
+    final_data['general'] = UserOut.from_orm_with_image(login_details) if isinstance(login_details,
+                                                                                     User) else StaffOut.from_orm_with_image(
+        login_details)
 
     # Get UPI Details
     upi_details = db.query(DoctorPaymentDetails).filter_by(doctor_id=doctor_id).first()
     final_data['upi'] = DoctorsBillingInput.model_validate(upi_details) if upi_details else None
 
-    #Get Subscription Details
-    subscription_details = db.query(Subscription).filter_by(user_id=doctor_id, is_active=True).all() # order_by(Subscription.start_date.desc())
-    final_data['subscription'] = [sub for sub in subscription_details] if subscription_details else []
+    # Get Subscription Details
+    subscription_details = db.query(Subscription).filter_by(user_id=doctor_id, is_active=True).order_by(
+        Subscription.created_at.desc()).first()  # order_by(Subscription.start_date.desc())
+    final_data['subscription'] = subscription_details # [sub for sub in subscription_details] if subscription_details else []
 
     return APIResponse(
-            status_code=200,
-            success=True,
-            message="Successfully fetched user details.",
-            data=final_data
-        ).model_dump()
+        status_code=200,
+        success=True,
+        message="Successfully fetched user details.",
+        data=final_data
+    ).model_dump()
 
     # if not upi_details:
     #     return APIResponse(
