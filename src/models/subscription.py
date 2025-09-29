@@ -37,3 +37,4 @@ class SubscriptionRead(SubscriptionSchema):
 
     model_config = {"from_attributes": True}
 
+

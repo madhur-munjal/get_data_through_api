@@ -1,13 +1,13 @@
 import os
 from datetime import datetime, date
 from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
-from src.models.plans import PlanOut
+from src.models.plans import PlanOut, PlanDetailsOnMail
+
 from src.models.response import APIResponse
 from src.models.subscription import SubscriptionCreate, SubscriptionRead  # Pydantic models
 from src.models.users import UserOut
@@ -46,7 +46,7 @@ def create_subscription(subscription: SubscriptionCreate, db: Session = Depends(
 
 
 @router.post("/send_subscription_details_on_mail", response_model=APIResponse[SubscriptionRead])
-def send_subscription_details_on_mail(plan_id: str, db: Session = Depends(get_db),
+def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Session = Depends(get_db),
                                       doctor_id: UUID = Depends(get_current_doctor_id)):
     db_user = (
         db.query(User)
@@ -61,14 +61,11 @@ def send_subscription_details_on_mail(plan_id: str, db: Session = Depends(get_db
 
     plan_details = (
         db.query(Plan)
-        .filter_by(id=plan_id)
+        .filter_by(id=plan_details.plan_id)
         .first()
     )
     if not plan_details:
         raise HTTPException(status_code=404, detail="User not found")
-    print("plan details")
-    print([PlanOut.model_validate(plan_details)])
-    print("*************")
 
     from src.utility import send_msg_on_email as send_email
     subject = "User Interested in Subscription – Action Required"

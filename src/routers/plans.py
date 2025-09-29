@@ -33,7 +33,7 @@ def list_plans(db: Session = Depends(get_db)):
         status_code=200,
         success=True,
         message=f"Successfully fetched list of plans!",
-        data=[PlanOut.model_validate(row) for row in all_plan_details],
+        data=[PlanOut.from_row(row) for row in all_plan_details],
     ).model_dump()
 
 
@@ -46,5 +46,5 @@ def get_plan(plan_id: str, db: Session = Depends(get_db)):
         status_code=200,
         success=True,
         message=f"Successfully fetched plan details!",
-        data=PlanOut.model_validate(plan),
+        data=PlanOut.from_row(plan),
     ).model_dump()
