@@ -165,7 +165,7 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     subscription, plan = db.query(Subscription, Plan).join(Plan, Subscription.plan_id == Plan.id).filter(
         Subscription.user_id == doctor_id).order_by(
         Subscription.created_at.desc()).first()
-    final_data['subscription'] = [SubscriptionOutWithPlan.from_orm(subscription, plan)] # for subscription, plan in all_subscription_details],
+    final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription, plan) # for subscription, plan in all_subscription_details],
 
     return APIResponse(
         status_code=200,
