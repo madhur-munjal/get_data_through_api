@@ -13,6 +13,7 @@ from src.models.visits import VisitOut, VisitCreate, VisitResponse, VisitAllResp
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
+from src.routers.appointments import get_appointment_with_billing_per_appointment_id
 
 router = APIRouter(
     prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}
@@ -154,7 +155,7 @@ def get_patient_details_with_visits_dates(
 @router.get("/get_date_patient_wise_visits_details/")  # , response_model=APIResponse[VisitResponse])
 def get_date_patient_wise_visit_details(
         patient_id: str,
-        scheduled_date: date = Query(..., description="Date in YYYY-MM-DD format"),
+        scheduled_date: str = Query(..., description="Date in YYYY-MM-DD format"),
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
@@ -171,6 +172,9 @@ def get_date_patient_wise_visit_details(
         raise HTTPException(
             status_code=404, detail=f"No visit by Patient id {patient_id} on date {scheduled_date}"
         )
+
+    billing_data = get_appointment_with_billing_per_appointment_id(db, visits.appointment_id)
+    visits.payment_details = billing_data.get("billing_summary")
     return APIResponse(
         status_code=200,
         success=True,

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from src.auth_utils import hash_password
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.dependencies import require_owner
+from src.dependencies import require_admin_owner
 from src.models.response import APIResponse
 # from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.models.staff import StaffCreate, StaffOut, DeleteStaffRequest, StaffUpdate
@@ -15,8 +15,8 @@ from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
 
 router = APIRouter(
-    prefix="/staff", tags=["staff"], responses={404: {"error": "Not found"}}
-    # , dependencies=[Depends(require_owner)]
+    prefix="/staff", tags=["staff"], responses={404: {"error": "Not found"}},
+    dependencies=[Depends(require_admin_owner)]
 )
 
 

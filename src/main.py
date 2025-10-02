@@ -2,7 +2,6 @@ import os
 import sys
 
 import redis
-from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -11,7 +10,6 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
-from src.scheduler import update_appointment_status
 from src.routers import api_router
 from src.database import engine, Base
 from src.core.exception_handlers import (
@@ -21,7 +19,6 @@ from src.core.exception_handlers import (
 from src.models.response import APIResponse
 from src.models.response import TokenRevoked
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from apscheduler.triggers.cron import CronTrigger
 
 load_dotenv()
 
@@ -66,12 +63,6 @@ def check_redis():
         print("❌ Redis is not reachable.")
 
 
-scheduler = BackgroundScheduler()
-trigger = CronTrigger(hour=17, minute=30)
-
-scheduler.add_job(update_appointment_status, trigger=trigger, name="Daily Status Update")
-scheduler.start()
-
 origins = [
     "*",
     "http://localhost:4200",
@@ -107,11 +98,10 @@ async def status():
         status_code=200, success=True, message="{'status': 'online'}", data=None
     ).model_dump()
 
-
-@app.post("/run-scheduler", tags=["Scheduler"])
-def run_scheduler_manually():
-    update_appointment_status()
-    return {"message": "Scheduler task executed successfully"}
+# @app.post("/run-scheduler", tags=["Scheduler"])
+# def run_scheduler_manually():
+#     update_appointment_status()
+#     return {"message": "Scheduler task executed successfully"}
 
 # if __name__ == "__main__":
 #     import uvicorn

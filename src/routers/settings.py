@@ -191,7 +191,7 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
 
 
 @router.get("/profile-images/{filename}")
-async def get_profile_image(filename: str):
+async def get_profile_image(filename: str, current_user=Depends(get_current_user_payload)):
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
         return FileResponse(file_path)

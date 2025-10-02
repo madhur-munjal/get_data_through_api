@@ -21,8 +21,8 @@ from src.redis_client import get_redis_client
 
 
 def get_current_user_payload(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    redis=Depends(get_redis_client),
+        credentials: HTTPAuthorizationCredentials = Depends(security),
+        redis=Depends(get_redis_client),
 ):
     token = credentials.credentials
     if redis.get(f"blacklist:{token}"):  # is_token_blacklisted(redis, token):
@@ -38,7 +38,7 @@ def get_current_user_payload(
         if user_id is None:
             raise TokenRevoked(message="User ID missing in token", code=200)
 
-        return payload # user_id
+        return payload  # user_id
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except JWTError as ex:
@@ -52,7 +52,7 @@ def get_current_user_payload(
 
 
 def get_current_doctor_id(
-    credentials: HTTPAuthorizationCredentials = Depends(security), current_user=Depends(get_current_user_payload),
+        credentials: HTTPAuthorizationCredentials = Depends(security), current_user=Depends(get_current_user_payload),
 ) -> UUID:
     token = credentials.credentials
     if not token:
@@ -81,5 +81,11 @@ def blacklist_token(redis: Redis, token: str, expiry_seconds: int):
 
 def require_owner(user_payload=Depends(get_current_user_payload)):
     if user_payload.get("role") != "owner":
+        raise HTTPException(status_code=403, detail="Permission denied.")
+    return user_payload
+
+
+def require_admin_owner(user_payload=Depends(get_current_user_payload)):
+    if user_payload.get("role").lower() not in ["owner", "admin"]:  # != "owner":
         raise HTTPException(status_code=403, detail="Permission denied.")
     return user_payload

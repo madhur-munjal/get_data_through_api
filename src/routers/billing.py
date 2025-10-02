@@ -14,13 +14,13 @@ from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.billing import Billing
 from src.schemas.tables.notifications import Notification
 from src.utility import save_data_to_db
+from src.dependencies import require_admin_owner
 
 router = APIRouter(
     prefix="/billings",
     tags=["billings"],
-    responses={404: {"error": "Not found"}}
-    # ,
-    # dependencies=[Depends(require_owner)]
+    responses={404: {"error": "Not found"}},
+    dependencies=[Depends(require_admin_owner)]
 )
 
 
@@ -142,18 +142,8 @@ def get_billing_summary(
     try:
         total_earning = query.with_entities(func.coalesce(func.sum(Billing.amount), 0)).scalar()
         completed_payment_ids = query.filter(Appointment.payment_status == PaymentStatus.PAID.value).with_entities(distinct(Appointment.id))
-        # print(completed_payment_ids)
         completed_payment = completed_payment_ids.count()
-        # with_entities(
-        #     func.count(Billing.billing_id)).scalar()
-
-        # query.filter(Appointment.payment_status == PaymentStatus.PAID.value).with_entities(
-        #             func.coalesce(func.sum(Billing.amount), 0)).scalar()
         pending_payment = query.filter(Appointment.payment_status == PaymentStatus.UNPAID.value,).with_entities(distinct(Appointment.id)).count()
-            # func.count(Billing.billing_id)).scalar()
-            # (
-            # query.filter(Appointment.payment_status == PaymentStatus.UNPAID.value).with_entities(
-            # func.coalesce(func.sum(Billing.amount), 0)).scalar())
         payment_details = query.with_entities(Billing.type, func.coalesce(func.sum(Billing.amount), 0).label('total')) \
             .group_by(Billing.type).having(func.sum(Billing.amount) > 0).all()
 

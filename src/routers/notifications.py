@@ -89,9 +89,6 @@ def get_notifications(page: int = Query(1, ge=1),
 
     offset = (page - 1) * page_size
     results = query.order_by(desc(Notification.created_at)).offset(offset).limit(page_size).all()
-    # import pdb;pdb.set_trace()
-    #
-    # print(NotificationOut.model_validate(results))
 
     return APIResponse(
         status_code=200,

@@ -87,7 +87,7 @@ def validate_user_fields(values, cls):
     errors: list[InitErrorDetails] = []
 
     # Email validation
-    if "email" in cls.model_fields and not EMAIL_REGEX.fullmatch(values.email):
+    if "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): # cls.model_fields and not EMAIL_REGEX.fullmatch(values.email):
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid email format"),
@@ -97,7 +97,7 @@ def validate_user_fields(values, cls):
         )
 
     # Username validation
-    if "username" in cls.model_fields and not USERNAME_REGEX.fullmatch(values.username):
+    if "username" in values and not values["username"].isalnum() and not USERNAME_REGEX.fullmatch(values.username): #"username" in cls.model_fields and not USERNAME_REGEX.fullmatch(values.username):
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid username format"),
@@ -108,9 +108,9 @@ def validate_user_fields(values, cls):
 
     # Password validation
     # password can be NOne in setting page, as user onlu update mobile
-    if "password" in cls.model_fields and values.password is None:
+    if "password" in values and values.password is None: # not values["password"].isalnum(): #"password" in cls.model_fields and values.password is None:
         return values
-    elif "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
+    elif "password" in values and not PASSWORD_REGEX.fullmatch(values.password):#"password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError(
@@ -230,7 +230,6 @@ from src.schemas.tables.subscription import Subscription
 
 
 def update_subscription_data(doctor_id=None):
-    print("************************************898")
     db: Session = SessionLocal()
     today = date.today()
 

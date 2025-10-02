@@ -206,9 +206,6 @@ def get_patients_list_on_basis_of_mobile(
             )
         )
     results = query.all()
-    # final_data = {column.name: getattr(Patient, column.name) for column in Patient.__table__.columns}
-    # print(results)
-    # print([PatientOut.model_validate(p) for p in results])
     return APIResponse(
         status_code=200,
         success=True,

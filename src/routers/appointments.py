@@ -171,7 +171,8 @@ def create_appointment(
 
 
 @router.put("/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut])
-def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: Session = Depends(get_db)):
+def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: Session = Depends(get_db),
+                       current_user=Depends(get_current_user_payload)):
     appointment = db.query(Appointment).filter_by(id=appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
@@ -182,41 +183,6 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
         # Update scheduled_time if provided
     if update_data.scheduled_time:
         appointment.scheduled_time = datetime.strptime(update_data.scheduled_time, "%H:%M:%S").time()
-
-    # data = update_data.dict(exclude_unset=True)
-    #
-    # # Convert known fields
-    # if "scheduled_date" in data:
-    #     data["scheduled_date"] = datetime.strptime(data["scheduled_date"], "%m/%d/%Y").date()
-    #
-    # if "appointment_time" in data:
-    #     data["scheduled_time"] = datetime.strptime(data["scheduled_time"], "%H:%M:%S").time()
-    #
-    # # Apply all fields
-    # for key, value in data.items():
-    #     print(key, value, sep="*****")
-    #     setattr(appointment, key, value)
-    # print(update_data.dict(exclude_unset=True))
-    # print("*******")
-    # print(appointment)
-    # print("***********")
-    # print(type(appointment))
-    #
-    # data = appointment.dict()
-    # # data.update({"doctor_id": appointment.doctor_id})
-    #
-    # db_appointment = Appointment(
-    #     patient_id=data.patient_id,
-    #     doctor_id=data.doctor_id,
-    #     scheduled_date=datetime.strptime(data.get("scheduled_date"), "%m/%d/%Y").date(),
-    #     scheduled_time=datetime.strptime(data.get("scheduled_time"), "%H:%M:%S").time(),
-    #     type=data.type,
-    #     status=data.status
-    # )
-    #
-    # # for key, value in update_data.dict(exclude_unset=True).items():
-    # #     setattr(appointment, key, value)
-
     db.commit()
     db.refresh(appointment)
     return APIResponse(
@@ -286,12 +252,6 @@ def get_appointment_data(
                 data=None
             ).model_dump()
 
-    # column_names = [col['name'] for col in query.column_descriptions]
-    # print(column_names)
-    # for row in query.all():
-    #     row_dict = dict(zip(column_names, row))
-    #     print(row_dict)
-
     total_records = query.count()
     offset = (page - 1) * page_size
     results = query.order_by(desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
@@ -326,7 +286,8 @@ def get_appointment_data(
 #     ).model_dump()
 
 @router.get("/{appointment_id}", response_model=APIResponse[VisitAllResponse])
-def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db)):
+def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db),
+                                               current_user=Depends(get_current_user_payload)):
     visit = db.query(Visit).filter_by(appointment_id=appointment_id).first()
     if not visit:
         appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
@@ -341,10 +302,6 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
             data=VisitAllResponse.from_appointment_row(appointment_details)
         ).model_dump()
     else:
-        # appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id)
-        # final_result = get_appointment_with_billing_per_row(db, appointment_details.all())
-        # print(final_result)
-        # import pdb;pdb.set_trace()
         billing_data = get_appointment_with_billing_per_appointment_id(db, visit.appointment_id)
         visit.payment_details = billing_data.get("billing_summary")
         return APIResponse(

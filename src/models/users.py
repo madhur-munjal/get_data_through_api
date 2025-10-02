@@ -27,6 +27,24 @@ class UserCreate(BaseModel):
         return validate_user_fields(values, cls)
 
 
+class UserUpdate(BaseModel):
+    """Model used to update an existing user."""
+
+    firstName: Optional[constr(min_length=3, max_length=15)] = None
+    lastName: Optional[constr(min_length=3, max_length=15)] = None
+    email: Optional[str] = None
+    country: Optional[str] = None
+    mobile: Optional[constr(min_length=5)] = None
+    username: Optional[constr(min_length=5, max_length=18)] = None
+    password: Optional[constr(min_length=5)] = None
+
+    model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def validate(cls, values):
+        return validate_user_fields(values, cls)
+
+
 class UserLogin(BaseModel):
     username: str
     password: str
