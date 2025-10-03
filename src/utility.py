@@ -11,6 +11,7 @@ from fastapi import HTTPException, status
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from sqlalchemy.exc import IntegrityError
+from jinja2 import Environment, FileSystemLoader
 
 from src.models.enums import AppointmentStatus
 from sqlalchemy.orm import Session
@@ -22,6 +23,7 @@ load_dotenv()
 
 # Simulated temporary OTP store (for demo; use Redis or DB in prod)
 otp_store = {}
+env = Environment(loader=FileSystemLoader("html_templates"))
 
 
 def generate_otp(length=4):
@@ -29,7 +31,12 @@ def generate_otp(length=4):
 
 
 def send_otp_email(to_email, otp):
-    message = MIMEText(f"Your OTP is: {otp}")
+    template = env.get_template("otp_email.html")
+    html_content = template.render(otp=otp)
+    message = MIMEText(html_content, "html")
+    print(message)
+
+    # message = MIMEText(f"Your OTP is: {otp}")
     from_email = os.getenv("from_email_id")  # "support@smarthealapp.com"
     message["From"] = from_email
     message["To"] = to_email
