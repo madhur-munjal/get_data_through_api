@@ -112,8 +112,9 @@ class ResetPasswordRequest(BaseModel):
 
 
 class VerifyOTPRequest(BaseModel):
-    email: str
     otp: str
+    token: str
+
 
     @model_validator(mode="after")
     def validate(cls, values):

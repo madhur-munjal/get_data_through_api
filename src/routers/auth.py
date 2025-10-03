@@ -26,6 +26,7 @@ from src.models.users import (
     UserCreate,
     UserLogin,
     UserOut,
+    VerifyOTPRequest
 )
 from src.redis_client import get_redis_client
 from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
@@ -246,17 +247,17 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 
 
 @router.post("/verify-otp", response_model=APIResponse, status_code=status.HTTP_200_OK)
-def verify_otp(otp: str, token: str, db: Session = Depends(get_db),
-               redis_client=Depends(get_redis_client)):  # request: VerifyOTPRequest,
+def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db),
+               redis_client=Depends(get_redis_client)):
     # stored_otp = otp_store.get(request.email)
     # session = get_otp_session(token)
-    session = redis_client.hgetall(token)
-    if not session or session["otp"] != otp:  # stored_otp:
+    session = redis_client.hgetall(request.token)
+    if not session or session["otp"] != request.otp:  # stored_otp:
         return APIResponse(
             status_code=200, success=False, message="Invalid/Expired OTP."
         ).model_dump()
     # mark_otp_verified(token)
-    redis_client.hset(token, "verified", "true")
+    redis_client.hset(request.token, "verified", "true")
     # if request.otp != stored_otp:
     #     return APIResponse(
     #         status_code=200, success=False, message="Incorrect OTP."

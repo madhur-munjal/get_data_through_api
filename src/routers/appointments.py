@@ -169,7 +169,7 @@ def create_appointment(
     ).model_dump()
 
 
-@router.put("/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut])
+@router.post("/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut])
 def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: Session = Depends(get_db),
                        current_user=Depends(get_current_user_payload)):
     appointment = db.query(Appointment).filter_by(id=appointment_id).first()
