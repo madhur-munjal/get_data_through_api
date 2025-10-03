@@ -275,16 +275,16 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db),
 @router.post(
     "/reset-password", response_model=APIResponse, status_code=status.HTTP_200_OK
 )
-def reset_password(token: str, request: ResetPasswordRequest, db: Session = Depends(get_db),
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db),
                    redis_client=Depends(get_redis_client)):
-    session = redis_client.hgetall(token)
+    session = redis_client.hgetall(request.token)
     if not session or session.get('verified') == 'false':
         return APIResponse(
-            status_code=200, success=False, message="This session is either expired or has not been verified"
+            status_code=200, success=False, message="Session is either expired or has not been verified"
         ).model_dump()
     # mark_otp_verified(token)
 
-    user = db.query(User).filter(User.email == request.email).first()
+    user = db.query(User).filter(User.email == session.get('email')).first()
     if not user:
         return APIResponse(
             status_code=200, success=False, message="User not found.", data=None

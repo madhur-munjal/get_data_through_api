@@ -93,7 +93,7 @@ class ForgotPasswordRequest(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    email: EmailStr
+    token: str
     password: constr(min_length=5)  # Required
 
     model_config = {"from_attributes": True}

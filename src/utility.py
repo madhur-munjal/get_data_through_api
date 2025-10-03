@@ -82,7 +82,7 @@ def validate_user_fields(values, cls):
     errors: list[InitErrorDetails] = []
 
     # Email validation
-    if cls.model_fields and not EMAIL_REGEX.fullmatch(values.email): # "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): #
+    if "email" in cls.model_fields and not EMAIL_REGEX.fullmatch(values.email): # "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): #
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid email format"),
