@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 from typing import Literal, Union, Optional, List, Any
 
 from pydantic import BaseModel, Field
@@ -138,6 +138,8 @@ class VisitAllResponse(BaseModel):
     medicationDetails: Optional[
         Any] = None  # Optional[List[MedicationDetails]] = None  # Optional[List[MedicationDetails]] = None
     paymentDetails: Optional[list] = None
+    scheduled_date: Optional[date] = None
+    scheduled_time: Optional[time] = None
 
     model_config = {"from_attributes": True}
 
@@ -161,6 +163,8 @@ class VisitAllResponse(BaseModel):
             type=row.type,
             status=row.status,
             paymentDetails=row.payment_details,
+            scheduled_date=row.scheduled_date,
+            scheduled_time=row.scheduled_time,
             # analysis=row.analysis,
             # advice=row.advice,
             # tests=row.tests,
@@ -198,5 +202,7 @@ class VisitAllResponse(BaseModel):
             paymentStatus=row.appointments.payment_status,
             paymentType=row.appointments.billing.type if row.appointments.billing else None,
             amount=row.appointments.billing.amount if row.appointments.billing else None,
-            paymentDetails=row.payment_details
+            paymentDetails=row.payment_details,
+            scheduled_date=row.appointments.scheduled_date,
+            scheduled_time=row.appointments.scheduled_time,
         )

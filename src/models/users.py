@@ -94,11 +94,21 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
-    new_password: str
+    password: constr(min_length=5)  # Required
+
+    model_config = {"from_attributes": True}
 
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
+    # password: str
+    #
+    # model_config = {"from_attributes": True}
+    #
+    # @model_validator(mode="after")
+    # def validate(cls, values):
+    #     return validate_user_fields(values, cls)
+
 
 
 class VerifyOTPRequest(BaseModel):

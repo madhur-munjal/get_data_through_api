@@ -5,9 +5,6 @@ import smtplib
 import string
 from datetime import datetime, timezone
 from email.mime.text import MIMEText
-from typing import Optional
-from sqlalchemy.orm import Session
-
 import pytz
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
@@ -17,8 +14,6 @@ from sqlalchemy.exc import IntegrityError
 
 from src.models.enums import AppointmentStatus
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from fastapi import File, UploadFile, Depends
 from typing import Optional
 from src.schemas.tables.appointments import Appointment
 from src.database import SessionLocal
@@ -87,7 +82,7 @@ def validate_user_fields(values, cls):
     errors: list[InitErrorDetails] = []
 
     # Email validation
-    if "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): # cls.model_fields and not EMAIL_REGEX.fullmatch(values.email):
+    if cls.model_fields and not EMAIL_REGEX.fullmatch(values.email): # "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): #
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid email format"),
@@ -97,7 +92,7 @@ def validate_user_fields(values, cls):
         )
 
     # Username validation
-    if "username" in values and not values["username"].isalnum() and not USERNAME_REGEX.fullmatch(values.username): #"username" in cls.model_fields and not USERNAME_REGEX.fullmatch(values.username):
+    if "username" in cls.model_fields and not USERNAME_REGEX.fullmatch(values.username):  # "username" in values and not values["username"].isalnum() and not USERNAME_REGEX.fullmatch(values.username): #
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid username format"),
@@ -107,10 +102,10 @@ def validate_user_fields(values, cls):
         )
 
     # Password validation
-    # password can be NOne in setting page, as user onlu update mobile
-    if "password" in values and values.password is None: # not values["password"].isalnum(): #"password" in cls.model_fields and values.password is None:
+    # password can be NOne in setting page, as user only update mobile
+    if "password" in cls.model_fields and values.password is None: # "password" in values and values.password is None: # :
         return values
-    elif "password" in values and not PASSWORD_REGEX.fullmatch(values.password):#"password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
+    elif "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password): # "password" in values and not PASSWORD_REGEX.fullmatch(values.password):#"password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError(
@@ -265,3 +260,12 @@ def update_subscription_data(doctor_id=None):
 
     db.commit()
     db.close()
+
+
+# def get_otp_session(token: str):
+#     session = redis_client.hgetall(token)
+#     return session if session else None
+#
+#
+# def mark_otp_verified(token: str):
+#     redis_client.hset(token, "verified", "true")

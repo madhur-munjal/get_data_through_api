@@ -66,7 +66,6 @@ def get_appointment_with_billing_per_appointment_id(db: Session, appointment_id)
     return dict()
 
 
-
 def get_appointment_with_billing_per_row(db: Session, results):
     appt_ids = [a.id for a in results]
     billing_data = (
@@ -177,6 +176,19 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
+    patient_data = update_data.patient.dict(exclude_unset=True)
+    patient_id = patient_data.get("patient_id")
+    valid_keys = {col.name for col in Patient.__table__.columns}
+    filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
+    # filtered_data["assigned_doctor_id"] = doctor_id
+
+    if patient_id:
+        patient = db.query(Patient).filter_by(patient_id=patient_id).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail=f"Patient not found with the id {patient_id}")
+        for field, value in filtered_data.items():
+            setattr(patient, field, value)
+
     if update_data.scheduled_date:
         appointment.scheduled_date = datetime.strptime(update_data.scheduled_date, "%m/%d/%Y").date()
 
@@ -207,7 +219,6 @@ def get_appointment_data(
 ):
     query = build_appointments_query(db, doctor_id)
     # total_records = len(query.all())
-
 
     # 🔍 Text filter: match firstname, lastname, or mobile
     if text:

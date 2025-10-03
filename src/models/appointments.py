@@ -9,7 +9,6 @@ from .enums import AppointmentStatus, PaymentStatus, Gender, TemperatureUnit
 
 class AppointmentCreate(BaseModel):
     patient: PatientUpdateWhileAppointment  # Nested patient data
-    # scheduled_date_time: datetime
     scheduled_date: str  # "08/25/2025"
     scheduled_time: str  # "16:00:00"
 
@@ -69,6 +68,7 @@ class AppointmentResponse(BaseModel):
 
 
 class AppointmentUpdate(BaseModel):
+    patient: PatientUpdateWhileAppointment  # Nested patient data
     scheduled_date: str  # "08/25/2025"
     scheduled_time: str  # "16:00:00"
 

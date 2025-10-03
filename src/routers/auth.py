@@ -8,7 +8,7 @@ from jose import jwt
 from passlib.context import CryptContext
 from redis import Redis
 from sqlalchemy.orm import Session
-from src.models.subscription import SubscriptionCreate
+
 from src.auth_utils import SECRET_KEY, ALGORITHM
 from src.auth_utils import (
     create_access_token,
@@ -19,10 +19,10 @@ from src.auth_utils import (
 from src.database import get_db
 from src.models.billing import DoctorsBillingSave
 from src.models.response import APIResponse
+from src.models.subscription import SubscriptionCreate
 from src.models.users import (
     ForgotPasswordRequest,
     ResetPasswordRequest,
-    VerifyOTPRequest,
     UserCreate,
     UserLogin,
     UserOut,
@@ -31,7 +31,7 @@ from src.redis_client import get_redis_client
 from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
-from src.utility import generate_otp, send_otp_email, otp_store
+from src.utility import generate_otp, send_otp_email
 
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -71,11 +71,11 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     start_date = date.today()
     end_date = start_date + timedelta(days=180)
     subscription_data = SubscriptionCreate(
-        user_id = db_user.id,
-        plan_id= "7d6c3a9a-3907-448e-aa38-effc448007ab",  # id of free plan
-        start_date= start_date,  # .isoformat() + "T07:11:38.682Z",
-        end_date= end_date,  # "2025-12-28T07:11:38.682Z",
-        auto_renew= False
+        user_id=db_user.id,
+        plan_id="7d6c3a9a-3907-448e-aa38-effc448007ab",  # id of free plan
+        start_date=start_date,  # .isoformat() + "T07:11:38.682Z",
+        end_date=end_date,  # "2025-12-28T07:11:38.682Z",
+        auto_renew=False
     )
     create_subscription(subscription=subscription_data, db=db)
     return APIResponse(
@@ -208,7 +208,8 @@ def logout(
 
 
 @router.post("/forgot-password", response_model=APIResponse)
-def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db),
+                    redis_client=Depends(get_redis_client)):
     user = db.query(User).filter_by(email=request.email).first()
     if not user:
         return APIResponse(
@@ -219,14 +220,20 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
             status_code=200, success=False, message="Username not found.", data=None
         ).model_dump()
     token = str(uuid.uuid4())
-
+    expiry_minutes: int = 10  # OTP expiry time in minutes
     otp = generate_otp()
-    otp_store[request.email] = otp  # TODO: Save OTP (with expiry in production)
-
+    # otp_store[request.email] = otp  # TODO: Save OTP (with expiry in production)
+    session_data = {
+        "email": request.email,
+        "otp": otp,
+        "verified": "false"
+    }
+    redis_client.hmset(token, session_data)
+    redis_client.expire(token, timedelta(minutes=expiry_minutes))
     try:
         send_otp_email(request.email, otp)
         return APIResponse(
-            status_code=200, success=True, message="OTP sent successfully", data=None
+            status_code=200, success=True, message="OTP sent successfully", data={'token': token}
         ).model_dump()
 
     except Exception as e:
@@ -239,20 +246,25 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 
 
 @router.post("/verify-otp", response_model=APIResponse, status_code=status.HTTP_200_OK)
-def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
-    stored_otp = otp_store.get(request.email)
-    if not stored_otp:
+def verify_otp(otp: str, token: str, db: Session = Depends(get_db),
+               redis_client=Depends(get_redis_client)):  # request: VerifyOTPRequest,
+    # stored_otp = otp_store.get(request.email)
+    # session = get_otp_session(token)
+    session = redis_client.hgetall(token)
+    if not session or session["otp"] != otp:  # stored_otp:
         return APIResponse(
-            status_code=200, success=False, message="OTP not found or expired."
+            status_code=200, success=False, message="Invalid/Expired OTP."
         ).model_dump()
-    if request.otp != stored_otp:
-        return APIResponse(
-            status_code=200, success=False, message="Incorrect OTP."
-        ).model_dump()
+    # mark_otp_verified(token)
+    redis_client.hset(token, "verified", "true")
+    # if request.otp != stored_otp:
+    #     return APIResponse(
+    #         status_code=200, success=False, message="Incorrect OTP."
+    #     ).model_dump()
 
     # You can add logic to mark OTP as verified (e.g., setting a flag in DB or cache)
     # For demo purposes, we delete it from the store
-    del otp_store[request.email]
+    # del otp_store[request.email]
 
     return APIResponse(
         status_code=200, success=True, message="OTP verified successfully.", data=None
@@ -262,13 +274,21 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
 @router.post(
     "/reset-password", response_model=APIResponse, status_code=status.HTTP_200_OK
 )
-def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(token: str, request: ResetPasswordRequest, db: Session = Depends(get_db),
+                   redis_client=Depends(get_redis_client)):
+    session = redis_client.hgetall(token)
+    if not session or session.get('verified') == 'false':
+        return APIResponse(
+            status_code=200, success=False, message="This session is either expired or has not been verified"
+        ).model_dump()
+    # mark_otp_verified(token)
+
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
         return APIResponse(
             status_code=200, success=False, message="User not found.", data=None
         ).model_dump()
-    user.password = pwd_context.hash(request.new_password)
+    user.password = pwd_context.hash(request.password)
     db.commit()
     return APIResponse(
         status_code=200, success=True, message="Password reset successfully.", data=None
