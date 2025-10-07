@@ -73,7 +73,7 @@ class UserOut(BaseModel):
         if image_filename:
             # base_url = request.base_url._url.rstrip("/")
             # return base_url + f"/static/{image_filename}"
-            return f"https://smarthealapp.com/images/{image_filename}"
+            return f"https://api.smarthealapp.com/images/{image_filename}"
         # if filename:
         #     return f"https://smarthealapp.com/static/{filename}"
         return None

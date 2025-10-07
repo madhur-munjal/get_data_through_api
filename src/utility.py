@@ -156,10 +156,10 @@ def save_data_to_db(data: dict, db_model, db_session):
 def get_appointment_status(appointment_date_time: datetime,
                            comparision_date_time: Optional[datetime] = None) -> str:
     if comparision_date_time is None:
-        comparision_date_time = datetime.now(timezone.utc)
+        comparision_date_time = datetime.now(pytz.timezone("Asia/Kolkata"))
     if appointment_date_time.tzinfo is None or appointment_date_time.tzinfo.utcoffset(appointment_date_time) is None:
         # It's naive — localize it
-        appointment_date_time = pytz.utc.localize(appointment_date_time)
+        appointment_date_time = pytz.timezone("Asia/Kolkata").localize(appointment_date_time)
     if appointment_date_time > comparision_date_time:
         return AppointmentStatus.UPCOMING.value
     else:

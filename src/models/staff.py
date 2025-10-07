@@ -49,7 +49,7 @@ class StaffOut(BaseModel):
         image_filename = staff_obj.profile_image_url  # e.g., "id.jpg"
         if image_filename:
             # base_url = request.base_url._url.rstrip("/")
-            return f"https://smarthealapp.com/images/{image_filename}"
+            return f"https://api.smarthealapp.com/images/{image_filename}"
         #
         # if filename:
         #     return f"https://smarthealapp.com/static/{filename}"
