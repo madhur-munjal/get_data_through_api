@@ -57,6 +57,30 @@ def register(
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    if user.sendToEmail:
+        # send email to staff with updated details
+        from src.utility import send_msg_on_email as send_email
+        subject = "Your staff account details - SmartHealApp"
+        body = f"""
+
+        Here are your staff account details:
+
+        First Name: {user.firstName}
+        Last Name: {user.lastName}
+        Email: {user.email}
+        Country: {user.country}
+        Mobile: {user.mobile}
+        Username: {user.username}
+        Password: {user.password}
+        Role: {user.role}
+
+        If you did not request this change, please contact the administrator immediately.
+
+        Best regards,
+        SmartHealApp Management Team
+        """
+        send_email(to_email=user.email, message=body, Subject=subject)
+
     return APIResponse(
         status_code=200,
         success=True,

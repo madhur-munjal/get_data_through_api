@@ -19,6 +19,7 @@ class StaffCreate(BaseModel):
     username: constr(min_length=5, max_length=18)  # Required
     password: constr(min_length=5)  # Required
     role: str  # Required
+    sendToEmail: Optional[bool] = False
 
     model_config = {"from_attributes": True}
 
