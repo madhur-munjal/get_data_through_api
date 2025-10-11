@@ -56,6 +56,10 @@ async def update_login_user(
         raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
 
     if image:
+        contents = await image.read()
+        if len(contents) > 2 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Image exceeds 2MB limit")
+
         if not image.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="File must be an image")
 
