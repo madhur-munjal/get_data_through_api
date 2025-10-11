@@ -37,10 +37,10 @@ def register(
         return APIResponse(
             status_code=200, success=False, message="Username already exists", data=None
         ).model_dump()
-    # if db.query(Staff).filter_by(email=user.email).first():
-    #     return APIResponse(
-    #         status_code=200, success=False, message="Email already exists", data=None
-    #     ).model_dump()
+    if db.query(Staff).filter_by(email=user.email).first():
+        return APIResponse(
+            status_code=200, success=False, message="Email already exists", data=None
+        ).model_dump()
     # Need to re-validate as in some cases staff will join from one clinic to another
     hashed_pw = hash_password(user.password)
     db_user = Staff(
