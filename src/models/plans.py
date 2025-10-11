@@ -15,6 +15,7 @@ class PlanCreate(BaseModel):
 
 class PlanOut(BaseModel):
     id: str
+    s_no: int
     name: str
     description: Optional[list] = None
     price: float
@@ -31,7 +32,7 @@ class PlanOut(BaseModel):
             description=[description.strip() for description in row.description.split(",")],
             price=row.price,
             currency=row.currency,
-            # duration_days=row.duration_days
+            s_no=row.s_no
         )
 
 

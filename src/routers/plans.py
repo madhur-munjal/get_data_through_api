@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from src.dependencies import require_owner
 from src.database import get_db
 from src.models.plans import PlanCreate, PlanOut
 from src.models.response import APIResponse
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/plans", tags=["Plans"])
 
 
 @router.post("", response_model=APIResponse[PlanOut])
-def create_plan(plan: PlanCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)):
+def create_plan(plan: PlanCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user_payload), role=Depends(require_owner)):
     existing = db.query(Plan).filter_by(name=plan.name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Plan already exists")
@@ -29,7 +30,7 @@ def create_plan(plan: PlanCreate, db: Session = Depends(get_db), current_user=De
 
 @router.get("", response_model=APIResponse)
 def list_plans(db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)):
-    all_plan_details = db.query(Plan).all()
+    all_plan_details = db.query(Plan).order_by(Plan.s_no).all()
     return APIResponse(
         status_code=200,
         success=True,
