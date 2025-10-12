@@ -8,6 +8,7 @@ class PlanCreate(BaseModel):
     description: Optional[str] = None
     price: float
     currency: Optional[str] = "INR"
+    s_no: int
     # duration_days: Optional[int] = 30
 
     model_config = {"from_attributes": True}
