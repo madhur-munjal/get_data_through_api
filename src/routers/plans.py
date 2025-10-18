@@ -14,8 +14,8 @@ router = APIRouter(prefix="/plans", tags=["Plans"])
 @router.post("", response_model=APIResponse[PlanOut])
 def create_plan(plan: PlanCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user_payload), role=Depends(require_owner)):
     existing = db.query(Plan).filter_by(name=plan.name).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Plan already exists")
+    # if existing:
+    #     raise HTTPException(status_code=400, detail="Plan already exists")
     new_plan = Plan(**plan.dict())
     db.add(new_plan)
     db.commit()
@@ -24,13 +24,13 @@ def create_plan(plan: PlanCreate, db: Session = Depends(get_db), current_user=De
         status_code=200,
         success=True,
         message=f"Plans has been created successfully!",
-        data=PlanOut.model_validate(new_plan),
+        data=PlanOut.from_row(new_plan),
     ).model_dump()
 
 
 @router.get("", response_model=APIResponse)
 def list_plans(db: Session = Depends(get_db), current_user=Depends(get_current_user_payload)):
-    all_plan_details = db.query(Plan).order_by(Plan.s_no).all()
+    all_plan_details = db.query(Plan).filter_by(duration_months=1).order_by(Plan.s_no).all()
     return APIResponse(
         status_code=200,
         success=True,

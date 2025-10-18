@@ -9,7 +9,7 @@ class PlanCreate(BaseModel):
     price: float
     currency: Optional[str] = "INR"
     s_no: int
-    # duration_days: Optional[int] = 30
+    duration_months: int
 
     model_config = {"from_attributes": True}
 
@@ -21,7 +21,7 @@ class PlanOut(BaseModel):
     description: Optional[list] = None
     price: float
     currency: str
-    # duration_days: int
+    duration_months: int
 
     model_config = {"from_attributes": True}
 
@@ -33,7 +33,8 @@ class PlanOut(BaseModel):
             description=[description.strip() for description in row.description.split(",")],
             price=row.price,
             currency=row.currency,
-            s_no=row.s_no
+            s_no=row.s_no,
+            duration_months=row.duration_months,
         )
 
 
