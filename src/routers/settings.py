@@ -147,9 +147,9 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
                                ):
     # Get general details
     username = current_user.get("sub")
-    login_details = db.query(Staff).filter_by(username=username).first()
+    login_details = db.query(User).filter_by(username=username).first()
     if login_details is None:
-        login_details = db.query(User).filter_by(username=username).first()
+        login_details = db.query(Staff).filter_by(username=username).first()
 
     if not login_details:
         raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
