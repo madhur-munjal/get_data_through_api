@@ -5,7 +5,9 @@ services:
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
-      retries: 5
+      timeout: 5s
+      retries: 20
+#      retries: 5
     image: mysql:8
     container_name: mysql_container_db
     restart: always
@@ -15,8 +17,8 @@ services:
       MYSQL_DATABASE: my_db
     ports:
       - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
+#    volumes:
+#      - db_data:/var/lib/mysql
 
   fastapi_web:
     build: .

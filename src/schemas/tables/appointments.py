@@ -3,9 +3,11 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time, Enum, Integer, Float
 from sqlalchemy.orm import relationship
-from src.models.enums import AppointmentStatus, AppointmentType, PaymentStatus
+
 from src.database import Base
+from src.models.enums import AppointmentStatus, AppointmentType, PaymentStatus
 from src.models.enums import TemperatureUnit
+
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -33,4 +35,3 @@ class Appointment(Base):
     user = relationship("User", back_populates="appointments")
     visits = relationship("Visit", back_populates="appointments")
     billing = relationship("Billing", back_populates="appointment", uselist=False)
-

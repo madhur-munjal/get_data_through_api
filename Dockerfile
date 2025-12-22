@@ -21,4 +21,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src /src
 EXPOSE 8000
-CMD ["/bin/sh", "-c", "redis-server --daemonize yes && uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["/bin/sh", "-c", "sleep 20 && redis-server --daemonize yes && uvicorn main:app --host 0.0.0.0 --port 8000"]
+i
