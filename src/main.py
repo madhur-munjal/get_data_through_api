@@ -11,7 +11,8 @@ from fastapi.staticfiles import StaticFiles
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
-from src.database import engine, Base
+from src.database import engine, Base, SessionLocal
+from src.schemas.tables.plans import Plan
 from src.core.exception_handlers import (
     custom_validation_handler,
     custom_http_exception_handler,
@@ -51,6 +52,33 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
     print(Base.metadata.tables.keys())
     print("Database tables created successfully.")
+
+
+@app.on_event("startup")
+def seed_data():
+    db = SessionLocal()
+
+    exists = db.query(Plan).first()
+    if exists:
+        db.close()
+        return
+
+    plans = [
+        Plan(s_no=1, name="Basic", price=199.0, duration_months=1),
+        # Plan(name="Premium", price=499.0),
+    ]
+    # TODO: complete other plans as needed
+
+    # s_no = Column(Integer, nullable=False)
+    # name = Column(String(36), nullable=False)         # e.g., "Basic", "Premium"
+    # description = Column(String(200), nullable=True)                # optional description
+    # price = Column(Float, nullable=False)                      # monthly or one-time price
+    # currency = Column(String(5), default="INR")                   # e.g., "INR", "USD"
+    # duration_months = Column(Integer, nullable=False)                # plan duration
+
+    db.add_all(plans)
+    db.commit()
+    db.close()
 
 
 @app.on_event("startup")

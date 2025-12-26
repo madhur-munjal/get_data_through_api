@@ -1,6 +1,6 @@
 import uuid
+from datetime import date, timedelta
 from datetime import datetime, timezone
-from datetime import timedelta
 
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -29,7 +29,9 @@ from src.models.users import (
     VerifyOTPRequest
 )
 from src.redis_client import get_redis_client
+from src.routers.subscription import create_subscription
 from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
+from src.schemas.tables.plans import Plan
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
 from src.utility import generate_otp, send_otp_email
@@ -66,14 +68,17 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    from src.routers.subscription import create_subscription
-    from datetime import date, timedelta
 
     start_date = date.today()
     end_date = start_date + timedelta(days=180)
+    plan = db.query(Plan).filter(Plan.name == "Basic").first()
+
+    # if not plan:
+    #     raise HTTPException(400, "Plan not found")
+
     subscription_data = SubscriptionCreate(
         user_id=db_user.id,
-        plan_id="7d6c3a9a-3907-448e-aa38-effc448007ab",  # id of free plan
+        plan_id=plan.id,  # "7d6c3a9a-3907-448e-aa38-effc448007ab",  # id of free plan
         start_date=start_date,  # .isoformat() + "T07:11:38.682Z",
         end_date=end_date,  # "2025-12-28T07:11:38.682Z",
         auto_renew=False
