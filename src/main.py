@@ -34,6 +34,7 @@ app = FastAPI(
     },
     # root_path="/src",
     docs_url="/api-docs",
+    apenapi_url="/openapi.json",
     redoc_url="/redoc-ui",
 )
 app.include_router(api_router.router)
