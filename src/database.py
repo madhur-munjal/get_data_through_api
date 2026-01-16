@@ -9,7 +9,7 @@ load_dotenv()  # ✅ This loads .env variables into os.environ
 mysql_username = os.getenv("mysql_username")
 mysql_password = os.getenv("MYSQL_ROOT_PASSWORD")
 hostname = os.getenv("hostname")
-database = os.getenv("MYSQL_DATABASE")
+database = os.getenv("database")
 db_port = os.getenv("db_port")
 DATABASE_URL = f"mysql+mysqlconnector://{mysql_username}:{mysql_password}@{hostname}:{db_port}/{database}"
 engine = create_engine(

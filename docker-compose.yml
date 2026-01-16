@@ -11,6 +11,8 @@ services:
     image: mysql:8
     container_name: mysql_container_db
     restart: always
+    environment:
+      MYSQL_DATABASE: my_db
     env_file:
       - .env
     ports:
