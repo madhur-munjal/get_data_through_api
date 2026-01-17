@@ -62,11 +62,17 @@ def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
     message["To"] = to_email
     message["Subject"] = Subject
     smtp_server = "smtpout.secureserver.net"
-    server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
-    status_code, response = server.ehlo()
-    status_code, response = server.login(from_email, os.getenv("email_password"))
-    server.sendmail(from_email, to_email, message.as_string())
-    server.quit()
+    with smtplib.SMTP(smtp_server, 587, timeout=30) as server:
+        server.starttls()
+        server.login(from_email, os.getenv("email_password"))
+        server.sendmail(from_email, to_email, message.as_string())
+        server.quit()
+
+    # server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
+    # status_code, response = server.ehlo()
+    # status_code, response = server.login(from_email, os.getenv("email_password"))
+    # server.sendmail(from_email, to_email, message.as_string())
+    # server.quit()
 
 
 def validate_user_fields(values, cls):

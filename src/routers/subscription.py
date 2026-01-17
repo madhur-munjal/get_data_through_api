@@ -62,7 +62,7 @@ def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Sessi
         .first()
     )
     if not plan_details:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Plan details not found")
 
     from src.utility import send_msg_on_email as send_email
     subject = "User Interested in Subscription – Action Required"
