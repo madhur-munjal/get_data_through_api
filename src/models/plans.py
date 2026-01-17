@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 class PlanCreate(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: Optional[str]
     price: float
     currency: Optional[str] = "INR"
     s_no: int
