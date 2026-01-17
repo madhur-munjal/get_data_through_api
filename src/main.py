@@ -1,6 +1,5 @@
 import os
 import sys
-
 import redis
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -11,7 +10,8 @@ from fastapi.staticfiles import StaticFiles
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from src.routers import api_router
-from src.database import engine, Base
+from src.database import engine, Base, SessionLocal
+from src.schemas.tables.plans import Plan
 from src.core.exception_handlers import (
     custom_validation_handler,
     custom_http_exception_handler,
@@ -52,6 +52,49 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
     print(Base.metadata.tables.keys())
     print("Database tables created successfully.")
+
+
+@app.on_event("startup")
+def seed_data():
+    db = SessionLocal()
+
+#     # exists = db.query(Plan).first()
+#     # if exists:
+#     #     db.close()
+#     #     return
+    plans = [
+        Plan(s_no=1, name="Basic", price=2500, description="""Access to Dashboard,
+                  Appointment Scheduling (Upto 10 Patients),
+                  View Patient Records (Upto 10 Patients),
+                  View Patient Past Records,
+                  Notification Alerts on Application,
+                  Staff Management (Upto 3 Staff Members),
+                  Role Based Access Control for Staff Members
+        """
+             , duration_months=1),
+        Plan(s_no=2, name="Professional", price=5000, description="""Access to Dashboard,
+                  Appointment Scheduling (Unlimited Patients),
+                  View Patient Records (Unlimited Patients),
+                  View Patient Past Records,
+                  Track Billing for Cash/UPI/Card Payments,
+                  Billing breakdown chart for Cash/UPI/Card Payments,
+                  Export Billing Data,
+                  Notification Alerts on Application,
+                  Staff Management (Unlimited Staff Members),
+                  Role Based Access Control for Staff Members""", duration_months=1),
+    ]
+#     # TODO: complete other plans as needed
+#
+#     # s_no = Column(Integer, nullable=False)
+#     # name = Column(String(36), nullable=False)         # e.g., "Basic", "Premium"
+#     # description = Column(String(200), nullable=True)                # optional description
+#     # price = Column(Float, nullable=False)                      # monthly or one-time price
+#     # currency = Column(String(5), default="INR")                   # e.g., "INR", "USD"
+#     # duration_months = Column(Integer, nullable=False)                # plan duration
+#
+    db.add_all(plans)
+    db.commit()
+    db.close()
 
 
 @app.on_event("startup")
