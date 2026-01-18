@@ -70,7 +70,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
 
     start_date = date.today()
-    end_date = start_date + timedelta(days=180)
+    end_date = start_date + timedelta(days=14)
     plan = db.query(Plan).filter(Plan.name == "Basic").first()
 
     # if not plan:

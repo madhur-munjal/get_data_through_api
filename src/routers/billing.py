@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import get_current_user_payload, get_current_doctor_id
+from src.dependencies import require_admin_owner
 from src.models.billing import BillingCreate, BillingOut, BillingDetails
 from src.models.enums import PaymentStatus
 from src.models.response import APIResponse
@@ -14,7 +15,6 @@ from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.billing import Billing
 from src.schemas.tables.notifications import Notification
 from src.utility import save_data_to_db
-from src.dependencies import require_admin_owner
 
 router = APIRouter(
     prefix="/billings",
@@ -73,7 +73,8 @@ def get_billing_details(
 
 ):
     """Get billing details."""
-    query = db.query(Billing).join(Billing.appointment).filter(Appointment.doctor_id == doctor_id)
+    query = db.query(Billing).filter(Billing.is_deleted == False).join(Billing.appointment).filter(
+        Appointment.doctor_id == doctor_id)
     if not query:
         raise HTTPException(status_code=404, detail="Billing details not found.")
 
@@ -121,7 +122,8 @@ def get_billing_summary(
         # page: int = Query(1, ge=1),
         # page_size: int = Query(20, ge=1),
 ):
-    query = db.query(Appointment).filter(Appointment.doctor_id == doctor_id).outerjoin(Appointment.billing)
+    query = db.query(Appointment).filter(Appointment.doctor_id == doctor_id).outerjoin(Appointment.billing).filter(
+        Billing.is_deleted == False)
     # query = db.query(Billing).join(Billing.appointment).filter(Appointment.doctor_id == doctor_id)
     if not query:
         raise HTTPException(status_code=404, detail="No Appointment details found.")
@@ -141,9 +143,11 @@ def get_billing_summary(
 
     try:
         total_earning = query.with_entities(func.coalesce(func.sum(Billing.amount), 0)).scalar()
-        completed_payment_ids = query.filter(Appointment.payment_status == PaymentStatus.PAID.value).with_entities(distinct(Appointment.id))
+        completed_payment_ids = query.filter(Appointment.payment_status == PaymentStatus.PAID.value).with_entities(
+            distinct(Appointment.id))
         completed_payment = completed_payment_ids.count()
-        pending_payment = query.filter(Appointment.payment_status == PaymentStatus.UNPAID.value,).with_entities(distinct(Appointment.id)).count()
+        pending_payment = query.filter(Appointment.payment_status == PaymentStatus.UNPAID.value, ).with_entities(
+            distinct(Appointment.id)).count()
         payment_details = query.with_entities(Billing.type, func.coalesce(func.sum(Billing.amount), 0).label('total')) \
             .group_by(Billing.type).having(func.sum(Billing.amount) > 0).all()
 
@@ -165,3 +169,27 @@ def get_billing_summary(
         ).model_dump()
     except Exception as ex:
         raise HTTPException(status_code=500, detail=f"Error fetching billing summary: {str(ex)}")
+
+
+@router.post("/delete_billing")
+def soft_delete_billing(
+        billing_id: str,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+):
+    """Delete billing details on basis of billing id."""
+    billing = db.query(Billing).filter(Billing.billing_id == billing_id).first()
+    print("*******")
+    print(billing)
+    print(db.query(Billing))
+    if not billing:
+        raise HTTPException(status_code=404, detail="Billing not found")
+    billing.is_deleted = True
+    billing.deleted_at = datetime.utcnow()
+    db.commit()
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="Billing details fetched successfully.",
+        data=f"Billing {billing_id} marked as deleted"
+    ).model_dump()
