@@ -1,5 +1,6 @@
 import datetime
 from typing import Optional
+
 from pydantic import BaseModel
 
 from .enums import BillingTypeEnum
@@ -72,5 +73,9 @@ class BillingDeleteOut(BaseModel):
     amount: float
     is_deleted: bool = False
     deleted_at: Optional[datetime.datetime]
+
+
+class BillingDeleteIn(BaseModel):
+    ids_to_delete: list[str]
 
     model_config = {"from_attributes": True}

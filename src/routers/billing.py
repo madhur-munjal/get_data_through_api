@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.dependencies import get_current_user_payload, get_current_doctor_id
 from src.dependencies import require_admin_owner
-from src.models.billing import BillingCreate, BillingOut, BillingDetails
+from src.models.billing import BillingCreate, BillingOut, BillingDetails, BillingDeleteIn
 from src.models.enums import PaymentStatus
 from src.models.response import APIResponse
 from src.schemas.tables.appointments import Appointment
@@ -173,7 +173,7 @@ def get_billing_summary(
 
 @router.post("/delete_billing")
 def soft_delete_billing(
-        ids_to_delete: list[str],
+        ids_to_delete: BillingDeleteIn,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
