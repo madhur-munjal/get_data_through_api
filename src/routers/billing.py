@@ -173,23 +173,24 @@ def get_billing_summary(
 
 @router.post("/delete_billing")
 def soft_delete_billing(
-        billing_id: str,
+        ids_to_delete: list[str],
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Delete billing details on basis of billing id."""
-    billing = db.query(Billing).filter(Billing.billing_id == billing_id).first()
-    print("*******")
-    print(billing)
-    print(db.query(Billing))
-    if not billing:
-        raise HTTPException(status_code=404, detail="Billing not found")
-    billing.is_deleted = True
-    billing.deleted_at = datetime.utcnow()
+    rows_updated = db.query(Billing).filter(Billing.billing_id.in_(ids_to_delete)).update(
+    {Billing.is_deleted: True},
+    synchronize_session=False
+)
     db.commit()
+    if rows_updated == 0:
+        raise HTTPException(status_code=404, detail="No billing records found for given IDs")
+    # billing.is_deleted = True
+    # billing.deleted_at = datetime.utcnow()
+    # db.commit()
     return APIResponse(
         status_code=200,
         success=True,
-        message="Billing details fetched successfully.",
-        data=f"Billing {billing_id} marked as deleted"
+        message=f"{rows_updated} billing records marked as deleted",
+        data=f"Billing {ids_to_delete} marked as deleted"
     ).model_dump()
