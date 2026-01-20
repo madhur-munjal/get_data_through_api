@@ -178,7 +178,7 @@ def soft_delete_billing(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Delete billing details on basis of billing id."""
-    rows_updated = db.query(Billing).filter(Billing.billing_id.in_(ids_to_delete)).update(
+    rows_updated = db.query(Billing).filter(Billing.billing_id.in_(ids_to_delete.ids_to_delete)).update(
     {Billing.is_deleted: True},
     synchronize_session=False
 )

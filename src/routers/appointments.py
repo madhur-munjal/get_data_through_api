@@ -70,6 +70,8 @@ def get_appointment_with_billing_per_row(db: Session, results):
     appt_ids = [a.id for a in results]
     billing_data = (
         db.query(Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt"))
+        .filter(
+            Billing.is_deleted == False)
         .filter(Billing.appointment_id.in_(appt_ids))
         .group_by(Billing.appointment_id, Billing.type)
         .all()
@@ -84,7 +86,6 @@ def get_appointment_with_billing_per_row(db: Session, results):
         # billing_map.setdefault(appointment_id, []).append(
         #     {"type": btype, "amount": amt}
         # )
-    # import pdb;pdb.set_trace()
 
     result = []
     for appt in results:
