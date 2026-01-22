@@ -57,44 +57,34 @@ def on_startup():
 @app.on_event("startup")
 def seed_data():
     db = SessionLocal()
-
-#     # exists = db.query(Plan).first()
-#     # if exists:
-#     #     db.close()
-#     #     return
-    plans = [
-        Plan(s_no=1, name="Basic", price=2500, description="""Access to Dashboard,
-                  Appointment Scheduling (Upto 10 Patients),
-                  View Patient Records (Upto 10 Patients),
-                  View Patient Past Records,
-                  Notification Alerts on Application,
-                  Staff Management (Upto 3 Staff Members),
-                  Role Based Access Control for Staff Members
-        """
-             , duration_months=1),
-        Plan(s_no=2, name="Professional", price=5000, description="""Access to Dashboard,
-                  Appointment Scheduling (Unlimited Patients),
-                  View Patient Records (Unlimited Patients),
-                  View Patient Past Records,
-                  Track Billing for Cash/UPI/Card Payments,
-                  Billing breakdown chart for Cash/UPI/Card Payments,
-                  Export Billing Data,
-                  Notification Alerts on Application,
-                  Staff Management (Unlimited Staff Members),
-                  Role Based Access Control for Staff Members""", duration_months=1),
-    ]
-#     # TODO: complete other plans as needed
-#
-#     # s_no = Column(Integer, nullable=False)
-#     # name = Column(String(36), nullable=False)         # e.g., "Basic", "Premium"
-#     # description = Column(String(200), nullable=True)                # optional description
-#     # price = Column(Float, nullable=False)                      # monthly or one-time price
-#     # currency = Column(String(5), default="INR")                   # e.g., "INR", "USD"
-#     # duration_months = Column(Integer, nullable=False)                # plan duration
-#
-    db.add_all(plans)
-    db.commit()
-    db.close()
+    try:
+        existing_plan = db.query(Plan).first()
+        if existing_plan is None:
+            plans = [
+                Plan(s_no=1, name="Basic", price=2500, description="""Access to Dashboard,
+                          Appointment Scheduling (Upto 10 Patients),
+                          View Patient Records (Upto 10 Patients),
+                          View Patient Past Records,
+                          Notification Alerts on Application,
+                          Staff Management (Upto 3 Staff Members),
+                          Role Based Access Control for Staff Members
+                """
+                     , duration_months=1),
+                Plan(s_no=2, name="Professional", price=5000, description="""Access to Dashboard,
+                          Appointment Scheduling (Unlimited Patients),
+                          View Patient Records (Unlimited Patients),
+                          View Patient Past Records,
+                          Track Billing for Cash/UPI/Card Payments,
+                          Billing breakdown chart for Cash/UPI/Card Payments,
+                          Export Billing Data,
+                          Notification Alerts on Application,
+                          Staff Management (Unlimited Staff Members),
+                          Role Based Access Control for Staff Members""", duration_months=1),
+            ]
+            db.add_all(plans)
+            db.commit()
+    finally:
+        db.close()
 
 
 @app.on_event("startup")

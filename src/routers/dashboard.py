@@ -142,7 +142,7 @@ def get_appointment_patient_count(
         data={
             "total_appointments": total_records,
             "upcoming_appointments": upcoming_appointments_count,
-            "new_patient_appointments": new_patient_appointment_count
+            "new_patients": new_patient_appointment_count
         }
     ).model_dump()
 

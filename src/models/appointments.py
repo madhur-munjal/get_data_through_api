@@ -41,6 +41,7 @@ class AppointmentResponse(BaseModel):
     lastName: Optional[str] = None
     paymentDetails: Optional[list] = None
     amount: Optional[float] = None
+    pulseRate: Optional[int] = None
 
     model_config = {"from_attributes": True}
 
@@ -59,6 +60,7 @@ class AppointmentResponse(BaseModel):
             paymentStatus=row['appointment'].payment_status,
             paymentDetails=row['billing'].get('billing_summary'),
             amount=row['billing'].get('total_amount'),
+            pulseRate=row['appointment'].get('pulseRate')
             # get_appointment_status(
             #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
             #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
@@ -95,6 +97,7 @@ class AppointmentById(BaseModel):
     type: int
     status: int
     paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)
+    pulseRate: Optional[int] = None
 
     model_config = {"from_attributes": True}
 
@@ -117,7 +120,8 @@ class AppointmentById(BaseModel):
             temperatureType=row.patient.temperatureType,
             type=row.type,
             status=row.status,
-            paymentStatus=row.payment_status
+            paymentStatus=row.payment_status,
+            pulseRate=row.pulseRate
         )
 
 
