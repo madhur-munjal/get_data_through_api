@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time, Enum, Integer, Float
+from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time, Enum, Integer, Float, JSON
 from sqlalchemy.orm import relationship
 
 from src.database import Base
@@ -29,6 +29,8 @@ class Appointment(Base):
     bloodPressureLower = Column(Integer, nullable=True)
     temperature = Column(Float, nullable=True)
     temperatureType = Column(Enum(TemperatureUnit), nullable=True)
+    pulseRate = Column(Integer, nullable=True)
+    # extra_fields = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     patient = relationship("Patient", back_populates="appointments")

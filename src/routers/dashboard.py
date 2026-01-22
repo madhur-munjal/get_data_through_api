@@ -1,14 +1,15 @@
 from uuid import UUID
-
+from datetime import date, datetime
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import or_, and_, func
-from sqlalchemy.orm import Session
-
+from sqlalchemy.orm import Session, aliased
+from src.routers.appointments import build_appointments_query
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.models.response import APIResponse
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.staff import Staff
+from src.schemas.tables.appointments import Appointment
 
 router = APIRouter(
     prefix="/dashboard",
@@ -103,3 +104,45 @@ def get_patient_staff_details(
         message=f"Successfully fetched the combined details of patient and staff.",
         data=merge_results
     ).model_dump()
+
+
+@router.get("/summary")  # , response_model=APIResponse[AppointmentOut]
+def get_appointment_patient_count(
+        startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
+        endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id)
+):
+    """
+    Used to get the Upcoming appointments, New Patient  and unread messages count in Dashboard.
+    """
+    query = build_appointments_query(db, doctor_id)
+    start_date_obj = datetime.strptime(startDate, "%Y-%m-%d").date()
+    end_date_obj = datetime.strptime(endDate, "%Y-%m-%d").date()
+    query = query.filter(Appointment.scheduled_date.between(start_date_obj, end_date_obj))
+    total_records = query.count()
+    # Get count of appointments where AppointmentStatus is UPCOMING
+    upcoming_appointments_count = query.filter(Appointment.status == 0).count()
+    subq = (
+        query.session.query(Appointment.patient_id)
+        .filter(Appointment.type == 1)
+        .subquery()
+    )
+    new_patient_appointment_count = (
+        query
+        .filter(Appointment.type == 0)
+        .filter(Appointment.patient_id.notin_(subq))
+        .count()
+    )
+
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched the appointment and patient counts.",
+        data={
+            "total_appointments": total_records,
+            "upcoming_appointments": upcoming_appointments_count,
+            "new_patient_appointments": new_patient_appointment_count
+        }
+    ).model_dump()
+

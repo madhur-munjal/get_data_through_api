@@ -115,6 +115,8 @@ def create_appointment(
     patient_id = patient_data.get("patient_id")
     valid_keys = {col.name for col in Patient.__table__.columns}
     filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
+    pulseRate = appointment.patient.pulseRate
+    # extra_data = appointment.patient.extra_fields
     filtered_data["assigned_doctor_id"] = doctor_id
 
     if patient_id is None:
@@ -147,6 +149,8 @@ def create_appointment(
         bloodPressureLower=patient_data.get("bloodPressureLower"),
         temperature=patient_data.get("temperature"),
         temperatureType=patient_data.get("temperatureType"),
+        pulseRate=patient_data.get("pulseRate"),
+        # extra_fields=extra_data
     )
     db.add(db_appointment)
     db.commit()

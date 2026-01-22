@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Literal, Optional, List
+from typing import Literal, Optional, List, Dict, Any
 
 from pydantic import BaseModel
 
@@ -111,5 +111,7 @@ class PatientUpdateWhileAppointment(BaseModel):
     bloodPressureLower: Optional[int] = None
     temperature: Optional[float] = None
     temperatureType: Optional[TemperatureUnit] = None
+    pulseRate: Optional[int] = None
+    # extra_fields: Optional[Dict[str, Any]] = None  # To capture any additional fields
 
     model_config = {"from_attributes": True}
