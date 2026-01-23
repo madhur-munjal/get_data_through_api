@@ -4,12 +4,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from src.utility import save_data_to_db
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.models.medicines import MedicineCreate, MedicineResponse, MedicineUpdate, MedicineDeleteIn
 from src.models.response import APIResponse
 from src.schemas.tables.medicines import Medicine
+from src.utility import save_data_to_db
 
 router = APIRouter(prefix="/medicines", tags=["Medicines"])
 
@@ -49,11 +49,11 @@ def get_medicines(
         page: int = Query(1, ge=1),
         page_size: int = Query(20, ge=1),
 ):
-    query = db.query(Medicine)
+    query = db.query(Medicine).filter(Medicine.doctor_id == doctor_id)
 
     # Apply filters - now includes composition search
     if search:
-        query = query.filter(Medicine.doctor_id == doctor_id).filter(
+        query = query.filter(
             (Medicine.medicine_name.ilike(f"%{search}%")) |
             # (Medicine.generic_name.ilike(f"%{search}%")) |
             (Medicine.composition.ilike(f"%{search}%"))  # NEW: Search in composition
@@ -83,9 +83,10 @@ def get_medicines(
 def update_medicine(
         medicine_id: str,
         medicine_update: MedicineUpdate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id)
 ):
-    db_medicine = db.query(Medicine).filter(Medicine.id == medicine_id).first()
+    db_medicine = db.query(Medicine).filter(Medicine.doctor_id == doctor_id, Medicine.id == medicine_id).first()
     if not db_medicine:
         raise HTTPException(status_code=404, detail="Medicine not found")
 
@@ -106,7 +107,7 @@ def update_medicine(
     return APIResponse(
         status_code=200,
         success=True,
-        message=f"Appointment updated successfully.",
+        message=f"Medicine details updated successfully.",
         data=MedicineUpdate.model_validate(db_medicine),
     ).model_dump()
 
@@ -118,7 +119,7 @@ def soft_delete_billing(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Delete billing details on basis of billing id."""
-    rows_updated = db.query(Medicine).filter(Medicine.id.in_(ids_to_delete.ids_to_delete)).update(
+    rows_updated = db.query(Medicine).filter(Medicine.doctor_id == doctor_id).filter(Medicine.id.in_(ids_to_delete.ids_to_delete)).update(
         {Medicine.is_deleted: True},
         synchronize_session=False)
     db.commit()
