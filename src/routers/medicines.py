@@ -47,9 +47,11 @@ def get_medicines(
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
         page: int = Query(1, ge=1),
-        page_size: int = Query(20, ge=1),
+        page_size: Optional[int] = Query(None, ge=1),
 ):
     query = db.query(Medicine).filter(Medicine.doctor_id == doctor_id)
+
+
 
     # Apply filters - now includes composition search
     if search:
@@ -65,8 +67,13 @@ def get_medicines(
     # medicines = query.offset(skip).limit(limit).all()
     total_records = query.count()
     # medicines = query.all()
-    offset = (page - 1) * page_size
-    query = query.order_by(Medicine.medicine_name).offset(offset).limit(page_size).all()
+    if page_size is not None:
+        offset = (page - 1) * page_size
+        query = query.order_by(Medicine.medicine_name).offset(offset).limit(page_size).all()
+    else:
+        query = query.order_by(Medicine.medicine_name)
+    # offset = (page - 1) * page_size
+    # query = query.order_by(Medicine.medicine_name).offset(offset).limit(page_size).all()
 
     return APIResponse(
         status_code=200,
@@ -124,12 +131,12 @@ def soft_delete_billing(
         synchronize_session=False)
     db.commit()
     if rows_updated == 0:
-        raise HTTPException(status_code=404, detail="No billing records found for given IDs")
+        raise HTTPException(status_code=404, detail="No medicines records found for given IDs")
     return APIResponse(
         status_code=200,
         success=True,
         message=f"{rows_updated} billing records marked as deleted",
-        data=f"Medicines {ids_to_delete} marked as deleted"
+        data=f"Medicines {ids_to_delete.ids_to_delete} marked as deleted"
     ).model_dump()
 #
 #
