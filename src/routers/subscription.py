@@ -97,7 +97,8 @@ def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Sessi
     Best regards,
     SmartHealApp Management Team
     """
-    send_email(to_email=os.getenv("from_email_id"), message=body, Subject=subject)
+    # send_email(to_email=os.getenv("from_email_id"), message=body, Subject=subject)
+    # TODO
     return APIResponse(
         status_code=200,
         success=True,

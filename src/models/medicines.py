@@ -62,9 +62,15 @@ class MedicineResponse(MedicineBase):
     @classmethod
     def from_row(cls, row):
         return cls(
+            id=row.id,
             medicine_name=row.medicine_name,
             composition=row.composition,
             manufacturer=row.manufacturer,
             created_at=row.created_at,
             updated_at=row.updated_at
         )
+
+class MedicineDeleteIn(BaseModel):
+    ids_to_delete: list[str]
+
+    model_config = {"from_attributes": True}

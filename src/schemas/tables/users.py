@@ -34,7 +34,9 @@ class User(Base):
                   default="admin")  # mandatory e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
     profile_image_url = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+
     visits = relationship("Visit", back_populates="user")
     appointments = relationship("Appointment", back_populates="user")
     staff = relationship("Staff", back_populates="doctor")
     payment_details = relationship("DoctorPaymentDetails", back_populates="doctor", uselist=False)
+    medicines = relationship("Medicine", back_populates="user")
