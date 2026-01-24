@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
+from src.scheduler import start_scheduler, shutdown_scheduler
 from src.routers import api_router
 from src.database import engine, Base, SessionLocal
 from src.schemas.tables.plans import Plan
@@ -18,6 +19,7 @@ from src.core.exception_handlers import (
 )
 from src.models.response import APIResponse
 from src.models.response import TokenRevoked
+from src.utility import update_appointment_status
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 load_dotenv()
@@ -53,6 +55,13 @@ def on_startup():
     print(Base.metadata.tables.keys())
     print("Database tables created successfully.")
 
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
+
+@app.on_event("shutdown")
+def shutdown_event():
+    shutdown_scheduler()
 
 @app.on_event("startup")
 def seed_data():
@@ -132,10 +141,10 @@ async def status():
         status_code=200, success=True, message="{'status': 'online'}", data=None
     ).model_dump()
 
-# @app.post("/run-scheduler", tags=["Scheduler"])
-# def run_scheduler_manually():
-#     update_appointment_status()
-#     return {"message": "Scheduler task executed successfully"}
+@app.post("/run-scheduler", tags=["Scheduler"])
+def run_scheduler_manually():
+    update_appointment_status()
+    return {"message": "Scheduler task executed successfully"}
 
 # if __name__ == "__main__":
 #     import uvicorn
