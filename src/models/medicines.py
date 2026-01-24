@@ -25,6 +25,7 @@ class MedicineCreate(MedicineBase):
     medicine_name: str = Field(..., min_length=1, max_length=255)
     composition: Optional[str] = None  # NEW: e.g., "Paracetamol 500mg, Caffeine 65mg"
     manufacturer: Optional[str] = Field(None, max_length=255)
+    # is_deleted: Optional[bool] = False
 
     model_config = {"from_attributes": True}
 
@@ -34,6 +35,7 @@ class MedicineUpdate(BaseModel):
     medicine_name: str = Field(..., min_length=1, max_length=255)
     composition: Optional[str] = None  # NEW: e.g., "Paracetamol 500mg, Caffeine 65mg"
     manufacturer: Optional[str] = Field(None, max_length=255)
+    # is_deleted: Optional[bool] = False
 
     model_config = {"from_attributes": True}
 

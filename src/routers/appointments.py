@@ -3,8 +3,8 @@ from datetime import date, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import desc
-from sqlalchemy import or_, extract
+from sqlalchemy import desc, or_, extract
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql import func
 
 from src.database import get_db
@@ -33,8 +33,6 @@ router = APIRouter(
     # ,
     # dependencies=[Depends(require_owner)]
 )
-
-from sqlalchemy.orm import Session, joinedload
 
 
 def build_appointments_query(db: Session, doctor_id: UUID):
@@ -115,7 +113,7 @@ def create_appointment(
     patient_id = patient_data.get("patient_id")
     valid_keys = {col.name for col in Patient.__table__.columns}
     filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
-    pulseRate = appointment.patient.pulseRate
+    # pulseRate = appointment.patient.pulseRate
     # extra_data = appointment.patient.extra_fields
     filtered_data["assigned_doctor_id"] = doctor_id
 
@@ -200,6 +198,8 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
         # Update scheduled_time if provided
     if update_data.scheduled_time:
         appointment.scheduled_time = datetime.strptime(update_data.scheduled_time, "%H:%M:%S").time()
+    if update_data.patient.pulseRate:
+        appointment.pulseRate = update_data.patient.pulseRate
     db.commit()
     db.refresh(appointment)
     return APIResponse(
@@ -366,4 +366,32 @@ def get_date_wise_booked_slots(
         success=True,
         message=f"Successfully fetched booked slots for {appointment_date}.",
         data=[row.scheduled_time.strftime("%H:%M") for row in results],
+    ).model_dump()
+
+
+@router.get("/appointments_left")
+def get_appointments_left(
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+):
+    """Get number of appointments left for current subscription."""
+    today_date = date.today()
+    total_appointments_today = db.query(Appointment).filter_by(
+        doctor_id=doctor_id,
+        scheduled_date=today_date
+    ).count()
+
+    completed_appointments_today = db.query(Appointment).filter_by(
+        doctor_id=doctor_id,
+        scheduled_date=today_date,
+        status=AppointmentStatus.COMPLETED.value
+    ).count()
+
+    appointments_left = total_appointments_today - completed_appointments_today
+
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="Successfully fetched appointments left for today.",
+        data={"appointments_left": appointments_left}
     ).model_dump()
