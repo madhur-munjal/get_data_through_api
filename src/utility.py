@@ -3,21 +3,24 @@ import random
 import re
 import smtplib
 import string
-from datetime import datetime, timezone
+from datetime import date
+from datetime import datetime
 from email.mime.text import MIMEText
+from typing import Optional
+
 import pytz
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
+from jinja2 import Environment, FileSystemLoader
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from sqlalchemy.exc import IntegrityError
-from jinja2 import Environment, FileSystemLoader
-
-from src.models.enums import AppointmentStatus
 from sqlalchemy.orm import Session
-from typing import Optional
-from src.schemas.tables.appointments import Appointment
+
 from src.database import SessionLocal
+from src.models.enums import AppointmentStatus
+from src.schemas.tables.appointments import Appointment
+from src.schemas.tables.subscription import Subscription
 
 load_dotenv()
 
@@ -95,7 +98,8 @@ def validate_user_fields(values, cls):
     errors: list[InitErrorDetails] = []
 
     # Email validation
-    if "email" in cls.model_fields and not EMAIL_REGEX.fullmatch(values.email): # "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): #
+    if "email" in cls.model_fields and not EMAIL_REGEX.fullmatch(
+            values.email):  # "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): #
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid email format"),
@@ -105,7 +109,8 @@ def validate_user_fields(values, cls):
         )
 
     # Username validation
-    if "username" in cls.model_fields and not USERNAME_REGEX.fullmatch(values.username):  # "username" in values and not values["username"].isalnum() and not USERNAME_REGEX.fullmatch(values.username): #
+    if "username" in cls.model_fields and not USERNAME_REGEX.fullmatch(
+            values.username):  # "username" in values and not values["username"].isalnum() and not USERNAME_REGEX.fullmatch(values.username): #
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid username format"),
@@ -116,9 +121,10 @@ def validate_user_fields(values, cls):
 
     # Password validation
     # password can be NOne in setting page, as user only update mobile
-    if "password" in cls.model_fields and values.password is None: # "password" in values and values.password is None: # :
+    if "password" in cls.model_fields and values.password is None:  # "password" in values and values.password is None: # :
         return values
-    elif "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password): # "password" in values and not PASSWORD_REGEX.fullmatch(values.password):#"password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
+    elif "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(
+            values.password):  # "password" in values and not PASSWORD_REGEX.fullmatch(values.password):#"password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError(
@@ -217,24 +223,57 @@ def get_appointment_summary(rows_as_query):
     return list(summary.values())
 
 
+# def update_appointment_status():
+#     db: Session = SessionLocal()
+#     now = datetime.now()
+#
+#     appointments = db.query(Appointment).filter(Appointment.status == 0).all()  # 0 = UPCOMING
+#
+#     for appt in appointments:
+#         scheduled_dt = datetime.combine(appt.scheduled_date, appt.scheduled_time)
+#         if now >= scheduled_dt:
+#             appt.status = AppointmentStatus.NO_SHOW.value  # 2 = NO_SHOW
+#             db.add(appt)
+#
+#     db.commit()
+#     db.close()
+from datetime import datetime
+from zoneinfo import ZoneInfo  # Python 3.9+, or use pytz for older versions
+
+
 def update_appointment_status():
     db: Session = SessionLocal()
-    now = datetime.now()
+    try:
+        # Use timezone-aware datetime (adjust timezone as needed)
+        now = datetime.now(ZoneInfo("Asia/Kolkata"))  # or your timezone
+        # OR if your database stores naive datetime:
+        # now = datetime.now()
 
-    appointments = db.query(Appointment).filter(Appointment.status == 0).all()  # 0 = UPCOMING
+        appointments = db.query(Appointment).filter(
+            Appointment.status == AppointmentStatus.UPCOMING.value  # Use enum value
+        ).all()
 
-    for appt in appointments:
-        scheduled_dt = datetime.combine(appt.scheduled_date, appt.scheduled_time)
-        if now >= scheduled_dt:
-            appt.status = AppointmentStatus.NO_SHOW.value  # 2 = NO_SHOW
-            db.add(appt)
+        for appt in appointments:
+            # Combine date and time
+            scheduled_dt = datetime.combine(appt.scheduled_date, appt.scheduled_time)
 
-    db.commit()
-    db.close()
+            # Make scheduled_dt timezone-aware if needed
+            if now.tzinfo is not None and scheduled_dt.tzinfo is None:
+                scheduled_dt = scheduled_dt.replace(tzinfo=ZoneInfo("Asia/Kolkata"))
 
+            print(
+                f"Appointment {appt.id}: Now={now}, Scheduled={scheduled_dt}, Now >= Scheduled: {now >= scheduled_dt}")
 
-from datetime import date
-from src.schemas.tables.subscription import Subscription
+            if now >= scheduled_dt:
+                appt.status = AppointmentStatus.NO_SHOW.value
+                # No need to db.add() for existing objects being updated
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Error updating appointment status: {e}")
+    finally:
+        db.close()
 
 
 def update_subscription_data(doctor_id=None):
@@ -273,7 +312,6 @@ def update_subscription_data(doctor_id=None):
 
     db.commit()
     db.close()
-
 
 # def get_otp_session(token: str):
 #     session = redis_client.hgetall(token)
