@@ -24,8 +24,8 @@ def create_medicine(medicine: MedicineCreate, db: Session = Depends(get_db),
     if existing:
         # existing_deleted = existing.filter(Medicine.is_deleted == 1).first()
         if existing.is_deleted == 1:
-            # update_data = medicine.model_dump(exclude_unset=True)
-            for field, value in medicine.items():
+            update_data = medicine.model_dump(exclude_unset=True)
+            for field, value in update_data.items():
                 setattr(existing, field, value)
             existing.is_deleted = False
             db.commit()
