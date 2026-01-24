@@ -25,11 +25,6 @@ def create_medicine(medicine: MedicineCreate, db: Session = Depends(get_db),
     medicine_data = medicine.dict()
     medicine_data['doctor_id'] = str(doctor_id)
     save_data_to_db(data=medicine_data, db_model=Medicine, db_session=db)  # Example usage of utility function
-    # medicine['doctor_id'] = str(doctor_id)
-    # db_medicine = Medicine(**medicine.dict())
-    # db.add(db_medicine)
-    # db.commit()
-    # db.refresh(db_medicine)
     return APIResponse(
         status_code=200,
         success=True,
@@ -41,17 +36,13 @@ def create_medicine(medicine: MedicineCreate, db: Session = Depends(get_db),
 # Get All Medicines (with pagination and filters)
 @router.get("")
 def get_medicines(
-        # skip: int = Query(0, ge=0),
-        # limit: int = Query(100, ge=1, le=100),
         search: Optional[str] = None,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
-        page: int = Query(1, ge=1),
+        page: Optional[int] = Query(None, ge=1),
         page_size: Optional[int] = Query(None, ge=1),
 ):
-    query = db.query(Medicine).filter(Medicine.doctor_id == doctor_id)
-
-
+    query = db.query(Medicine).filter(Medicine.doctor_id == doctor_id, Medicine.is_deleted == 0)
 
     # Apply filters - now includes composition search
     if search:
@@ -61,19 +52,17 @@ def get_medicines(
             (Medicine.composition.ilike(f"%{search}%"))  # NEW: Search in composition
         )
 
-    # if is_active is not None:
-    query = query.filter(Medicine.is_deleted == False)
-
     # medicines = query.offset(skip).limit(limit).all()
     total_records = query.count()
-    # medicines = query.all()
-    if page_size is not None:
+    query = query.order_by(Medicine.medicine_name)
+    if page is not None and page_size is not None:
         offset = (page - 1) * page_size
-        query = query.order_by(Medicine.medicine_name).offset(offset).limit(page_size).all()
+        query = query.offset(offset).limit(page_size).all()
+    elif page_size is not None:
+        # Only page_size provided (limit results but no offset)
+        query = query.limit(page_size).all()
     else:
-        query = query.order_by(Medicine.medicine_name)
-    # offset = (page - 1) * page_size
-    # query = query.order_by(Medicine.medicine_name).offset(offset).limit(page_size).all()
+        query = query.all()
 
     return APIResponse(
         status_code=200,
@@ -81,30 +70,42 @@ def get_medicines(
         message="Medicines details fetched successfully.",
         data={"total_records": total_records,
               "medicines_list": [MedicineResponse.from_row(row) for row in query]}
-        # Try with MedicineResponse.model_validate(db_medicine)
+    ).model_dump()
+
+
+@router.get("/{medicine_id}")
+def get_medicine_by_id(
+        medicine_id: str,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+):
+    db_medicine = db.query(Medicine).filter(Medicine.doctor_id == doctor_id, Medicine.is_deleted == 0,
+                                            Medicine.medicine_id == medicine_id).first()
+    if not db_medicine:
+        raise HTTPException(status_code=404, detail="Medicine not found.")
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message="Medicine details fetched successfully.",
+        data=MedicineResponse.from_row(db_medicine)
     ).model_dump()
 
 
 # Update Medicine
-@router.put("/update/{medicine_id}")
+@router.put("/update")
 def update_medicine(
-        medicine_id: str,
         medicine_update: MedicineUpdate,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id)
 ):
-    db_medicine = db.query(Medicine).filter(Medicine.doctor_id == doctor_id, Medicine.id == medicine_id).first()
+    medicine_id = medicine_update.medicine_id
+    db_medicine = db.query(Medicine).filter(Medicine.doctor_id == doctor_id,
+                                            Medicine.medicine_id == medicine_id).first()
     if not db_medicine:
         raise HTTPException(status_code=404, detail="Medicine not found")
 
     # Update only provided fields
     update_data = medicine_update.dict(exclude_unset=True)
-
-    # # Check for name conflict if name is being updated
-    # if "name" in update_data and update_data["name"] != db_medicine.name:
-    #     existing = db.query(Medicine).filter(Medicine.name == update_data["name"]).first()
-    #     if existing:
-    #         raise HTTPException(status_code=400, detail="Medicine with this name already exists")
 
     for field, value in update_data.items():
         setattr(db_medicine, field, value)
@@ -126,7 +127,8 @@ def soft_delete_billing(
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Delete billing details on basis of billing id."""
-    rows_updated = db.query(Medicine).filter(Medicine.doctor_id == doctor_id).filter(Medicine.id.in_(ids_to_delete.ids_to_delete)).update(
+    rows_updated = db.query(Medicine).filter(Medicine.doctor_id == doctor_id).filter(
+        Medicine.medicine_id.in_(ids_to_delete.ids_to_delete)).update(
         {Medicine.is_deleted: True},
         synchronize_session=False)
     db.commit()
@@ -138,17 +140,3 @@ def soft_delete_billing(
         message=f"{rows_updated} billing records marked as deleted",
         data=f"Medicines {ids_to_delete.ids_to_delete} marked as deleted"
     ).model_dump()
-#
-#
-# # Delete Medicine (soft delete by setting is_active to False)
-# @router.delete("/{medicine_id}", status_code=204)
-# def delete_medicine(medicine_id: int, db: Session = Depends(get_db)):
-#     db_medicine = db.query(Medicine).filter(Medicine.id == medicine_id).first()
-#     if not db_medicine:
-#         raise HTTPException(status_code=404, detail="Medicine not found")
-#
-#     # Soft delete
-#     db_medicine.is_active = False
-#     db.commit()
-#     return None
-#

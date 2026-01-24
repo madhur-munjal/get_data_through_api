@@ -1,13 +1,16 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Text, DateTime, ForeignKey
-from sqlalchemy.sql import func
-from src.database import Base
+import uuid
+
+from sqlalchemy import Column, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from src.database import Base
 
 
 class Medicine(Base):
     __tablename__ = "medicines"
 
-    id = Column(Integer, primary_key=True, index=True)
+    medicine_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     doctor_id = Column(String(36), ForeignKey("users.id"))
     medicine_name = Column(String(255), nullable=False, index=True)
     composition = Column(Text, nullable=True)
