@@ -20,23 +20,22 @@ def create_medicine(medicine: MedicineCreate, db: Session = Depends(get_db),
                     doctor_id: UUID = Depends(get_current_doctor_id)):
     # Check if medicine with same name already exists
     existing = db.query(Medicine).filter(Medicine.doctor_id == doctor_id,
-                                         Medicine.medicine_name == medicine.medicine_name)
+                                         Medicine.medicine_name == medicine.medicine_name).first()
     if existing:
-        existing_deleted = existing.filter(Medicine.is_deleted == 1).first()
-        if existing_deleted:
-            update_data = medicine.model_dump(exclude_unset=True)
-            for field, value in update_data.items():
-                setattr(existing_deleted, field, value)
-            existing_deleted.is_deleted = False
+        # existing_deleted = existing.filter(Medicine.is_deleted == 1).first()
+        if existing.is_deleted == 1:
+            # update_data = medicine.model_dump(exclude_unset=True)
+            for field, value in medicine.items():
+                setattr(existing, field, value)
+            existing.is_deleted = False
             db.commit()
-            db.refresh(existing_deleted)
+            db.refresh(existing)
             return APIResponse(
                 status_code=200,
                 success=True,
                 message=f"Medicine details updated successfully.",
-                data=MedicineUpdate.model_validate(existing_deleted),
+                data=MedicineUpdate.model_validate(existing),
             ).model_dump()
-
         else:
             raise HTTPException(status_code=400, detail="Medicine with this name already exists")
     medicine_data = medicine.dict()
