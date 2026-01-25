@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 from uuid import UUID
-
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -176,14 +176,9 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     if plan.name == "Professional":
         final_data['subscription'].appointment_left = -1
     else:
-        if final_data['subscription'] is None:
+        today = date.today()
+        if final_data['subscription'].end_date < today or final_data['subscription'] is None:
             final_data['subscription'].appointment_left = 0
-            return APIResponse(
-                status_code=200,
-                success=True,
-                message="Successfully fetched user details.",
-                data=final_data
-            ).model_dump()
         else:
             used_appointments = db.query(Appointment).filter(
                     Appointment.doctor_id == str(doctor_id),

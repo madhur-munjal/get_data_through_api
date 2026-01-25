@@ -20,7 +20,7 @@ from src.core.exception_handlers import (
 )
 from src.models.response import APIResponse
 from src.models.response import TokenRevoked
-from src.utility import update_appointment_status
+from src.utility import update_appointment_status, update_subscription_data
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 load_dotenv()
@@ -149,6 +149,7 @@ async def status():
 @app.post("/run-scheduler", tags=["Scheduler"])
 def run_scheduler_manually():
     update_appointment_status()
+    update_subscription_data()
     return {"message": "Scheduler task executed successfully"}
 
 # if __name__ == "__main__":
