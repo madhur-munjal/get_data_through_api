@@ -84,7 +84,7 @@ def get_medicines(
         status_code=200,
         success=True,
         message="Medicines details fetched successfully.",
-        data={"total_records": total_records,
+        data={"page": page, "page_size": page_size, "total_records": total_records,
               "medicines_list": [MedicineResponse.from_row(row) for row in query]}
     ).model_dump()
 

@@ -1,7 +1,7 @@
 from calendar import month_name
 from datetime import date, datetime
 from uuid import UUID
-
+from typing import Optional
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import desc, or_, extract
 from sqlalchemy.orm import Session, joinedload
@@ -212,8 +212,8 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
 
 @router.get("", response_model=APIResponse[PaginatedAppointmentResponse])
 def get_appointment_data(
-        page: int = Query(1, ge=1),
-        page_size: int = Query(20, ge=1),
+        page: Optional[int] = Query(None, ge=1),
+        page_size: Optional[int] = Query(None, ge=1),
         text: str = Query(None, description="Search by patient's first name, last name or mobile number"),
         month: str = Query(None, description="Filter by month "),
         status: str = Query(None, description="Filter by appointment status"),
@@ -269,11 +269,20 @@ def get_appointment_data(
             ).model_dump()
 
     total_records = query.count()
-    offset = (page - 1) * page_size
-    results = query.order_by(desc(Appointment.scheduled_date)).offset(offset).limit(page_size).all()
+    # offset = (page - 1) * page_size
+    results = query.order_by(desc(Appointment.scheduled_date))
     # Appointment.scheduled_date.desc()
 
-    final_result = get_appointment_with_billing_per_row(db, results)
+    if page is not None and page_size is not None:
+        offset = (page - 1) * page_size
+        final_query = results.offset(offset).limit(page_size).all()
+    elif page_size is not None:
+        # Only page_size provided (limit results but no offset)
+        final_query = results.limit(page_size).all()
+    else:
+        final_query = results.all()
+
+    final_result = get_appointment_with_billing_per_row(db, final_query)
 
     return APIResponse(
         status_code=200,

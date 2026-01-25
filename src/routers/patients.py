@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -73,8 +74,10 @@ def update_patent(
 
 @router.get("", response_model=APIResponse[PaginatedPatientResponse])
 def get_patients_list(
-        page: int = Query(1, ge=1),
-        page_size: int = Query(20, ge=1),
+        page: Optional[int] = Query(None, ge=1),
+        page_size: Optional[int] = Query(None, ge=1),
+        # page: int = Query(1, ge=1),
+        # page_size: int = Query(20, ge=1),
         text: str = Query(None, description="Search by patient's first name, last name or mobile number"),
         # month: str = Query(None, description="Filter by month "),
         minAge: int = Query(None, description="Filter by patient minimum age"),
@@ -85,7 +88,7 @@ def get_patients_list(
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
-    offset = (page - 1) * page_size
+    # offset = (page - 1) * page_size
     patient_query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
 
     if text:
@@ -144,17 +147,26 @@ def get_patients_list(
         )
         .subquery()
     )
-    patient_query = patient_query.join(get_type, Patient.patient_id == get_type.c.patient_id).add_columns(get_type.c.type.label("latest_appointment_type"))
+    patient_query = patient_query.join(get_type, Patient.patient_id == get_type.c.patient_id).add_columns(
+        get_type.c.type.label("latest_appointment_type"))
     total_records = patient_query.count()
     results = patient_query.order_by(
-        desc(Patient.created_at)).offset(offset).limit(page_size).all()
+        desc(Patient.created_at))
+    if page is not None and page_size is not None:
+        offset = (page - 1) * page_size
+        final_query = results.offset(offset).limit(page_size).all()
+    elif page_size is not None:
+        # Only page_size provided (limit results but no offset)
+        final_query = results.limit(page_size).all()
+    else:
+        final_query = results.all()
     # TODO need to add time as well
     return APIResponse(
         status_code=200,
         success=True,
         message=f"Successfully fetched patient lists.",
         data={"page": page, "page_size": page_size, "total_records": total_records,
-              "patient_list": [PatientOut.from_row(p) for p in results]}
+              "patient_list": [PatientOut.from_row(p) for p in final_query]}
     ).model_dump()
 
     # patients = db.query(Patient).filter(Patient.assigned_doctor_id == doctor_id).all()

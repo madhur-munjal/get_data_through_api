@@ -89,8 +89,8 @@ class PatientOut(BaseModel):
 
 
 class PaginatedPatientResponse(BaseModel):
-    page: int
-    page_size: int
+    page: Optional[int] = None
+    page_size: Optional[int] = None
     total_records: int
     patient_list: List[PatientOut]
 

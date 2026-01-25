@@ -126,7 +126,7 @@ class AppointmentById(BaseModel):
 
 
 class PaginatedAppointmentResponse(BaseModel):
-    page: int
-    page_size: int
+    page: Optional[int] = None
+    page_size: Optional[int] = None
     total_records: int
     appointment_list: List[AppointmentResponse]

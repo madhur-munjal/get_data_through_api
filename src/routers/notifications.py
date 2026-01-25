@@ -51,8 +51,8 @@ def mark_as_read(
 
 
 @router.get("")
-def get_notifications(page: int = Query(1, ge=1),
-                      page_size: int = Query(20, ge=1),
+def get_notifications(page: Optional[int] = Query(None, ge=1),
+                      page_size: Optional[int] = Query(None, ge=1),
                       status: Optional[str] = Query(None),
                       startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
                       endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
@@ -87,12 +87,21 @@ def get_notifications(page: int = Query(1, ge=1),
     else:  # if status.lower() in [None, ""]:
         msg = "all"
 
-    offset = (page - 1) * page_size
-    results = query.order_by(desc(Notification.created_at)).offset(offset).limit(page_size).all()
+    # offset = (page - 1) * page_size
+    results = query.order_by(desc(Notification.created_at))
+
+    if page is not None and page_size is not None:
+        offset = (page - 1) * page_size
+        final_query = results.offset(offset).limit(page_size).all()
+    elif page_size is not None:
+        # Only page_size provided (limit results but no offset)
+        final_query = results.limit(page_size).all()
+    else:
+        final_query = results.all()
 
     return APIResponse(
         status_code=200,
         success=True,
         message=f"successfully fetched {msg} notifications",
-        data=[NotificationOut.model_validate(row) for row in results]
+        data=[NotificationOut.model_validate(row) for row in final_query]
     ).model_dump()

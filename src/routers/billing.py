@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -68,8 +69,10 @@ def get_billing_details(
         startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
         endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
         type: str = Query(None, description="what type of transaction, cash, card, upi etc."),
-        page: int = Query(1, ge=1),
-        page_size: int = Query(20, ge=1),
+        # page: int = Query(1, ge=1),
+        # page_size: int = Query(20, ge=1),
+        page: Optional[int] = Query(None, ge=1),
+        page_size: Optional[int] = Query(None, ge=1),
 
 ):
     """Get billing details."""
@@ -100,8 +103,18 @@ def get_billing_details(
         query = query.filter(Billing.type.ilike(type))  # (func.lower(Billing.type) == type.lower())
     # query = query.order_by(Billing.created_at.desc())
     total_records = query.count()
-    offset = (page - 1) * page_size
-    query = query.order_by(Billing.created_at.desc()).offset(offset).limit(page_size).all()
+
+    query = query.order_by(Billing.created_at.desc())
+
+    if page is not None and page_size is not None:
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size).all()
+    elif page_size is not None:
+        # Only page_size provided (limit results but no offset)
+        query = query.limit(page_size).all()
+    else:
+        query = query.all()
+    # offset = (page - 1) * page_size .offset(offset).limit(page_size).all()
 
     return APIResponse(
         status_code=200,
@@ -179,9 +192,9 @@ def soft_delete_billing(
 ):
     """Delete billing details on basis of billing id."""
     rows_updated = db.query(Billing).filter(Billing.billing_id.in_(ids_to_delete.ids_to_delete)).update(
-    {Billing.is_deleted: True},
-    synchronize_session=False
-)
+        {Billing.is_deleted: True},
+        synchronize_session=False
+    )
     db.commit()
     if rows_updated == 0:
         raise HTTPException(status_code=404, detail="No billing records found for given IDs")

@@ -1,5 +1,6 @@
 import os
 import sys
+
 import redis
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -55,13 +56,16 @@ def on_startup():
     print(Base.metadata.tables.keys())
     print("Database tables created successfully.")
 
+
 @app.on_event("startup")
 def startup_event():
     start_scheduler()
 
+
 @app.on_event("shutdown")
 def shutdown_event():
     shutdown_scheduler()
+
 
 @app.on_event("startup")
 def seed_data():
@@ -140,6 +144,7 @@ async def status():
     return APIResponse(
         status_code=200, success=True, message="{'status': 'online'}", data=None
     ).model_dump()
+
 
 @app.post("/run-scheduler", tags=["Scheduler"])
 def run_scheduler_manually():
