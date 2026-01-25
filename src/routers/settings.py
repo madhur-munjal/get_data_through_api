@@ -7,18 +7,20 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from src.auth_utils import hash_password, pwd_context
+from src.constants import total_appointments_basic_plan
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, get_current_user_payload
 from src.models.billing import DoctorsBillingInput
 from src.models.response import APIResponse
 from src.models.staff import StaffOut
-from src.models.users import UserOut
 from src.models.subscription import SubscriptionOutWithPlan
+from src.models.users import UserOut
 from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
+from src.schemas.tables.plans import Plan
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.subscription import Subscription
 from src.schemas.tables.users import User
-from src.schemas.tables.plans import Plan
+from src.schemas.tables.appointments import Appointment
 
 router = APIRouter(
     prefix="/settings", tags=["settings"], responses={404: {"error": "Not found"}}
@@ -169,7 +171,28 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     subscription, plan = db.query(Subscription, Plan).join(Plan, Subscription.plan_id == Plan.id).filter(
         Subscription.user_id == doctor_id).order_by(
         Subscription.created_at.desc()).first()
-    final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription, plan) # for subscription, plan in all_subscription_details],
+    final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription,
+                                                                  plan)  # for subscription, plan in all_subscription_details],
+    if plan.name == "Professional":
+        final_data['subscription'].appointment_left = -1
+    else:
+        if final_data['subscription'] is None:
+            final_data['subscription'].appointment_left = 0
+            return APIResponse(
+                status_code=200,
+                success=True,
+                message="Successfully fetched user details.",
+                data=final_data
+            ).model_dump()
+        else:
+            used_appointments = db.query(Appointment).filter(
+                    Appointment.doctor_id == str(doctor_id),
+                    Appointment.scheduled_date.between(
+                        final_data['subscription'].start_date,
+                        final_data['subscription'].end_date
+                    )
+                ).count()
+            final_data['subscription'].appointment_left = total_appointments_basic_plan - used_appointments
 
     return APIResponse(
         status_code=200,

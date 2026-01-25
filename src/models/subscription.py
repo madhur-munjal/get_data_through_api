@@ -59,6 +59,7 @@ class SubscriptionRead(SubscriptionSchema):
 #         )
 
 class SubscriptionOutWithPlan(BaseModel):
+    appointment_left: Optional[int] = None
     subscription_id: str
     user_id: str
     plan_id: str
