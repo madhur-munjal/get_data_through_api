@@ -192,9 +192,48 @@ def soft_delete_billing(
 ):
     """Delete billing details on basis of billing id."""
     rows_updated = db.query(Billing).filter(Billing.billing_id.in_(ids_to_delete.ids_to_delete)).update(
-        {Billing.is_deleted: True},
+        {Billing.is_deleted: True, Billing.deleted_at: datetime.utcnow()},
         synchronize_session=False
     )
+    # Step 2: Find all appointment_ids linked to these billing_ids
+    appointment_ids = (
+        db.query(Billing.appointment_id)
+        .filter(Billing.billing_id.in_(ids_to_delete.ids_to_delete))
+        .distinct()
+        .all()
+    )
+    appointment_ids = [row[0] for row in appointment_ids]
+
+    # Step 3: For each appointment, check if any billing is still active
+    for appointment_id in appointment_ids:
+        active_billing_exists = (
+            db.query(Billing)
+            .filter(
+                Billing.appointment_id == appointment_id,
+                Billing.is_deleted == False
+            )
+            .first()
+        )
+
+        # Step 4: Update payment_status in Appointment
+        payment_status = PaymentStatus.PAID.value if active_billing_exists else PaymentStatus.UNPAID.value
+        db.query(Appointment).filter(Appointment.id == appointment_id).update(
+            {Appointment.payment_status: payment_status},
+            synchronize_session=False
+        )
+
+    # db.commit()
+
+    # appointment_ids = (
+    #     db.query(Billing.appointment_id)
+    #     .filter(Billing.billing_id.in_(ids_to_delete.ids_to_delete))
+    #     .all()
+    # )
+    # appointment_ids = [row[0] for row in appointment_ids]  # flatten list of tuples
+    # db.query(Appointment).filter(Appointment.id.in_(appointment_ids)).update(
+    #     {Appointment.payment_status: 0},
+    #     synchronize_session=False
+    # )
     db.commit()
     if rows_updated == 0:
         raise HTTPException(status_code=404, detail="No billing records found for given IDs")

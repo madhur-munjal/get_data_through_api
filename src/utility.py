@@ -7,6 +7,7 @@ from datetime import date
 from datetime import datetime
 from email.mime.text import MIMEText
 from typing import Optional
+from zoneinfo import ZoneInfo  # Python 3.9+, or use pytz for older versions
 
 import pytz
 from dotenv import load_dotenv
@@ -237,8 +238,6 @@ def get_appointment_summary(rows_as_query):
 #
 #     db.commit()
 #     db.close()
-from datetime import datetime
-from zoneinfo import ZoneInfo  # Python 3.9+, or use pytz for older versions
 
 
 def update_appointment_status():
@@ -320,3 +319,18 @@ def update_subscription_data(doctor_id=None):
 #
 # def mark_otp_verified(token: str):
 #     redis_client.hset(token, "verified", "true")
+
+def get_subscription_active_status_by_doctor(db: Session, doctor_id):
+    today = date.today()
+    active_subscription = (
+        db.query(Subscription)
+        .filter(
+            Subscription.user_id == doctor_id,
+            Subscription.start_date <= today,
+            Subscription.end_date >= today,
+            Subscription.is_active == True
+        )
+        .order_by(Subscription.start_date.desc())
+        .first()
+    )
+    return active_subscription

@@ -3,6 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from src.utility import get_subscription_active_status_by_doctor
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
@@ -29,6 +30,14 @@ def add_visits(
         current_user=Depends(get_current_user_payload),
 ):
     """Register a new visit details."""
+    get_subscription_active_status = get_subscription_active_status_by_doctor(db, doctor_id)
+    if get_subscription_active_status is False:
+        return APIResponse(
+            status_code=200,
+            success=False,
+            message="Your subscription has expired. Please renew your subscription to access this feature.",
+            data=None
+        ).model_dump()
     appointment_id = visit_data.appointment_id
     str_appointment_id = str(appointment_id)
     appointment_details = db.query(Appointment).filter_by(id=str_appointment_id).first()

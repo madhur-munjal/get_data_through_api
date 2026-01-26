@@ -75,9 +75,8 @@ def seed_data():
         if existing_plan is None:
             plans = [
                 Plan(s_no=1, name="Basic", price=2500, description="""Access to Dashboard,
-                          Appointment Scheduling (Upto 10 Patients),
-                          View Patient Records (Upto 10 Patients),
-                          View Patient Past Records,
+                          Appointment Scheduling (Upto 110 appointments/months),
+                          View Patient Records,
                           Notification Alerts on Application,
                           Staff Management (Upto 3 Staff Members),
                           Role Based Access Control for Staff Members
@@ -86,7 +85,6 @@ def seed_data():
                 Plan(s_no=2, name="Professional", price=5000, description="""Access to Dashboard,
                           Appointment Scheduling (Unlimited Patients),
                           View Patient Records (Unlimited Patients),
-                          View Patient Past Records,
                           Track Billing for Cash/UPI/Card Payments,
                           Billing breakdown chart for Cash/UPI/Card Payments,
                           Export Billing Data,

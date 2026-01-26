@@ -171,23 +171,40 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     subscription, plan = db.query(Subscription, Plan).join(Plan, Subscription.plan_id == Plan.id).filter(
         Subscription.user_id == doctor_id).order_by(
         Subscription.created_at.desc()).first()
+    # , Subscription.start_date <= date.today(),
+    # Subscription.end_date >= date.today()
+    # if result:
+    #     subscription, plan = result
+    # active_subscription = (
+    #     db.query(Subscription)
+    #     .options(joinedload(Subscription.plan))  # eager load plan relationship
+    #     .filter(
+    #         Subscription.user_id == doctor_id,
+    #         Subscription.start_date <= date.today(),
+    #         Subscription.end_date >= date.today()
+    #     )
+    #     .order_by(Subscription.start_date.desc())
+    #     .first()
+    # )
     final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription,
                                                                   plan)  # for subscription, plan in all_subscription_details],
     if plan.name == "Professional":
         final_data['subscription'].appointment_left = -1
     else:
-        today = date.today()
-        if final_data['subscription'].end_date < today or final_data['subscription'] is None:
-            final_data['subscription'].appointment_left = 0
-        else:
-            used_appointments = db.query(Appointment).filter(
-                    Appointment.doctor_id == str(doctor_id),
-                    Appointment.scheduled_date.between(
-                        final_data['subscription'].start_date,
-                        final_data['subscription'].end_date
-                    )
-                ).count()
-            final_data['subscription'].appointment_left = total_appointments_basic_plan - used_appointments
+        # today = date.today()
+        # if final_data['subscription'].end_date < today or final_data['subscription'] is None:
+        #     final_data['subscription'].appointment_left = 0
+        # else:
+        used_appointments = db.query(Appointment).filter(
+                Appointment.doctor_id == str(doctor_id),
+                Appointment.created_at.between(
+                    final_data['subscription'].start_date,
+                    final_data['subscription'].end_date
+                )
+            ).count()
+        final_data['subscription'].appointment_left = total_appointments_basic_plan - used_appointments
+    # else:
+    #     final_data['subscription'] = None
 
     return APIResponse(
         status_code=200,

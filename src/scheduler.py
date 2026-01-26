@@ -24,7 +24,7 @@ scheduler = BackgroundScheduler()
 def start_scheduler():
     """Initialize and start the scheduler"""
     scheduler.add_job(update_appointment_status, 'cron', hour=23, minute=45)
-    scheduler.add_job(update_subscription_data, 'cron', hour=0, minute=0)
+    scheduler.add_job(update_subscription_data, 'cron', hour=00, minute=1)
     scheduler.start()
     print("Scheduler's started - Will run update_appointment_status daily at 23:45 and update_subscription_data at 00:00")
 
