@@ -333,4 +333,4 @@ def get_subscription_active_status_by_doctor(db: Session, doctor_id):
         .order_by(Subscription.start_date.desc())
         .first()
     )
-    return active_subscription
+    return active_subscription is not None
