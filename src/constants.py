@@ -1,1 +1,1 @@
-total_appointments_basic_plan = 3
+total_appointments_basic_plan = 110
