@@ -1,7 +1,8 @@
 from calendar import month_name
 from datetime import date, datetime
-from uuid import UUID
 from typing import Optional
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import desc, or_, extract
 from sqlalchemy.orm import Session, joinedload
@@ -24,6 +25,7 @@ from src.schemas.tables.billing import Billing
 from src.schemas.tables.notifications import Notification
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
+from src.utility import get_subscription_active_status_by_doctor
 from src.utility import save_data_to_db, get_appointment_status
 
 router = APIRouter(
@@ -109,6 +111,14 @@ def create_appointment(
 ):
     """Register a new appointment.
     If enter new mobile number, then it will create under new patients record."""
+    get_subscription_active_status = get_subscription_active_status_by_doctor(db, doctor_id)
+    if get_subscription_active_status is False:
+        return APIResponse(
+            status_code=200,
+            success=False,
+            message="Your subscription has expired. Please renew your subscription to access this feature.",
+            data=None
+        ).model_dump()
     patient_data = appointment.patient.dict(exclude_unset=True)
     patient_id = patient_data.get("patient_id")
     valid_keys = {col.name for col in Patient.__table__.columns}
