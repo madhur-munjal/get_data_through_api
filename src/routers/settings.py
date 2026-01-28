@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from src.auth_utils import hash_password, pwd_context
+from src.utility import get_appointments_left_by_doctor
 from src.constants import total_appointments_basic_plan
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, get_current_user_payload
@@ -188,21 +189,22 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     # )
     final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription,
                                                                   plan)  # for subscription, plan in all_subscription_details],
-    if plan.name == "Professional":
-        final_data['subscription'].appointment_left = -1
-    else:
-        # today = date.today()
-        # if final_data['subscription'].end_date < today or final_data['subscription'] is None:
-        #     final_data['subscription'].appointment_left = 0
-        # else:
-        used_appointments = db.query(Appointment).filter(
-                Appointment.doctor_id == str(doctor_id),
-                Appointment.created_at.between(
-                    final_data['subscription'].start_date,
-                    final_data['subscription'].end_date
-                )
-            ).count()
-        final_data['subscription'].appointment_left = total_appointments_basic_plan - used_appointments
+    final_data['subscription'].appointment_left = get_appointments_left_by_doctor(db, doctor_id)
+    # if plan.name == "Professional":
+    #     final_data['subscription'].appointment_left = -1
+    # else:
+    #     # today = date.today()
+    #     # if final_data['subscription'].end_date < today or final_data['subscription'] is None:
+    #     #     final_data['subscription'].appointment_left = 0
+    #     # else:
+    #     used_appointments = db.query(Appointment).filter(
+    #             Appointment.doctor_id == str(doctor_id),
+    #             Appointment.created_at.between(
+    #                 final_data['subscription'].start_date,
+    #                 final_data['subscription'].end_date
+    #             )
+    #         ).count()
+    #     final_data['subscription'].appointment_left = total_appointments_basic_plan - used_appointments
     # else:
     #     final_data['subscription'] = None
 

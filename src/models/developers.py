@@ -3,29 +3,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic import constr
-
+from src.utility import get_appointments_left_by_doctor
 
 class DevelopersTabOut(BaseModel):
-    client_name: str
-    brand_name: str
-    subscription_plan: str
-    end_date: datetime.date
-    status: str
-
-    model_config = {"from_attributes": True}
-
-    @classmethod
-    def from_row(cls, row):
-        return cls(
-            client_name=row.client_name,
-            brand_name=row.brand_name,
-            subscription_plan=row.subscription_plan,
-            end_date=row.end_date,
-            status=row.status
-        )
-
-
-class UserOut(BaseModel):
     id: UUID
     firstName: constr(min_length=3, max_length=15)
     lastName: constr(min_length=3, max_length=15)
@@ -34,18 +14,28 @@ class UserOut(BaseModel):
     mobile: constr(min_length=5)
     username: constr(min_length=5, max_length=18)
     role: str
+    subscription: str
+    subscription_startDate: datetime.datetime  # '2026-01-20',
+    subscription_endDate: datetime.datetime  # '2026-12-30',
+    isActive: bool  # true,
+    appointment_left: int  # 110 - actual,
 
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_row(cls, row):
+    def from_row(cls, db, user, subscription):
         return cls(
-            id=row.id,
-            firstName=row.firstName,
-            lastName=row.lastName,
-            email=row.email,
-            country=row.country,
-            mobile=row.mobile,
-            username=row.username,
-            role=row.role
+            id=user.id,
+            firstName=user.firstName,
+            lastName=user.lastName,
+            email=user.email,
+            country=user.country,
+            mobile=user.mobile,
+            username=user.username,
+            role=user.role,
+            subscription=subscription.plan.name,
+            subscription_startDate=subscription.start_date,
+            subscription_endDate=subscription.end_date,
+            isActive=subscription.is_active,
+            appointment_left=get_appointments_left_by_doctor(db, user.id),
         )

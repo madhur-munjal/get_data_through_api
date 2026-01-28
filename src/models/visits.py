@@ -140,6 +140,7 @@ class VisitAllResponse(BaseModel):
     paymentDetails: Optional[list] = None
     scheduled_date: Optional[date] = None
     scheduled_time: Optional[time] = None
+    pulseRate: Optional[int] = None
 
     model_config = {"from_attributes": True}
 
@@ -172,7 +173,8 @@ class VisitAllResponse(BaseModel):
             # medicationDetails=row.medicationDetails,
             paymentStatus=row.payment_status,
             paymentType=row.billing.type if row.billing else None,
-            amount=row.billing.amount if row.billing else None
+            amount=row.billing.amount if row.billing else None,
+            pulseRate=row.pulseRate
         )
 
     @classmethod
@@ -205,4 +207,5 @@ class VisitAllResponse(BaseModel):
             paymentDetails=row.payment_details,
             scheduled_date=row.appointments.scheduled_date,
             scheduled_time=row.appointments.scheduled_time,
+            pulseRate=row.appointments.pulseRate
         )
