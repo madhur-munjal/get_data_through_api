@@ -169,7 +169,7 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     # subscription_details = db.query(Subscription).filter_by(user_id=doctor_id, is_active=True).order_by(
     #     Subscription.created_at.desc()).first()  # order_by(Subscription.start_date.desc())
     # final_data['subscription'] = subscription_details # [sub for sub in subscription_details] if subscription_details else []
-    subscription, plan = db.query(Subscription, Plan).join(Plan, Subscription.plan_id == Plan.id).filter(
+    subscription = db.query(Subscription).filter(
         Subscription.user_id == doctor_id).order_by(
         Subscription.created_at.desc()).first()
     # , Subscription.start_date <= date.today(),
@@ -187,8 +187,7 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     #     .order_by(Subscription.start_date.desc())
     #     .first()
     # )
-    final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription,
-                                                                  plan)  # for subscription, plan in all_subscription_details],
+    final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription)  # for subscription, plan in all_subscription_details],
     final_data['subscription'].appointment_left = get_appointments_left_by_doctor(db, doctor_id)
     # if plan.name == "Professional":
     #     final_data['subscription'].appointment_left = -1

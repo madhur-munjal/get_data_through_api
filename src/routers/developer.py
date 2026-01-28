@@ -75,14 +75,17 @@ def update_user_details(user_id: str, payload: UserUpdate, db: Session = Depends
         #     subscription = Subscription(user_id=user_id)
         #     db.add(subscription)
 
-        # if payload.subscription.plan_name is not None:
-        #     subscription.plan.plan_name = payload.subscription.plan_name
-        if payload.subscription.start_date is not None:
-            subscription.start_date = payload.subscription.start_date
-        if payload.subscription.end_date is not None:
-            subscription.end_date = payload.subscription.end_date
-        if payload.subscription.is_active is not None:
-            subscription.is_active = payload.subscription.is_active
+        if subscription:
+            # if payload.subscription.plan_name is not None:
+            #     subscription.plan.plan_name = payload.subscription.plan_name
+            # if payload.subscription.start_date is not None:
+            #     subscription.start_date = payload.subscription.start_date
+            if payload.subscription.end_date is not None:
+                subscription.end_date = payload.subscription.end_date
+            if payload.subscription.is_active is not None:
+                subscription.is_active = payload.subscription.is_active
+        else:
+            raise HTTPException(status_code=404, detail="Subscription not found")
 
     db.commit()
     db.refresh(user)
