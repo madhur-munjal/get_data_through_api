@@ -1,14 +1,12 @@
 import os
 from typing import Optional
 from uuid import UUID
-from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from src.auth_utils import hash_password, pwd_context
-from src.utility import get_appointments_left_by_doctor
-from src.constants import total_appointments_basic_plan
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, get_current_user_payload
 from src.models.billing import DoctorsBillingInput
@@ -17,11 +15,10 @@ from src.models.staff import StaffOut
 from src.models.subscription import SubscriptionOutWithPlan
 from src.models.users import UserOut
 from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
-from src.schemas.tables.plans import Plan
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.subscription import Subscription
 from src.schemas.tables.users import User
-from src.schemas.tables.appointments import Appointment
+from src.utility import get_appointments_left_by_doctor
 
 router = APIRouter(
     prefix="/settings", tags=["settings"], responses={404: {"error": "Not found"}}
@@ -107,10 +104,10 @@ async def update_login_user(
         status_code=200,
         success=True,
         message=message,
-        data=UserOut.from_orm_with_image(login_details) if isinstance(login_details,
-                                                                      User) else StaffOut.from_orm_with_image(
-            login_details),
-    ).model_dump()
+        data=UserOut.model_validate(login_details, from_attributes=True) if isinstance(login_details,
+                                                                                       User) else StaffOut.
+        model_validate(
+            login_details, from_attributes=True)).model_dump()
 
 
 @router.post("/upi")  # , response_model=APIResponse[StaffOut])
@@ -157,9 +154,9 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     if not login_details:
         raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
     final_data = dict()
-    final_data['general'] = UserOut.from_orm_with_image(login_details) if isinstance(login_details,
-                                                                                     User) else StaffOut.from_orm_with_image(
-        login_details)
+    final_data['general'] = UserOut.model_validate(login_details, from_attributes=True) if isinstance(login_details,
+                                                                                                      User) else StaffOut.model_validate(
+        login_details, from_attributes=True)
 
     # Get UPI Details
     upi_details = db.query(DoctorPaymentDetails).filter_by(doctor_id=doctor_id).first()
@@ -172,40 +169,8 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
     subscription = db.query(Subscription).filter(
         Subscription.user_id == doctor_id).order_by(
         Subscription.created_at.desc()).first()
-    # , Subscription.start_date <= date.today(),
-    # Subscription.end_date >= date.today()
-    # if result:
-    #     subscription, plan = result
-    # active_subscription = (
-    #     db.query(Subscription)
-    #     .options(joinedload(Subscription.plan))  # eager load plan relationship
-    #     .filter(
-    #         Subscription.user_id == doctor_id,
-    #         Subscription.start_date <= date.today(),
-    #         Subscription.end_date >= date.today()
-    #     )
-    #     .order_by(Subscription.start_date.desc())
-    #     .first()
-    # )
-    final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription)  # for subscription, plan in all_subscription_details],
+    final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription) if subscription else None
     final_data['subscription'].appointment_left = get_appointments_left_by_doctor(db, doctor_id)
-    # if plan.name == "Professional":
-    #     final_data['subscription'].appointment_left = -1
-    # else:
-    #     # today = date.today()
-    #     # if final_data['subscription'].end_date < today or final_data['subscription'] is None:
-    #     #     final_data['subscription'].appointment_left = 0
-    #     # else:
-    #     used_appointments = db.query(Appointment).filter(
-    #             Appointment.doctor_id == str(doctor_id),
-    #             Appointment.created_at.between(
-    #                 final_data['subscription'].start_date,
-    #                 final_data['subscription'].end_date
-    #             )
-    #         ).count()
-    #     final_data['subscription'].appointment_left = total_appointments_basic_plan - used_appointments
-    # else:
-    #     final_data['subscription'] = None
 
     return APIResponse(
         status_code=200,

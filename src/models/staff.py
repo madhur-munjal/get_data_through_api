@@ -56,11 +56,11 @@ class StaffOut(BaseModel):
         #     return f"https://smarthealapp.com/static/{filename}"
         return None
 
-    @classmethod
-    def from_orm_with_image(cls, staff_obj):
-        data = staff_obj.__dict__.copy()
-        data["profile_image_url"] = cls.build_image_url(staff_obj)
-        return cls(**data)
+    # @classmethod
+    # def from_orm_with_image(cls, staff_obj):
+    #     data = staff_obj.__dict__.copy()
+    #     data["profile_image_url"] = cls.build_image_url(staff_obj)
+    #     return cls(**data)
 
 
 class DeleteStaffRequest(BaseModel):

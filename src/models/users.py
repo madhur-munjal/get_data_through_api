@@ -67,22 +67,22 @@ class UserOut(BaseModel):
     def validate(cls, values):
         return validate_user_fields(values, cls)
 
-    @staticmethod
-    def build_image_url(user_obj) -> Optional[str]:
-        image_filename = user_obj.profile_image_url  # e.g., "id.jpg"
-        if image_filename:
-            # base_url = request.base_url._url.rstrip("/")
-            # return base_url + f"/static/{image_filename}"
-            return f"https://api.smarthealapp.com/images/{image_filename}"
-        # if filename:
-        #     return f"https://smarthealapp.com/static/{filename}"
-        return None
+    # @staticmethod
+    # def build_image_url(user_obj) -> Optional[str]:
+    #     image_filename = user_obj.profile_image_url  # e.g., "id.jpg"
+    #     if image_filename:
+    #         # base_url = request.base_url._url.rstrip("/")
+    #         # return base_url + f"/static/{image_filename}"
+    #         return f"https://api.smarthealapp.com/images/{image_filename}"
+    #     # if filename:
+    #     #     return f"https://smarthealapp.com/static/{filename}"
+    #     return None
 
-    @classmethod
-    def from_orm_with_image(cls, user_obj):
-        data = user_obj.__dict__.copy()
-        data["profile_image_url"] = cls.build_image_url(user_obj)
-        return cls(**data)
+    # @classmethod
+    # def from_orm_with_image(cls, user_obj):
+    #     data = user_obj.__dict__.copy()
+    #     data["profile_image_url"] = cls.build_image_url(user_obj)
+    #     return cls(**data)
 
     model_config = {"from_attributes": True}
 
