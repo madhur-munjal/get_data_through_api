@@ -5,6 +5,10 @@ from pydantic import BaseModel
 from pydantic import constr
 from src.utility import get_appointments_left_by_doctor
 
+from typing import Optional
+from datetime import date
+
+
 class DevelopersTabOut(BaseModel):
     id: UUID
     firstName: constr(min_length=3, max_length=15)
@@ -39,3 +43,18 @@ class DevelopersTabOut(BaseModel):
             isActive=subscription.is_active,
             appointment_left=get_appointments_left_by_doctor(db, user.id),
         )
+
+
+class SubscriptionUpdate(BaseModel):
+    plan_name: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    is_active: Optional[bool] = None
+
+
+class UserUpdate(BaseModel):
+    firstName: Optional[constr(min_length=3, max_length=15)]  # Required
+    lastName: Optional[constr(min_length=3, max_length=15)] = None
+    email: Optional[str]
+    country: Optional[str] = None
+    subscription: Optional[SubscriptionUpdate] = None
