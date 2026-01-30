@@ -40,3 +40,4 @@ class User(Base):
     staff = relationship("Staff", back_populates="doctor")
     payment_details = relationship("DoctorPaymentDetails", back_populates="doctor", uselist=False)
     medicines = relationship("Medicine", back_populates="user")
+    subscription = relationship("Subscription", back_populates="user", uselist=False)

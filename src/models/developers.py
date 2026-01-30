@@ -1,12 +1,14 @@
 import datetime
+from datetime import date
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic import constr
-from src.utility import get_appointments_left_by_doctor
+from pydantic import model_validator
 
-from typing import Optional
-from datetime import date
+from src.utility import get_appointments_left_by_doctor
+from src.utility import validate_user_fields
 
 
 class DevelopersTabOut(BaseModel):
@@ -52,9 +54,19 @@ class SubscriptionUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
-class UserUpdate(BaseModel):
+class DeveloperUserUpdate(BaseModel):
     firstName: Optional[constr(min_length=3, max_length=15)]  # Required
     lastName: Optional[constr(min_length=3, max_length=15)] = None
     email: Optional[str]
     country: Optional[str] = None
     subscription: Optional[SubscriptionUpdate] = None
+
+    model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def validate(cls, values):
+        return validate_user_fields(values, cls)
+
+
+class UserWithAllSubscription:
+    pass

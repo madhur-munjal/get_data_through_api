@@ -21,3 +21,4 @@ class Subscription(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     plan = relationship("Plan", back_populates="subscription")
+    user = relationship("User", back_populates="subscription")

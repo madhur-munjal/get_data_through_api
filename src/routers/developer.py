@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import require_owner
-from src.models.developers import DevelopersTabOut, UserUpdate
+from src.models.developers import DevelopersTabOut, DeveloperUserUpdate
 from src.models.response import APIResponse
 from src.models.subscription import SubscriptionOutWithPlan
 from src.schemas.tables.subscription import Subscription
@@ -53,8 +53,8 @@ def get_subscriptions_details_particular_doctor(doctor_id: str, db: Session = De
     ).model_dump()
 
 
-@router.put("/users/{user_id}")
-def update_user_details(user_id: str, payload: UserUpdate, db: Session = Depends(get_db)):
+@router.put("/users/")
+def update_user_details(user_id: str, payload: DeveloperUserUpdate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
