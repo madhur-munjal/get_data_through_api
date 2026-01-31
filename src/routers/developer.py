@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import require_owner
-from src.models.developers import DevelopersTabOut, DeveloperUserUpdate
+from src.models.developers import DevelopersTabOut, DeveloperUserUpdate, UserWithAllSubscription
 from src.models.response import APIResponse
-from src.models.subscription import SubscriptionOutWithPlan
 from src.schemas.tables.subscription import Subscription
 from src.schemas.tables.users import User
 
@@ -33,23 +33,43 @@ def get_all_users_list(db: Session = Depends(get_db)):
         .filter(Subscription.is_active == True)
         .all()
     )
+    latest_sub = (
+        db.query(
+            Subscription.user_id,
+            func.max(Subscription.end_date).label("latest_end_date")
+        )
+        .group_by(Subscription.user_id)
+        .subquery()
+    )
+    result = (
+        db.query(User, Subscription).join(latest_sub, User.id == latest_sub.c.user_id)
+        .join(
+            Subscription,
+            (Subscription.user_id == latest_sub.c.user_id) &
+            (Subscription.end_date == latest_sub.c.latest_end_date)
+        )
+        .all()
+    )
+
+    # results = db.query(User).all()
     return APIResponse(
         status_code=200,
         success=True,
         message=f"Successfully fetched users lists.",
-        data=[DevelopersTabOut.from_row(db, user, subscription) for user, subscription in results]
+        data=[DevelopersTabOut.from_row(db, user, subscription) for user, subscription in result]
     ).model_dump()
 
 
 @router.get("/{doctor_id}", response_model=APIResponse)
 def get_subscriptions_details_particular_doctor(doctor_id: str, db: Session = Depends(get_db)):
-    all_subscription_details = db.query(Subscription).filter(
-        Subscription.user_id == doctor_id).all()
+    # all_subscription_details = db.query(Subscription).filter(
+    #     Subscription.user_id == doctor_id).all()
+    results = db.query(User).filter(User.id == doctor_id).all()
     return APIResponse(
         status_code=200,
         success=True,
         message=f"Successfully fetched the subscription data!",
-        data=[SubscriptionOutWithPlan.from_orm(row) for row in all_subscription_details],
+        data=[UserWithAllSubscription.from_row(db, row) for row in results],
     ).model_dump()
 
 

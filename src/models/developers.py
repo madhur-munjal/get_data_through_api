@@ -68,5 +68,63 @@ class DeveloperUserUpdate(BaseModel):
         return validate_user_fields(values, cls)
 
 
-class UserWithAllSubscription:
-    pass
+class SubscriptionWithPlan(BaseModel):
+    subscription_id: str
+    plan_id: str
+    plan_name: str
+    plan_description: Optional[list] = None
+    plan_price: float
+    plan_currency: str
+    subscription_startDate: date
+    subscription_endDate: date
+    is_active: bool
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+    model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_orm(cls, row):
+        return cls(
+            subscription_id=row.id,
+            plan_id=row.plan.id,
+            plan_name=row.plan.name,
+            plan_description=[description.strip() for description in row.plan.description.split(",")],
+            plan_price=row.plan.price,
+            plan_currency=row.plan.currency,
+            subscription_startDate=row.start_date.date(),
+            subscription_endDate=row.end_date.date() if row.end_date else None,
+            is_active=row.is_active,
+            created_at=row.created_at,
+            updated_at=row.updated_at
+        )
+
+
+class UserWithAllSubscription(BaseModel):
+    user_id: str
+    firstName: constr(min_length=3, max_length=15)
+    lastName: constr(min_length=3, max_length=15)
+    email: str
+    country: str
+    mobile: constr(min_length=5)
+    username: constr(min_length=5, max_length=18)
+    role: str
+    appointment_left: int  # 110 - actual,
+    subscription: list[SubscriptionWithPlan] = []
+
+    model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_row(cls, db, user_row):
+        return cls(
+            user_id=user_row.id,
+            firstName=user_row.firstName,
+            lastName=user_row.lastName,
+            email=user_row.email,
+            country=user_row.country,
+            mobile=user_row.mobile,
+            username=user_row.username,
+            role=user_row.role,
+            appointment_left=get_appointments_left_by_doctor(db, user_row.id),
+            subscription=[SubscriptionWithPlan.from_orm(sub) for sub in user_row.subscription]
+        )
