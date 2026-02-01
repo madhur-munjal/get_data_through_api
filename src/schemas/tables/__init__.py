@@ -9,3 +9,4 @@ from .notifications import Notification
 from .subscription import Subscription
 from .plans import Plan
 from .medicines import Medicine
+from .interested_users import InterestedUser

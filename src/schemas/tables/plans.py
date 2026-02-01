@@ -27,3 +27,4 @@ class Plan(Base):
     duration_months = Column(Integer, nullable=False)  # plan duration
 
     subscription = relationship("Subscription", back_populates="plan")
+    interested_users = relationship("InterestedUser", back_populates="plan")

@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 
 from . import (
+    auth,
+    developer,
     patients,
     users,
-    auth,
     staff,
     appointments,
     visits,
@@ -15,7 +16,6 @@ from . import (
     upload_images,
     plans,
     medicines,
-    developer,
 )
 
 router = APIRouter(
@@ -27,9 +27,10 @@ router = APIRouter(
 
 # List of routers
 routers = [
+    auth.router,
+    developer.router,
     patients.router,
     users.router,
-    auth.router,
     staff.router,
     appointments.router,
     visits.router,
@@ -40,8 +41,7 @@ routers = [
     subscription.router,
     # upload_images.router
     plans.router,
-    medicines.router,
-    developer.router,
+    medicines.router
 ]
 
 # Include all routers

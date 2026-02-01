@@ -36,3 +36,4 @@ class User(Base):
     payment_details = relationship("DoctorPaymentDetails", back_populates="doctor")
     medicines = relationship("Medicine", back_populates="user")
     subscription = relationship("Subscription", back_populates="user")
+    interested_users = relationship("InterestedUser", back_populates="user")

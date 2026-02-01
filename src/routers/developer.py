@@ -10,6 +10,7 @@ from src.models.developers import (
     UserWithAllSubscription,
 )
 from src.models.response import APIResponse
+from src.schemas.tables.interested_users import InterestedUser
 from src.schemas.tables.subscription import Subscription
 from src.schemas.tables.users import User
 
@@ -68,9 +69,34 @@ def get_all_users_list(db: Session = Depends(get_db)):
     ).model_dump()
 
 
+@router.get("/interested_users")
+def get_interested_users_list(db: Session = Depends(get_db)):
+    interested_users = db.query(InterestedUser).all()
+    if not interested_users:
+        raise HTTPException(status_code=404, detail="No interested user found")
+    interested_users_list = []
+    for row in interested_users:
+        # db_user = db.query(User).filter_by(id=row.doctor_id).first()
+        # if not db_user:
+        #     raise HTTPException(status_code=404, detail="User not found")
+        # plan_details = db.query(Plan).filter_by(id=row.plan_id).first()
+        # if not plan_details:
+        #     raise HTTPException(status_code=404, detail="Plan details not found")
+        interested_users_list.append({'user_firstName': row.user.firstName, "user_lastName": row.user.lastName,
+                                      "user_mobile": row.user.mobile, "plan_name": row.plan.name,
+                                      "plan_price": row.plan.price,
+                                      "created_at": row.created_at})
+    return APIResponse(
+        status_code=200,
+        success=True,
+        message=f"Successfully fetched interested users lists.",
+        data=interested_users_list,
+    ).model_dump()
+
+
 @router.get("/{doctor_id}", response_model=APIResponse)
 def get_subscriptions_details_particular_doctor(
-    doctor_id: str, db: Session = Depends(get_db)
+        doctor_id: str, db: Session = Depends(get_db)
 ):
     # all_subscription_details = db.query(Subscription).filter(
     #     Subscription.user_id == doctor_id).all()
@@ -85,7 +111,7 @@ def get_subscriptions_details_particular_doctor(
 
 @router.put("/users/")
 def update_user_details(
-    user_id: str, payload: DeveloperUserUpdate, db: Session = Depends(get_db)
+        user_id: str, payload: DeveloperUserUpdate, db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

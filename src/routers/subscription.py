@@ -14,10 +14,11 @@ from src.models.subscription import (
     SubscriptionRead,
 )  # Pydantic models
 from src.models.subscription import SubscriptionOutWithPlan
+from src.schemas.tables.interested_users import InterestedUser
 from src.schemas.tables.plans import Plan
 from src.schemas.tables.subscription import Subscription  # SQLAlchemy model
 from src.schemas.tables.users import User
-from src.utility import update_subscription_data, send_msg_on_email
+from src.utility import update_subscription_data, send_msg_on_email, save_data_to_db
 
 router = APIRouter(
     prefix="/subscriptions",
@@ -30,10 +31,10 @@ router = APIRouter(
 # 📥 Create a new subscription
 @router.post("", response_model=APIResponse[SubscriptionRead])
 def create_subscription(
-    subscription: SubscriptionCreate,
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
-    dependencies=Depends(require_owner),
+        subscription: SubscriptionCreate,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        dependencies=Depends(require_owner),
 ):
     input_data = subscription.dict()
     if subscription.user_id is None:
@@ -57,9 +58,9 @@ def create_subscription(
     "/send_subscription_details_on_mail", response_model=APIResponse[SubscriptionRead]
 )
 def send_subscription_details_on_mail(
-    plan_details: PlanDetailsOnMail,
-    db: Session = Depends(get_db),
-    doctor_id: UUID = Depends(get_current_doctor_id),
+        plan_details: PlanDetailsOnMail,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     db_user = db.query(User).filter_by(id=doctor_id).first()
     if not db_user:
@@ -100,12 +101,12 @@ def send_subscription_details_on_mail(
     Best regards,
     SmartHealApp Management Team
     """
-
+    interested_users_data = {'doctor_id': str(doctor_id), 'plan_id': plan_details.id}
+    save_data_to_db(interested_users_data, InterestedUser, db)
     send_msg_on_email(
         to_email=os.getenv("from_email_id"), message=body, Subject=subject
     )
     # send_email(to_email=os.getenv("from_email_id"), message=body, Subject=subject)
-    # TODO
     return APIResponse(
         status_code=200,
         success=True,
@@ -156,7 +157,7 @@ def send_subscription_details_on_mail(
 
 @router.get("/get_subscription", response_model=APIResponse)
 def get_subscription(
-    db: Session = Depends(get_db), doctor_id: UUID = Depends(get_current_doctor_id)
+        db: Session = Depends(get_db), doctor_id: UUID = Depends(get_current_doctor_id)
 ):
     all_subscription_details = (
         db.query(Subscription).filter(Subscription.user_id == doctor_id).all()
@@ -169,7 +170,6 @@ def get_subscription(
             SubscriptionOutWithPlan.from_orm(row) for row in all_subscription_details
         ],
     ).model_dump()
-
 
 # # 📄 Get all subscriptions
 # @router.get("/", response_model=list[SubscriptionRead])
