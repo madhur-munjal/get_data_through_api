@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
-from src.models.medicines import MedicineCreate, MedicineResponse, MedicineUpdate, MedicineDeleteIn
+from src.models.medicines import (
+    MedicineCreate,
+    MedicineResponse,
+    MedicineUpdate,
+    MedicineDeleteIn,
+)
 from src.models.response import APIResponse
 from src.schemas.tables.medicines import Medicine
 from src.utility import save_data_to_db
@@ -16,11 +21,20 @@ router = APIRouter(prefix="/medicines", tags=["Medicines"])
 
 # Create Medicine
 @router.post("/add", status_code=201)
-def create_medicine(medicine: MedicineCreate, db: Session = Depends(get_db),
-                    doctor_id: UUID = Depends(get_current_doctor_id)):
+def create_medicine(
+    medicine: MedicineCreate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+):
     # Check if medicine with same name already exists
-    existing = db.query(Medicine).filter(Medicine.doctor_id == doctor_id,
-                                         Medicine.medicine_name == medicine.medicine_name).first()
+    existing = (
+        db.query(Medicine)
+        .filter(
+            Medicine.doctor_id == doctor_id,
+            Medicine.medicine_name == medicine.medicine_name,
+        )
+        .first()
+    )
     if existing:
         # existing_deleted = existing.filter(Medicine.is_deleted == 1).first()
         if existing.is_deleted == 1:
@@ -37,33 +51,40 @@ def create_medicine(medicine: MedicineCreate, db: Session = Depends(get_db),
                 data=MedicineUpdate.model_validate(existing),
             ).model_dump()
         else:
-            raise HTTPException(status_code=400, detail="Medicine with this name already exists")
+            raise HTTPException(
+                status_code=400, detail="Medicine with this name already exists"
+            )
     medicine_data = medicine.dict()
-    medicine_data['doctor_id'] = str(doctor_id)
-    save_data_to_db(data=medicine_data, db_model=Medicine, db_session=db)  # Example usage of utility function
+    medicine_data["doctor_id"] = str(doctor_id)
+    save_data_to_db(
+        data=medicine_data, db_model=Medicine, db_session=db
+    )  # Example usage of utility function
     return APIResponse(
         status_code=200,
         success=True,
         message=f"New Medicine created.",
-        data=medicine.dict()
+        data=medicine.dict(),
     ).model_dump()
 
 
 # Get All Medicines (with pagination and filters)
 @router.get("")
 def get_medicines(
-        search: Optional[str] = None,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        page: Optional[int] = Query(None, ge=1),
-        page_size: Optional[int] = Query(None, ge=1),
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    page: Optional[int] = Query(None, ge=1),
+    page_size: Optional[int] = Query(None, ge=1),
 ):
-    query = db.query(Medicine).filter(Medicine.doctor_id == doctor_id, Medicine.is_deleted == 0)
+    query = db.query(Medicine).filter(
+        Medicine.doctor_id == doctor_id, Medicine.is_deleted == 0
+    )
 
     # Apply filters - now includes composition search
     if search:
         query = query.filter(
-            (Medicine.medicine_name.ilike(f"%{search}%")) |
+            (Medicine.medicine_name.ilike(f"%{search}%"))
+            |
             # (Medicine.generic_name.ilike(f"%{search}%")) |
             (Medicine.composition.ilike(f"%{search}%"))  # NEW: Search in composition
         )
@@ -84,39 +105,53 @@ def get_medicines(
         status_code=200,
         success=True,
         message="Medicines details fetched successfully.",
-        data={"page": page, "page_size": page_size, "total_records": total_records,
-              "medicines_list": [MedicineResponse.from_row(row) for row in query]}
+        data={
+            "page": page,
+            "page_size": page_size,
+            "total_records": total_records,
+            "medicines_list": [MedicineResponse.from_row(row) for row in query],
+        },
     ).model_dump()
 
 
 @router.get("/{medicine_id}")
 def get_medicine_by_id(
-        medicine_id: str,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    medicine_id: str,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
-    db_medicine = db.query(Medicine).filter(Medicine.doctor_id == doctor_id, Medicine.is_deleted == 0,
-                                            Medicine.medicine_id == medicine_id).first()
+    db_medicine = (
+        db.query(Medicine)
+        .filter(
+            Medicine.doctor_id == doctor_id,
+            Medicine.is_deleted == 0,
+            Medicine.medicine_id == medicine_id,
+        )
+        .first()
+    )
     if not db_medicine:
         raise HTTPException(status_code=404, detail="Medicine not found.")
     return APIResponse(
         status_code=200,
         success=True,
         message="Medicine details fetched successfully.",
-        data=MedicineResponse.from_row(db_medicine)
+        data=MedicineResponse.from_row(db_medicine),
     ).model_dump()
 
 
 # Update Medicine
 @router.put("/update")
 def update_medicine(
-        medicine_update: MedicineUpdate,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id)
+    medicine_update: MedicineUpdate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     medicine_id = medicine_update.medicine_id
-    db_medicine = db.query(Medicine).filter(Medicine.doctor_id == doctor_id,
-                                            Medicine.medicine_id == medicine_id).first()
+    db_medicine = (
+        db.query(Medicine)
+        .filter(Medicine.doctor_id == doctor_id, Medicine.medicine_id == medicine_id)
+        .first()
+    )
     if not db_medicine:
         raise HTTPException(status_code=404, detail="Medicine not found")
 
@@ -138,21 +173,25 @@ def update_medicine(
 
 @router.post("/delete")
 def soft_delete_billing(
-        ids_to_delete: MedicineDeleteIn,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    ids_to_delete: MedicineDeleteIn,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Delete billing details on basis of billing id."""
-    rows_updated = db.query(Medicine).filter(Medicine.doctor_id == doctor_id).filter(
-        Medicine.medicine_id.in_(ids_to_delete.ids_to_delete)).update(
-        {Medicine.is_deleted: True},
-        synchronize_session=False)
+    rows_updated = (
+        db.query(Medicine)
+        .filter(Medicine.doctor_id == doctor_id)
+        .filter(Medicine.medicine_id.in_(ids_to_delete.ids_to_delete))
+        .update({Medicine.is_deleted: True}, synchronize_session=False)
+    )
     db.commit()
     if rows_updated == 0:
-        raise HTTPException(status_code=404, detail="No medicines records found for given IDs")
+        raise HTTPException(
+            status_code=404, detail="No medicines records found for given IDs"
+        )
     return APIResponse(
         status_code=200,
         success=True,
         message=f"{rows_updated} billing records marked as deleted",
-        data=f"Medicines {ids_to_delete.ids_to_delete} marked as deleted"
+        data=f"Medicines {ids_to_delete.ids_to_delete} marked as deleted",
     ).model_dump()

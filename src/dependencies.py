@@ -21,8 +21,8 @@ from src.redis_client import get_redis_client
 
 
 def get_current_user_payload(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
-        redis=Depends(get_redis_client),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    redis=Depends(get_redis_client),
 ):
     token = credentials.credentials
     if redis.get(f"blacklist:{token}"):  # is_token_blacklisted(redis, token):
@@ -52,7 +52,8 @@ def get_current_user_payload(
 
 
 def get_current_doctor_id(
-        credentials: HTTPAuthorizationCredentials = Depends(security), current_user=Depends(get_current_user_payload),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user=Depends(get_current_user_payload),
 ) -> UUID:
     token = credentials.credentials
     if not token:

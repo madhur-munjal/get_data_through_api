@@ -46,7 +46,7 @@ class StaffOut(BaseModel):
         return validate_user_fields(values, cls)
 
     @staticmethod
-    def build_image_url(staff_obj) -> Optional[str]: # , request: Request
+    def build_image_url(staff_obj) -> Optional[str]:  # , request: Request
         image_filename = staff_obj.profile_image_url  # e.g., "id.jpg"
         if image_filename:
             # base_url = request.base_url._url.rstrip("/")

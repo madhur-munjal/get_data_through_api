@@ -39,5 +39,4 @@ class NotificationOut(BaseModel):
     def created_time(self) -> time:
         return self.created_at.time()
 
-
     model_config = {"from_attributes": True}

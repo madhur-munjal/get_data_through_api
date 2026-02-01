@@ -30,7 +30,9 @@ class PlanOut(BaseModel):
         return cls(
             id=row.id,
             name=row.name,
-            description=[description.strip() for description in row.description.split(",")],
+            description=[
+                description.strip() for description in row.description.split(",")
+            ],
             price=row.price,
             currency=row.currency,
             s_no=row.s_no,

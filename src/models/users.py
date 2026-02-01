@@ -61,8 +61,6 @@ class UserOut(BaseModel):
     role: str
     profile_image_url: Optional[str] = None
 
-
-
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
@@ -101,6 +99,7 @@ class ResetPasswordRequest(BaseModel):
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
+
     # password: str
     #
     # model_config = {"from_attributes": True}
@@ -108,7 +107,6 @@ class ResetPasswordRequest(BaseModel):
     # @model_validator(mode="after")
     # def validate(cls, values):
     #     return validate_user_fields(values, cls)
-
 
 
 class VerifyOTPRequest(BaseModel):
@@ -123,9 +121,9 @@ class UserIDRequest(BaseModel):
 
 
 class UpdateLoginRecord(BaseModel):
-    mobile: Optional[str] = Form(None),
-    current_password: Optional[str] = Form(None),
-    password: Optional[constr(min_length=5)] = Form(None),
+    mobile: Optional[str] = (Form(None),)
+    current_password: Optional[str] = (Form(None),)
+    password: Optional[constr(min_length=5)] = (Form(None),)
     image: Optional[UploadFile] = File(None)
 
     # mobile: Optional[str] = None
@@ -139,4 +137,3 @@ class UpdateLoginRecord(BaseModel):
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
-

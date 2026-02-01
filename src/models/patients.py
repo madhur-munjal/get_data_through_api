@@ -13,16 +13,15 @@ class PatientRecord(BaseModel):
     mobile: str  # Required
     gender: Optional[Gender] = None
     address: Optional[str] = None
-    bloodGroup: Optional[
-        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
-    ] = None
+    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+        None
+    )
     weight: Optional[float] = None
     bloodPressureUpper: Optional[int] = None
     bloodPressureLower: Optional[int] = None
     temperature: Optional[float] = None
     temperatureType: Optional[TemperatureUnit] = None
     list_of_appointments: Optional[List] = None  # List of appointment dates
-
 
     model_config = {"from_attributes": True}
 
@@ -55,9 +54,9 @@ class PatientOut(BaseModel):
     gender: Optional[Gender] = None
     address: Optional[str] = None
     lastVisit: Optional[date] = None
-    bloodGroup: Optional[
-        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
-    ] = None
+    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+        None
+    )
     weight: Optional[float] = None
     bloodPressureUpper: Optional[int] = None
     bloodPressureLower: Optional[int] = None
@@ -84,7 +83,7 @@ class PatientOut(BaseModel):
             bloodPressureLower=row.Patient.bloodPressureLower,
             temperature=row.Patient.temperature,
             temperatureType=row.Patient.temperatureType,
-            type=row.latest_appointment_type
+            type=row.latest_appointment_type,
         )
 
 
@@ -103,9 +102,9 @@ class PatientUpdateWhileAppointment(BaseModel):
     mobile: str  # Required
     gender: Optional[Gender] = None
     address: Optional[str] = None
-    bloodGroup: Optional[
-        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
-    ] = None
+    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+        None
+    )
     weight: Optional[float] = None
     bloodPressureUpper: Optional[int] = None
     bloodPressureLower: Optional[int] = None

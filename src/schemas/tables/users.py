@@ -1,12 +1,6 @@
 import uuid
 
-from sqlalchemy import (
-    Column,
-    Text,
-    String,
-    CheckConstraint,
-    DateTime
-)
+from sqlalchemy import Column, Text, String, CheckConstraint, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from src.database import Base
@@ -30,8 +24,9 @@ class User(Base):
     mobile = Column(Text, nullable=False)  # mandatory
     username = Column(String(255), nullable=False, unique=True)  # mandatory
     password = Column(Text, nullable=False)  # mandatory
-    role = Column(String(50), nullable=False,
-                  default="admin")  # mandatory e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
+    role = Column(
+        String(50), nullable=False, default="admin"
+    )  # mandatory e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
     profile_image_url = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
@@ -41,4 +36,3 @@ class User(Base):
     payment_details = relationship("DoctorPaymentDetails", back_populates="doctor")
     medicines = relationship("Medicine", back_populates="user")
     subscription = relationship("Subscription", back_populates="user")
-

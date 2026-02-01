@@ -17,26 +17,30 @@ from src.schemas.tables.visits import Visit
 from src.routers.appointments import get_appointment_with_billing_per_appointment_id
 
 router = APIRouter(
-    prefix="/visits", tags=["visits"], responses={404: {"error": "Not found"}}
+    prefix="/visits",
+    tags=["visits"],
+    responses={404: {"error": "Not found"}},
     # , dependencies=[Depends(require_owner)]
 )
 
 
 @router.post("/add_visits", response_model=APIResponse[VisitOut])
 def add_visits(
-        visit_data: VisitCreate,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        current_user=Depends(get_current_user_payload),
+    visit_data: VisitCreate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    current_user=Depends(get_current_user_payload),
 ):
     """Register a new visit details."""
-    get_subscription_active_status = get_subscription_active_status_by_doctor(db, doctor_id)
+    get_subscription_active_status = get_subscription_active_status_by_doctor(
+        db, doctor_id
+    )
     if get_subscription_active_status is False:
         return APIResponse(
             status_code=200,
             success=False,
             message="Your subscription has expired. Please renew your subscription to access this feature.",
-            data=None
+            data=None,
         ).model_dump()
     appointment_id = visit_data.appointment_id
     str_appointment_id = str(appointment_id)
@@ -63,11 +67,15 @@ def add_visits(
     db.add(db_visit)
 
     # 2. Update patient's lastVisit field
-    patient = db.query(Patient).filter_by(patient_id=patient_id, assigned_doctor_id=doctor_id).first()
+    patient = (
+        db.query(Patient)
+        .filter_by(patient_id=patient_id, assigned_doctor_id=doctor_id)
+        .first()
+    )
     if patient:
         if (
-                not patient.lastVisit
-                or appointment_details.scheduled_date > patient.lastVisit
+            not patient.lastVisit
+            or appointment_details.scheduled_date > patient.lastVisit
         ):
             patient.lastVisit = appointment_details.scheduled_date
 
@@ -86,9 +94,9 @@ def add_visits(
 
 @router.get("/visits_list/{patient_id}")  # , response_model=APIResponse[VisitResponse])
 def get_visits_by_patient_id(
-        patient_id: str,
-        db: Session = Depends(get_db),
-        current_user=Depends(get_current_user_payload),
+    patient_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user_payload),
 ):
     """Fetch visit details by patient id."""
     visits = db.query(Visit).filter(Visit.patient_id == patient_id).all()
@@ -108,21 +116,23 @@ def get_visits_by_patient_id(
 
 @router.get("/visit_details/")  # , response_model=APIResponse[VisitResponse])
 def get_visit_details(
-        appointment_id: str,
-        db: Session = Depends(get_db),
-        current_user=Depends(get_current_user_payload),
+    appointment_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user_payload),
 ):
     """Fetch visit details by patient id."""
     visit = db.query(Visit).filter_by(appointment_id=appointment_id).first()
     if not visit:
-        appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+        appointment_details = (
+            db.query(Appointment).filter(Appointment.id == appointment_id).first()
+        )
         if not appointment_details:
             raise HTTPException(status_code=404, detail="Appointment not found")
         return APIResponse(
             status_code=200,
             success=True,
             message=f"Successfully fetched appointment details.",
-            data=AppointmentById.from_row(appointment_details)
+            data=AppointmentById.from_row(appointment_details),
             # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
         ).model_dump()
         # raise HTTPException(
@@ -138,11 +148,13 @@ def get_visit_details(
     ).model_dump()
 
 
-@router.get("/visits_date_list/{patient_id}")  # , response_model=APIResponse[VisitResponse])
+@router.get(
+    "/visits_date_list/{patient_id}"
+)  # , response_model=APIResponse[VisitResponse])
 def get_patient_details_with_visits_dates(
-        patient_id: str,
-        db: Session = Depends(get_db),
-        current_user=Depends(get_current_user_payload),
+    patient_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user_payload),
 ):
     """Fetch patient details with their previous visit dates by patient id."""
     patient_details = db.query(Patient).filter_by(patient_id=patient_id).first()
@@ -157,32 +169,45 @@ def get_patient_details_with_visits_dates(
         status_code=200,
         success=True,
         message="Successfully fetched patients details with visits date",
-        data={'patient_details': patient_details, 'visit_dates_details': visit_dates_details},
+        data={
+            "patient_details": patient_details,
+            "visit_dates_details": visit_dates_details,
+        },
     ).model_dump()
 
 
-@router.get("/get_date_patient_wise_visits_details/")  # , response_model=APIResponse[VisitResponse])
+@router.get(
+    "/get_date_patient_wise_visits_details/"
+)  # , response_model=APIResponse[VisitResponse])
 def get_date_patient_wise_visit_details(
-        patient_id: str,
-        scheduled_date: str = Query(..., description="Date in YYYY-MM-DD format"),
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    patient_id: str,
+    scheduled_date: str = Query(..., description="Date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Fetch patient details with their previous visit dates by patient id."""
     # patient_details = db.query(Patient).filter_by(patient_id=patient_id).first()
     # visits = db.query(Visit).filter_by(doctor_id=doctor_id,patient_id=patient_id).all()
-    visits = db.query(Visit).join(Appointment).filter(
+    visits = (
+        db.query(Visit)
+        .join(Appointment)
+        .filter(
             Visit.doctor_id == doctor_id,
             Visit.patient_id == patient_id,
-            Appointment.scheduled_date == scheduled_date
-        ).first()
+            Appointment.scheduled_date == scheduled_date,
+        )
+        .first()
+    )
 
     if not visits:
         raise HTTPException(
-            status_code=404, detail=f"No visit by Patient id {patient_id} on date {scheduled_date}"
+            status_code=404,
+            detail=f"No visit by Patient id {patient_id} on date {scheduled_date}",
         )
 
-    billing_data = get_appointment_with_billing_per_appointment_id(db, visits.appointment_id)
+    billing_data = get_appointment_with_billing_per_appointment_id(
+        db, visits.appointment_id
+    )
     visits.payment_details = billing_data.get("billing_summary")
     return APIResponse(
         status_code=200,

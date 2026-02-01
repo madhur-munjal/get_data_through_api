@@ -4,7 +4,11 @@ from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.dependencies import require_owner
-from src.models.developers import DevelopersTabOut, DeveloperUserUpdate, UserWithAllSubscription
+from src.models.developers import (
+    DevelopersTabOut,
+    DeveloperUserUpdate,
+    UserWithAllSubscription,
+)
 from src.models.response import APIResponse
 from src.schemas.tables.subscription import Subscription
 from src.schemas.tables.users import User
@@ -13,7 +17,7 @@ router = APIRouter(
     prefix="/developers",
     tags=["developers"],
     responses={404: {"error": "Not found"}},
-    dependencies=[Depends(require_owner)]
+    dependencies=[Depends(require_owner)],
 )
 
 
@@ -36,17 +40,18 @@ def get_all_users_list(db: Session = Depends(get_db)):
     latest_sub = (
         db.query(
             Subscription.user_id,
-            func.max(Subscription.end_date).label("latest_end_date")
+            func.max(Subscription.end_date).label("latest_end_date"),
         )
         .group_by(Subscription.user_id)
         .subquery()
     )
     result = (
-        db.query(User, Subscription).join(latest_sub, User.id == latest_sub.c.user_id)
+        db.query(User, Subscription)
+        .join(latest_sub, User.id == latest_sub.c.user_id)
         .join(
             Subscription,
-            (Subscription.user_id == latest_sub.c.user_id) &
-            (Subscription.end_date == latest_sub.c.latest_end_date)
+            (Subscription.user_id == latest_sub.c.user_id)
+            & (Subscription.end_date == latest_sub.c.latest_end_date),
         )
         .all()
     )
@@ -56,12 +61,17 @@ def get_all_users_list(db: Session = Depends(get_db)):
         status_code=200,
         success=True,
         message=f"Successfully fetched users lists.",
-        data=[DevelopersTabOut.from_row(db, user, subscription) for user, subscription in result]
+        data=[
+            DevelopersTabOut.from_row(db, user, subscription)
+            for user, subscription in result
+        ],
     ).model_dump()
 
 
 @router.get("/{doctor_id}", response_model=APIResponse)
-def get_subscriptions_details_particular_doctor(doctor_id: str, db: Session = Depends(get_db)):
+def get_subscriptions_details_particular_doctor(
+    doctor_id: str, db: Session = Depends(get_db)
+):
     # all_subscription_details = db.query(Subscription).filter(
     #     Subscription.user_id == doctor_id).all()
     results = db.query(User).filter(User.id == doctor_id).all()
@@ -74,7 +84,9 @@ def get_subscriptions_details_particular_doctor(doctor_id: str, db: Session = De
 
 
 @router.put("/users/")
-def update_user_details(user_id: str, payload: DeveloperUserUpdate, db: Session = Depends(get_db)):
+def update_user_details(
+    user_id: str, payload: DeveloperUserUpdate, db: Session = Depends(get_db)
+):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -89,7 +101,9 @@ def update_user_details(user_id: str, payload: DeveloperUserUpdate, db: Session 
 
     # Update subscription if provided
     if payload.subscription:
-        subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
+        subscription = (
+            db.query(Subscription).filter(Subscription.user_id == user_id).first()
+        )
         # if not subscription:
         #     # If no subscription exists, create one
         #     subscription = Subscription(user_id=user_id)

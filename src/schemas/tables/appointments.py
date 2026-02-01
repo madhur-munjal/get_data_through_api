@@ -1,7 +1,18 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time, Enum, Integer, Float, JSON
+from sqlalchemy import (
+    Column,
+    String,
+    DateTime,
+    ForeignKey,
+    Date,
+    Time,
+    Enum,
+    Integer,
+    Float,
+    JSON,
+)
 from sqlalchemy.orm import relationship
 
 from src.database import Base
@@ -21,9 +32,7 @@ class Appointment(Base):
     type = Column(Integer, nullable=False, default=AppointmentType.NEW.value)
     status = Column(Integer, nullable=False, default=AppointmentStatus.UPCOMING.value)
     payment_status = Column(Integer, nullable=False, default=PaymentStatus.UNPAID.value)
-    bloodGroup = Column(
-        String(5), nullable=True
-    )  # e.g., "A+", "O-", etc.
+    bloodGroup = Column(String(5), nullable=True)  # e.g., "A+", "O-", etc.
     weight = Column(Float, nullable=True)
     bloodPressureUpper = Column(Integer, nullable=True)
     bloodPressureLower = Column(Integer, nullable=True)

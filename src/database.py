@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+
 # from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
@@ -23,8 +24,7 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 class Base(DeclarativeBase):
     def to_dict(self):
         return {
-            column.name: getattr(self, column.name)
-            for column in self.__table__.columns
+            column.name: getattr(self, column.name) for column in self.__table__.columns
         }
 
 

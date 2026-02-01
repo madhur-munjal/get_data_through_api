@@ -15,7 +15,7 @@ from src.models.appointments import (
     AppointmentOut,
     AppointmentResponse,
     AppointmentUpdate,
-    PaginatedAppointmentResponse
+    PaginatedAppointmentResponse,
 )
 from src.models.enums import AppointmentType, AppointmentStatus
 from src.models.response import APIResponse
@@ -31,7 +31,7 @@ from src.utility import save_data_to_db, get_appointment_status
 router = APIRouter(
     prefix="/appointments",
     tags=["appointments"],
-    responses={404: {"error": "Not found"}}
+    responses={404: {"error": "Not found"}},
     # ,
     # dependencies=[Depends(require_owner)]
 )
@@ -39,16 +39,19 @@ router = APIRouter(
 
 def build_appointments_query(db: Session, doctor_id: UUID):
     """Base query for appointments with patient preloaded."""
-    return (db.query(Appointment)
-            .join(Appointment.patient)
-            .options(joinedload(Appointment.patient))
-            .filter(Appointment.doctor_id == doctor_id)
-            )
+    return (
+        db.query(Appointment)
+        .join(Appointment.patient)
+        .options(joinedload(Appointment.patient))
+        .filter(Appointment.doctor_id == doctor_id)
+    )
 
 
 def get_appointment_with_billing_per_appointment_id(db: Session, appointment_id):
     billing_data = (
-        db.query(Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt"))
+        db.query(
+            Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt")
+        )
         .filter(Billing.appointment_id == appointment_id)
         .group_by(Billing.appointment_id, Billing.type)
         .all()
@@ -58,7 +61,9 @@ def get_appointment_with_billing_per_appointment_id(db: Session, appointment_id)
     for appointment_id, btype, amt in billing_data:
         if appointment_id not in billing_map:
             billing_map[appointment_id] = {"billing_summary": [], "total_amount": 0}
-        billing_map[appointment_id]["billing_summary"].append({"type": btype, "amount": amt})
+        billing_map[appointment_id]["billing_summary"].append(
+            {"type": btype, "amount": amt}
+        )
         billing_map[appointment_id]["total_amount"] += amt
 
     if billing_map:
@@ -69,9 +74,10 @@ def get_appointment_with_billing_per_appointment_id(db: Session, appointment_id)
 def get_appointment_with_billing_per_row(db: Session, results):
     appt_ids = [a.id for a in results]
     billing_data = (
-        db.query(Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt"))
-        .filter(
-            Billing.is_deleted == False)
+        db.query(
+            Billing.appointment_id, Billing.type, func.sum(Billing.amount).label("amt")
+        )
+        .filter(Billing.is_deleted == False)
         .filter(Billing.appointment_id.in_(appt_ids))
         .group_by(Billing.appointment_id, Billing.type)
         .all()
@@ -81,7 +87,9 @@ def get_appointment_with_billing_per_row(db: Session, results):
     for appointment_id, btype, amt in billing_data:
         if appointment_id not in billing_map:
             billing_map[appointment_id] = {"billing_summary": [], "total_amount": 0}
-        billing_map[appointment_id]["billing_summary"].append({"type": btype, "amount": amt})
+        billing_map[appointment_id]["billing_summary"].append(
+            {"type": btype, "amount": amt}
+        )
         billing_map[appointment_id]["total_amount"] += amt
         # billing_map.setdefault(appointment_id, []).append(
         #     {"type": btype, "amount": amt}
@@ -90,11 +98,13 @@ def get_appointment_with_billing_per_row(db: Session, results):
     result = []
     for appt in results:
         patient = appt.patient
-        result.append({
-            "appointment": appt,
-            "patient": patient,
-            "billing": billing_map.get(appt.id, dict())
-        })
+        result.append(
+            {
+                "appointment": appt,
+                "patient": patient,
+                "billing": billing_map.get(appt.id, dict()),
+            }
+        )
     return result
 
     # pdb.set_trace()
@@ -104,20 +114,22 @@ def get_appointment_with_billing_per_row(db: Session, results):
 
 @router.post("/create_appointment", response_model=APIResponse[AppointmentOut])
 def create_appointment(
-        appointment: AppointmentCreate,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        current_user=Depends(get_current_user_payload),
+    appointment: AppointmentCreate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    current_user=Depends(get_current_user_payload),
 ):
     """Register a new appointment.
     If enter new mobile number, then it will create under new patients record."""
-    get_subscription_active_status = get_subscription_active_status_by_doctor(db, doctor_id)
+    get_subscription_active_status = get_subscription_active_status_by_doctor(
+        db, doctor_id
+    )
     if get_subscription_active_status is False:
         return APIResponse(
             status_code=200,
             success=False,
             message="Your subscription has expired. Please renew your subscription to access this feature.",
-            data=None
+            data=None,
         ).model_dump()
     patient_data = appointment.patient.dict(exclude_unset=True)
     patient_id = patient_data.get("patient_id")
@@ -138,7 +150,9 @@ def create_appointment(
         type = AppointmentType.FOLLOW_UP.value
         patient = db.query(Patient).filter_by(patient_id=patient_id).first()
         if not patient:
-            raise HTTPException(status_code=404, detail=f"Patient not found with the id {patient_id}")
+            raise HTTPException(
+                status_code=404, detail=f"Patient not found with the id {patient_id}"
+            )
         for field, value in filtered_data.items():
             setattr(patient, field, value)
     data = appointment.dict()
@@ -149,7 +163,10 @@ def create_appointment(
         scheduled_time=datetime.strptime(data["scheduled_time"], "%H:%M:%S").time(),
         type=type,
         status=get_appointment_status(
-            datetime.strptime(f"{data.get('scheduled_date')} {data.get('scheduled_time')}", "%m/%d/%Y %H:%M:%S")
+            datetime.strptime(
+                f"{data.get('scheduled_date')} {data.get('scheduled_time')}",
+                "%m/%d/%Y %H:%M:%S",
+            )
         ),
         bloodGroup=patient_data.get("bloodGroup"),
         weight=patient_data.get("weight"),
@@ -164,14 +181,20 @@ def create_appointment(
     db.commit()
     db.refresh(db_appointment)
     created_appointment_id = db_appointment.id
-    updated_by = current_user.get('firstName') + " " + current_user.get('lastName') if current_user.get(
-        'lastName') else current_user.get('firstName')
-    notification_data = {'doctor_id': doctor_id, 'appointment_id': created_appointment_id,
-                         'firstName': patient_data.get('firstName'),
-                         'lastName': patient_data.get(
-                             'lastName'),
-                         'type': 'appointment', 'message': 'appointment created', 'updated_by': updated_by
-                         }
+    updated_by = (
+        current_user.get("firstName") + " " + current_user.get("lastName")
+        if current_user.get("lastName")
+        else current_user.get("firstName")
+    )
+    notification_data = {
+        "doctor_id": doctor_id,
+        "appointment_id": created_appointment_id,
+        "firstName": patient_data.get("firstName"),
+        "lastName": patient_data.get("lastName"),
+        "type": "appointment",
+        "message": "appointment created",
+        "updated_by": updated_by,
+    }
     save_data_to_db(notification_data, Notification, db)
 
     return APIResponse(
@@ -182,9 +205,15 @@ def create_appointment(
     ).model_dump()
 
 
-@router.post("/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut])
-def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: Session = Depends(get_db),
-                       current_user=Depends(get_current_user_payload)):
+@router.post(
+    "/update_appointment/{appointment_id}", response_model=APIResponse[AppointmentOut]
+)
+def update_appointment(
+    appointment_id: str,
+    update_data: AppointmentUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user_payload),
+):
     appointment = db.query(Appointment).filter_by(id=appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
@@ -198,16 +227,22 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
     if patient_id:
         patient = db.query(Patient).filter_by(patient_id=patient_id).first()
         if not patient:
-            raise HTTPException(status_code=404, detail=f"Patient not found with the id {patient_id}")
+            raise HTTPException(
+                status_code=404, detail=f"Patient not found with the id {patient_id}"
+            )
         for field, value in filtered_data.items():
             setattr(patient, field, value)
 
     if update_data.scheduled_date:
-        appointment.scheduled_date = datetime.strptime(update_data.scheduled_date, "%m/%d/%Y").date()
+        appointment.scheduled_date = datetime.strptime(
+            update_data.scheduled_date, "%m/%d/%Y"
+        ).date()
 
         # Update scheduled_time if provided
     if update_data.scheduled_time:
-        appointment.scheduled_time = datetime.strptime(update_data.scheduled_time, "%H:%M:%S").time()
+        appointment.scheduled_time = datetime.strptime(
+            update_data.scheduled_time, "%H:%M:%S"
+        ).time()
     if update_data.patient.pulseRate:
         appointment.pulseRate = update_data.patient.pulseRate
     db.commit()
@@ -222,15 +257,19 @@ def update_appointment(appointment_id: str, update_data: AppointmentUpdate, db: 
 
 @router.get("", response_model=APIResponse[PaginatedAppointmentResponse])
 def get_appointment_data(
-        page: Optional[int] = Query(None, ge=1),
-        page_size: Optional[int] = Query(None, ge=1),
-        text: str = Query(None, description="Search by patient's first name, last name or mobile number"),
-        month: str = Query(None, description="Filter by month "),
-        status: str = Query(None, description="Filter by appointment status"),
-        startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
-        endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    page: Optional[int] = Query(None, ge=1),
+    page_size: Optional[int] = Query(None, ge=1),
+    text: str = Query(
+        None, description="Search by patient's first name, last name or mobile number"
+    ),
+    month: str = Query(None, description="Filter by month "),
+    status: str = Query(None, description="Filter by appointment status"),
+    startDate: str = Query(
+        None, description="Filter by start date in YYYY-MM-DD format"
+    ),
+    endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     query = build_appointments_query(db, doctor_id)
     # total_records = len(query.all())
@@ -241,7 +280,7 @@ def get_appointment_data(
             or_(
                 Patient.firstName.ilike(f"%{text}%"),
                 Patient.lastName.ilike(f"%{text}%"),
-                Patient.mobile.ilike(f"%{text}%")
+                Patient.mobile.ilike(f"%{text}%"),
             )
         )
 
@@ -249,7 +288,9 @@ def get_appointment_data(
     if month:
         try:
             month_number = list(month_name).index(month.capitalize())  # January = 1
-            query = query.filter(extract("month", Appointment.scheduled_date) == month_number)
+            query = query.filter(
+                extract("month", Appointment.scheduled_date) == month_number
+            )
         except ValueError:
             pass  # Invalid month name, skip filter
 
@@ -258,7 +299,7 @@ def get_appointment_data(
         STATUS_LOOKUP = {
             "Upcoming": AppointmentStatus.UPCOMING,
             "Completed": AppointmentStatus.COMPLETED,
-            "No Show": AppointmentStatus.NO_SHOW
+            "No Show": AppointmentStatus.NO_SHOW,
         }
         status_enum = STATUS_LOOKUP.get(status)
         status_db_value = status_enum.value
@@ -269,13 +310,15 @@ def get_appointment_data(
         try:
             start_date_obj = datetime.strptime(startDate, "%Y-%m-%d").date()
             end_date_obj = datetime.strptime(endDate, "%Y-%m-%d").date()
-            query = query.filter(Appointment.scheduled_date.between(start_date_obj, end_date_obj))
+            query = query.filter(
+                Appointment.scheduled_date.between(start_date_obj, end_date_obj)
+            )
         except ValueError:
             return APIResponse(
                 status_code=200,
                 success=True,
                 message=f"ValueError wile filtering from startDate and EndDate.",
-                data=None
+                data=None,
             ).model_dump()
 
     total_records = query.count()
@@ -298,8 +341,12 @@ def get_appointment_data(
         status_code=200,
         success=True,
         message=f"Successfully fetched appointment lists.",
-        data={"page": page, "page_size": page_size, "total_records": total_records,
-              "appointment_list": [AppointmentResponse.from_row(p) for p in final_result]}
+        data={
+            "page": page,
+            "page_size": page_size,
+            "total_records": total_records,
+            "appointment_list": [AppointmentResponse.from_row(p) for p in final_result],
+        },
     ).model_dump()
 
 
@@ -320,24 +367,34 @@ def get_appointment_data(
 #         # PatientOut.from_row(appointment_details)  # [PatientOut.from_row(p) for p in appointment_details]
 #     ).model_dump()
 
+
 @router.get("/{appointment_id}", response_model=APIResponse[VisitAllResponse])
-def get_patient_details_through_appointment_id(appointment_id: str, db: Session = Depends(get_db),
-                                               current_user=Depends(get_current_user_payload)):
+def get_patient_details_through_appointment_id(
+    appointment_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user_payload),
+):
     visit = db.query(Visit).filter_by(appointment_id=appointment_id).first()
     if not visit:
-        appointment_details = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+        appointment_details = (
+            db.query(Appointment).filter(Appointment.id == appointment_id).first()
+        )
         if not appointment_details:
             raise HTTPException(status_code=404, detail="Appointment not found")
-        billing_data = get_appointment_with_billing_per_appointment_id(db, appointment_details.id)
+        billing_data = get_appointment_with_billing_per_appointment_id(
+            db, appointment_details.id
+        )
         appointment_details.payment_details = billing_data.get("billing_summary")
         return APIResponse(
             status_code=200,
             success=True,
             message=f"Successfully fetched appointment details.",
-            data=VisitAllResponse.from_appointment_row(appointment_details)
+            data=VisitAllResponse.from_appointment_row(appointment_details),
         ).model_dump()
     else:
-        billing_data = get_appointment_with_billing_per_appointment_id(db, visit.appointment_id)
+        billing_data = get_appointment_with_billing_per_appointment_id(
+            db, visit.appointment_id
+        )
         visit.payment_details = billing_data.get("billing_summary")
         return APIResponse(
             status_code=200,
@@ -348,12 +405,13 @@ def get_patient_details_through_appointment_id(appointment_id: str, db: Session 
 
 
 @router.get(
-    "/get_appointment_by_date/{appointment_date}", response_model=APIResponse[list[AppointmentResponse]]
+    "/get_appointment_by_date/{appointment_date}",
+    response_model=APIResponse[list[AppointmentResponse]],
 )
 def get_appointment_by_date(
-        appointment_date: str,  # date = Query(..., description="Date in YYYY-MM-DD format"),
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    appointment_date: str,  # date = Query(..., description="Date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     results = (
         db.query(Appointment)
@@ -369,11 +427,12 @@ def get_appointment_by_date(
 
 
 @router.get(
-    "/booked_slots/get_date_wise_booked_slots")  # , response_model=APIResponse[list[AppointmentResponse]])
+    "/booked_slots/get_date_wise_booked_slots"
+)  # , response_model=APIResponse[list[AppointmentResponse]])
 def get_date_wise_booked_slots(
-        appointment_date: date = Query(..., description="Date in YYYY-MM-DD format"),
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    appointment_date: date = Query(..., description="Date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     results = (
         db.query(Appointment)
@@ -390,21 +449,26 @@ def get_date_wise_booked_slots(
 
 @router.get("/appointments_left")
 def get_appointments_left(
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Get number of appointments left for current subscription."""
     today_date = date.today()
-    total_appointments_today = db.query(Appointment).filter_by(
-        doctor_id=doctor_id,
-        scheduled_date=today_date
-    ).count()
+    total_appointments_today = (
+        db.query(Appointment)
+        .filter_by(doctor_id=doctor_id, scheduled_date=today_date)
+        .count()
+    )
 
-    completed_appointments_today = db.query(Appointment).filter_by(
-        doctor_id=doctor_id,
-        scheduled_date=today_date,
-        status=AppointmentStatus.COMPLETED.value
-    ).count()
+    completed_appointments_today = (
+        db.query(Appointment)
+        .filter_by(
+            doctor_id=doctor_id,
+            scheduled_date=today_date,
+            status=AppointmentStatus.COMPLETED.value,
+        )
+        .count()
+    )
 
     appointments_left = total_appointments_today - completed_appointments_today
 
@@ -412,5 +476,5 @@ def get_appointments_left(
         status_code=200,
         success=True,
         message="Successfully fetched appointments left for today.",
-        data={"appointments_left": appointments_left}
+        data={"appointments_left": appointments_left},
     ).model_dump()

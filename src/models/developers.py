@@ -89,14 +89,16 @@ class SubscriptionWithPlan(BaseModel):
             subscription_id=row.id,
             plan_id=row.plan.id,
             plan_name=row.plan.name,
-            plan_description=[description.strip() for description in row.plan.description.split(",")],
+            plan_description=[
+                description.strip() for description in row.plan.description.split(",")
+            ],
             plan_price=row.plan.price,
             plan_currency=row.plan.currency,
             subscription_startDate=row.start_date.date(),
             subscription_endDate=row.end_date.date() if row.end_date else None,
             is_active=row.is_active,
             created_at=row.created_at,
-            updated_at=row.updated_at
+            updated_at=row.updated_at,
         )
 
 
@@ -126,5 +128,7 @@ class UserWithAllSubscription(BaseModel):
             username=user_row.username,
             role=user_row.role,
             appointment_left=get_appointments_left_by_doctor(db, user_row.id),
-            subscription=[SubscriptionWithPlan.from_orm(sub) for sub in user_row.subscription]
+            subscription=[
+                SubscriptionWithPlan.from_orm(sub) for sub in user_row.subscription
+            ],
         )

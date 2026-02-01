@@ -10,7 +10,9 @@ from src.database import Base
 class Medicine(Base):
     __tablename__ = "medicines"
 
-    medicine_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    medicine_id = Column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
     doctor_id = Column(String(36), ForeignKey("users.id"))
     medicine_name = Column(String(255), nullable=False, index=True)
     composition = Column(Text, nullable=True)

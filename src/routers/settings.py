@@ -21,7 +21,9 @@ from src.schemas.tables.users import User
 from src.utility import get_appointments_left_by_doctor
 
 router = APIRouter(
-    prefix="/settings", tags=["settings"], responses={404: {"error": "Not found"}}
+    prefix="/settings",
+    tags=["settings"],
+    responses={404: {"error": "Not found"}},
     # , dependencies=[Depends(require_owner)]
 )
 
@@ -31,19 +33,19 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/general")  # , response_model=APIResponse[StaffOut])
 async def update_login_user(
-        mobile: Optional[str] = Form(None),
-        current_password: Optional[str] = Form(None),
-        password: Optional[str] = Form(None),
-        image: Optional[UploadFile] = File(None),
-        db: Session = Depends(get_db),
-        # doctor_id: UUID = Depends(get_current_doctor_id),
-        current_user=Depends(get_current_user_payload),
+    mobile: Optional[str] = Form(None),
+    current_password: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
+    image: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    # doctor_id: UUID = Depends(get_current_doctor_id),
+    current_user=Depends(get_current_user_payload),
 ):
     """Used to update data of login user(doctor/staff)."""
     updated_login_data = {
         "mobile": mobile,
         "current_password": current_password,
-        "password": password
+        "password": password,
     }
 
     username = current_user.get("sub")
@@ -53,7 +55,10 @@ async def update_login_user(
         login_details = db.query(User).filter_by(username=username).first()
 
     if not login_details:
-        raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
+        raise HTTPException(
+            status_code=404,
+            detail="Login username does not found in staff and user table.",
+        )
 
     if image:
         contents = await image.read()
@@ -78,23 +83,30 @@ async def update_login_user(
     else:
         message = "Login user details updated successfully."
 
-    current_password = updated_login_data.get('current_password')
-    password = updated_login_data.get('password')
+    current_password = updated_login_data.get("current_password")
+    password = updated_login_data.get("password")
 
     if current_password is None and password:
-        raise HTTPException(status_code=400, detail="Current password is required to set a new password.")
+        raise HTTPException(
+            status_code=400,
+            detail="Current password is required to set a new password.",
+        )
 
     if password is None and current_password:
-        raise HTTPException(status_code=400, detail="password is required to set a new password.")
+        raise HTTPException(
+            status_code=400, detail="password is required to set a new password."
+        )
 
     if current_password:
         if not pwd_context.verify(current_password, login_details.password):
-            raise HTTPException(status_code=400, detail="Current password is incorrect.")
+            raise HTTPException(
+                status_code=400, detail="Current password is incorrect."
+            )
 
         if password:
             hashed_pw = hash_password(password)
             login_details.password = hashed_pw
-    mobile = updated_login_data.get('mobile')
+    mobile = updated_login_data.get("mobile")
     if mobile:
         login_details.mobile = mobile
 
@@ -104,18 +116,21 @@ async def update_login_user(
         status_code=200,
         success=True,
         message=message,
-        data=UserOut.model_validate(login_details, from_attributes=True) if isinstance(login_details,
-                                                                                       User) else StaffOut.
-        model_validate(
-            login_details, from_attributes=True)).model_dump()
+        data=(
+            UserOut.model_validate(login_details, from_attributes=True)
+            if isinstance(login_details, User)
+            else StaffOut.model_validate(login_details, from_attributes=True)
+        ),
+    ).model_dump()
 
 
 @router.post("/upi")  # , response_model=APIResponse[StaffOut])
-def upsert_billing(data: DoctorsBillingInput,
-                   db: Session = Depends(get_db),
-                   doctor_id: UUID = Depends(get_current_doctor_id),
-                   current_user=Depends(get_current_user_payload),
-                   ):
+def upsert_billing(
+    data: DoctorsBillingInput,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    current_user=Depends(get_current_user_payload),
+):
     existing = db.query(DoctorPaymentDetails).filter_by(doctor_id=doctor_id).first()
     if existing:
         # Update existing billing record
@@ -125,7 +140,7 @@ def upsert_billing(data: DoctorsBillingInput,
     else:
         # Create new billing record
         billing_data = data.model_dump()
-        billing_data['doctor_id'] = doctor_id
+        billing_data["doctor_id"] = doctor_id
         # import pdb; pdb.set_trace()
         new_billing = DoctorPaymentDetails(**billing_data)
         db.add(new_billing)
@@ -135,16 +150,17 @@ def upsert_billing(data: DoctorsBillingInput,
         status_code=200,
         success=True,
         message="UPI details were updated successfully.",
-        data=None
+        data=None,
     ).model_dump()
 
 
 @router.get("/configurations")
-def get_doctor_billing_details(db: Session = Depends(get_db),
-                               doctor_id: UUID = Depends(get_current_doctor_id),
-                               current_user=Depends(get_current_user_payload),
-                               # request: Request = None
-                               ):
+def get_doctor_billing_details(
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    current_user=Depends(get_current_user_payload),
+    # request: Request = None
+):
     # Get general details
     username = current_user.get("sub")
     login_details = db.query(User).filter_by(username=username).first()
@@ -152,31 +168,45 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
         login_details = db.query(Staff).filter_by(username=username).first()
 
     if not login_details:
-        raise HTTPException(status_code=404, detail="Login username does not found in staff and user table.")
+        raise HTTPException(
+            status_code=404,
+            detail="Login username does not found in staff and user table.",
+        )
     final_data = dict()
-    final_data['general'] = UserOut.model_validate(login_details, from_attributes=True) if isinstance(login_details,
-                                                                                                      User) else StaffOut.model_validate(
-        login_details, from_attributes=True)
+    final_data["general"] = (
+        UserOut.model_validate(login_details, from_attributes=True)
+        if isinstance(login_details, User)
+        else StaffOut.model_validate(login_details, from_attributes=True)
+    )
 
     # Get UPI Details
     upi_details = db.query(DoctorPaymentDetails).filter_by(doctor_id=doctor_id).first()
-    final_data['upi'] = DoctorsBillingInput.model_validate(upi_details) if upi_details else None
+    final_data["upi"] = (
+        DoctorsBillingInput.model_validate(upi_details) if upi_details else None
+    )
 
     # Get Subscription Details
     # subscription_details = db.query(Subscription).filter_by(user_id=doctor_id, is_active=True).order_by(
     #     Subscription.created_at.desc()).first()  # order_by(Subscription.start_date.desc())
     # final_data['subscription'] = subscription_details # [sub for sub in subscription_details] if subscription_details else []
-    subscription = db.query(Subscription).filter(
-        Subscription.user_id == doctor_id).order_by(
-        Subscription.created_at.desc()).first()
-    final_data['subscription'] = SubscriptionOutWithPlan.from_orm(subscription) if subscription else None
-    final_data['subscription'].appointment_left = get_appointments_left_by_doctor(db, doctor_id)
+    subscription = (
+        db.query(Subscription)
+        .filter(Subscription.user_id == doctor_id)
+        .order_by(Subscription.created_at.desc())
+        .first()
+    )
+    final_data["subscription"] = (
+        SubscriptionOutWithPlan.from_orm(subscription) if subscription else None
+    )
+    final_data["subscription"].appointment_left = get_appointments_left_by_doctor(
+        db, doctor_id
+    )
 
     return APIResponse(
         status_code=200,
         success=True,
         message="Successfully fetched user details.",
-        data=final_data
+        data=final_data,
     ).model_dump()
 
     # if not upi_details:
@@ -196,7 +226,9 @@ def get_doctor_billing_details(db: Session = Depends(get_db),
 
 
 @router.get("/profile-images/{filename}")
-async def get_profile_image(filename: str, current_user=Depends(get_current_user_payload)):
+async def get_profile_image(
+    filename: str, current_user=Depends(get_current_user_payload)
+):
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
         return FileResponse(file_path)

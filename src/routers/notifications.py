@@ -16,7 +16,7 @@ from src.schemas.tables.notifications import Notification
 router = APIRouter(
     prefix="/notifications",
     tags=["notifications"],
-    responses={404: {"error": "Not found"}}
+    responses={404: {"error": "Not found"}},
     # ,
     # dependencies=[Depends(require_owner)]
 )
@@ -24,26 +24,24 @@ router = APIRouter(
 
 @router.post("/mark_as_read")
 def mark_as_read(
-        payload: NotificationUpdateRequest,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id)
+    payload: NotificationUpdateRequest,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """"""
     try:
         if payload.mark_all_as_read:
-            db.query(Notification).filter_by(doctor_id=doctor_id).update({Notification.read: True})
+            db.query(Notification).filter_by(doctor_id=doctor_id).update(
+                {Notification.read: True}
+            )
         else:
             if payload.id:
-                db.query(Notification).filter(Notification.doctor_id == doctor_id,
-                                              Notification.id.in_(payload.id)).update(
-                    {Notification.read: True}, synchronize_session=False
-                )
+                db.query(Notification).filter(
+                    Notification.doctor_id == doctor_id, Notification.id.in_(payload.id)
+                ).update({Notification.read: True}, synchronize_session=False)
         db.commit()
         return APIResponse(
-            status_code=200,
-            success=True,
-            message=f"Notifications updated",
-            data=None
+            status_code=200, success=True, message=f"Notifications updated", data=None
         ).model_dump()
     except Exception as e:
         db.rollback()
@@ -51,14 +49,17 @@ def mark_as_read(
 
 
 @router.get("")
-def get_notifications(page: Optional[int] = Query(None, ge=1),
-                      page_size: Optional[int] = Query(None, ge=1),
-                      status: Optional[str] = Query(None),
-                      startDate: str = Query(None, description="Filter by start date in YYYY-MM-DD format"),
-                      endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
-                      db: Session = Depends(get_db),
-                      doctor_id: UUID = Depends(get_current_doctor_id),
-                      ):
+def get_notifications(
+    page: Optional[int] = Query(None, ge=1),
+    page_size: Optional[int] = Query(None, ge=1),
+    status: Optional[str] = Query(None),
+    startDate: str = Query(
+        None, description="Filter by start date in YYYY-MM-DD format"
+    ),
+    endDate: str = Query(None, description="Filter by end date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+):
     """Fetch notifications, with optional filtering by type and date range."""
     query = db.query(Notification).filter_by(doctor_id=doctor_id)
 
@@ -72,7 +73,7 @@ def get_notifications(page: Optional[int] = Query(None, ge=1),
             status_code=200,
             success=True,
             message=f"Invalid date format. Please use YYYY-MM-DD, {str(ex)}",
-            data=None
+            data=None,
         ).model_dump()
 
     if status is None:
@@ -103,5 +104,5 @@ def get_notifications(page: Optional[int] = Query(None, ge=1),
         status_code=200,
         success=True,
         message=f"successfully fetched {msg} notifications",
-        data=[NotificationOut.model_validate(row) for row in final_query]
+        data=[NotificationOut.model_validate(row) for row in final_query],
     ).model_dump()

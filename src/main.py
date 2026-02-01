@@ -41,7 +41,11 @@ app = FastAPI(
 )
 app.include_router(api_router.router)
 
-app.mount("/images", StaticFiles(directory=os.path.join(os.getcwd(), "uploads")), name="images")
+app.mount(
+    "/images",
+    StaticFiles(directory=os.path.join(os.getcwd(), "uploads")),
+    name="images",
+)
 
 
 @app.on_event("startup")
@@ -74,15 +78,24 @@ def seed_data():
         existing_plan = db.query(Plan).first()
         if existing_plan is None:
             plans = [
-                Plan(s_no=1, name="Basic", price=2500, description="""Access to Dashboard,
+                Plan(
+                    s_no=1,
+                    name="Basic",
+                    price=2500,
+                    description="""Access to Dashboard,
                           Appointment Scheduling (Upto 110 appointments/months),
                           View Patient Records,
                           Notification Alerts on Application,
                           Staff Management (Upto 3 Staff Members),
                           Role Based Access Control for Staff Members
-                """
-                     , duration_months=1),
-                Plan(s_no=2, name="Professional", price=5000, description="""Access to Dashboard,
+                """,
+                    duration_months=1,
+                ),
+                Plan(
+                    s_no=2,
+                    name="Professional",
+                    price=5000,
+                    description="""Access to Dashboard,
                           Appointment Scheduling (Unlimited Patients),
                           View Patient Records (Unlimited Patients),
                           Track Billing for Cash/UPI/Card Payments,
@@ -90,7 +103,9 @@ def seed_data():
                           Export Billing Data,
                           Notification Alerts on Application,
                           Staff Management (Unlimited Staff Members),
-                          Role Based Access Control for Staff Members""", duration_months=1),
+                          Role Based Access Control for Staff Members""",
+                    duration_months=1,
+                ),
             ]
             db.add_all(plans)
             db.commit()
@@ -118,7 +133,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,  # Or specify your frontend URL
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS", "PUT"],  # ["*"],  # Or ["GET", "POST", "OPTIONS"]
+    allow_methods=[
+        "GET",
+        "POST",
+        "OPTIONS",
+        "PUT",
+    ],  # ["*"],  # Or ["GET", "POST", "OPTIONS"]
     allow_headers=["*"],  # Or ["Authorization", "Content-Type"]
 )
 
@@ -149,6 +169,7 @@ def run_scheduler_manually():
     update_appointment_status()
     update_subscription_data()
     return {"message": "Scheduler task executed successfully"}
+
 
 # if __name__ == "__main__":
 #     import uvicorn

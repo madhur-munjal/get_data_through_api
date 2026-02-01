@@ -9,6 +9,8 @@ from email.mime.text import MIMEText
 from typing import Optional
 from zoneinfo import ZoneInfo  # Python 3.9+, or use pytz for older versions
 
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 import pytz
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
@@ -61,23 +63,45 @@ def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
     :param message:
     :return:
     """
-    message = MIMEText(f"{message}")
-    from_email = os.getenv("from_email_id")
-    message["From"] = from_email
-    message["To"] = to_email
-    message["Subject"] = Subject
-    smtp_server = "smtpout.secureserver.net"
-    with smtplib.SMTP(smtp_server, 587, timeout=30) as server:
-        server.starttls()
-        server.login(from_email, os.getenv("email_password"))
-        server.sendmail(from_email, to_email, message.as_string())
-        server.quit()
 
-    # server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
-    # status_code, response = server.ehlo()
-    # status_code, response = server.login(from_email, os.getenv("email_password"))
-    # server.sendmail(from_email, to_email, message.as_string())
-    # server.quit()
+    message = Mail(
+        from_email=os.getenv("from_email_id"),  # must be verified in SendGrid
+        to_emails=to_email,
+        subject=Subject,
+        plain_text_content=message,
+    )
+    try:
+        sg = SendGridAPIClient(os.getenv("SendGridAPI"))
+        response = sg.send(message)
+        return {"status": response.status_code, "message": "Email sent successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
+#     """
+#     Send a message to the specified email address.
+#     :param to_email:
+#     :param message:
+#     :return:
+#     """
+#     message = MIMEText(f"{message}")
+#     from_email = os.getenv("from_email_id")
+#     message["From"] = from_email
+#     message["To"] = to_email
+#     message["Subject"] = Subject
+#     smtp_server = "smtpout.secureserver.net"
+#     with smtplib.SMTP(smtp_server, 587, timeout=30) as server:
+#         server.starttls()
+#         server.login(from_email, os.getenv("email_password"))
+#         server.sendmail(from_email, to_email, message.as_string())
+#         server.quit()
+#
+#     # server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
+#     # status_code, response = server.ehlo()
+#     # status_code, response = server.login(from_email, os.getenv("email_password"))
+#     # server.sendmail(from_email, to_email, message.as_string())
+#     # server.quit()
 
 
 def validate_user_fields(values, cls):
@@ -101,7 +125,8 @@ def validate_user_fields(values, cls):
 
     # Email validation
     if "email" in cls.model_fields and not EMAIL_REGEX.fullmatch(
-            values.email):  # "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): #
+        values.email
+    ):  # "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): #
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid email format"),
@@ -112,7 +137,8 @@ def validate_user_fields(values, cls):
 
     # Username validation
     if "username" in cls.model_fields and not USERNAME_REGEX.fullmatch(
-            values.username):  # "username" in values and not values["username"].isalnum() and not USERNAME_REGEX.fullmatch(values.username): #
+        values.username
+    ):  # "username" in values and not values["username"].isalnum() and not USERNAME_REGEX.fullmatch(values.username): #
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError("value_error", "Invalid username format"),
@@ -123,10 +149,13 @@ def validate_user_fields(values, cls):
 
     # Password validation
     # password can be NOne in setting page, as user only update mobile
-    if "password" in cls.model_fields and values.password is None:  # "password" in values and values.password is None: # :
+    if (
+        "password" in cls.model_fields and values.password is None
+    ):  # "password" in values and values.password is None: # :
         return values
     elif "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(
-            values.password):  # "password" in values and not PASSWORD_REGEX.fullmatch(values.password):#"password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
+        values.password
+    ):  # "password" in values and not PASSWORD_REGEX.fullmatch(values.password):#"password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
         errors.append(
             InitErrorDetails(
                 type=PydanticCustomError(
@@ -161,19 +190,27 @@ def save_data_to_db(data: dict, db_model, db_session):
         db_session.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=str(e)  # IntegrityError will come for "Duplicate entry or validation error etc.",
+            detail=str(
+                e
+            ),  # IntegrityError will come for "Duplicate entry or validation error etc.",
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
-def get_appointment_status(appointment_date_time: datetime,
-                           comparision_date_time: Optional[datetime] = None) -> str:
+def get_appointment_status(
+    appointment_date_time: datetime, comparision_date_time: Optional[datetime] = None
+) -> str:
     if comparision_date_time is None:
         comparision_date_time = datetime.now(pytz.timezone("Asia/Kolkata"))
-    if appointment_date_time.tzinfo is None or appointment_date_time.tzinfo.utcoffset(appointment_date_time) is None:
+    if (
+        appointment_date_time.tzinfo is None
+        or appointment_date_time.tzinfo.utcoffset(appointment_date_time) is None
+    ):
         # It's naive — localize it
-        appointment_date_time = pytz.timezone("Asia/Kolkata").localize(appointment_date_time)
+        appointment_date_time = pytz.timezone("Asia/Kolkata").localize(
+            appointment_date_time
+        )
     if appointment_date_time > comparision_date_time:
         return AppointmentStatus.UPCOMING.value
     else:
@@ -186,19 +223,23 @@ def get_appointment_summary(rows_as_query):
     for appointment, patient, billing in rows_as_query:
         if appointment.id not in summary:
             summary[appointment.id] = {
-                "appointment": {c.name: getattr(appointment, c.name) for c in appointment.__table__.columns},
-                "patient": {c.name: getattr(patient, c.name) for c in patient.__table__.columns},
+                "appointment": {
+                    c.name: getattr(appointment, c.name)
+                    for c in appointment.__table__.columns
+                },
+                "patient": {
+                    c.name: getattr(patient, c.name) for c in patient.__table__.columns
+                },
                 "billings": [],
-                "total_amount": 0
+                "total_amount": 0,
             }
             summary[appointment.id]["appointment"].pop("_sa_instance_state", None)
             summary[appointment.id]["patient"].pop("_sa_instance_state", None)
 
         if billing:  # .amount:
-            summary[appointment.id]["billings"].append({
-                "type": billing.type,
-                "amount": billing.amount
-            })
+            summary[appointment.id]["billings"].append(
+                {"type": billing.type, "amount": billing.amount}
+            )
             # {"3a65d550-1612-4913-8819-4bb42f916744":{"billings":[{"type":"Cash"}]}}
             summary[appointment.id]["total_amount"] += billing.amount
 
@@ -249,9 +290,13 @@ def update_appointment_status():
         # OR if your database stores naive datetime:
         # now = datetime.now()
 
-        appointments = db.query(Appointment).filter(
-            Appointment.status == AppointmentStatus.UPCOMING.value  # Use enum value
-        ).all()
+        appointments = (
+            db.query(Appointment)
+            .filter(
+                Appointment.status == AppointmentStatus.UPCOMING.value  # Use enum value
+            )
+            .all()
+        )
 
         for appt in appointments:
             # Combine date and time
@@ -262,7 +307,8 @@ def update_appointment_status():
                 scheduled_dt = scheduled_dt.replace(tzinfo=ZoneInfo("Asia/Kolkata"))
 
             print(
-                f"Appointment {appt.id}: Now={now}, Scheduled={scheduled_dt}, Now >= Scheduled: {now >= scheduled_dt}")
+                f"Appointment {appt.id}: Now={now}, Scheduled={scheduled_dt}, Now >= Scheduled: {now >= scheduled_dt}"
+            )
 
             if now >= scheduled_dt:
                 appt.status = AppointmentStatus.NO_SHOW.value
@@ -282,10 +328,21 @@ def update_subscription_data(doctor_id=None):
 
     # Step 1: Deactivate expired subscriptions
     if doctor_id:
-        expired = db.query(Subscription).filter(Subscription.user_id == doctor_id, Subscription.end_date < today,
-                                                Subscription.is_active == True).all()
+        expired = (
+            db.query(Subscription)
+            .filter(
+                Subscription.user_id == doctor_id,
+                Subscription.end_date < today,
+                Subscription.is_active == True,
+            )
+            .all()
+        )
     else:
-        expired = db.query(Subscription).filter(Subscription.end_date < today, Subscription.is_active == True).all()
+        expired = (
+            db.query(Subscription)
+            .filter(Subscription.end_date < today, Subscription.is_active == True)
+            .all()
+        )
     for sub in expired:
         sub.is_active = False
 
@@ -304,7 +361,10 @@ def update_subscription_data(doctor_id=None):
         # Deactivate others for this doc_id
         others = (
             db.query(Subscription)
-            .filter(Subscription.user_id == user_id, Subscription.id != latest.id if latest else True)
+            .filter(
+                Subscription.user_id == user_id,
+                Subscription.id != latest.id if latest else True,
+            )
             .all()
         )
         for sub in others:
@@ -322,6 +382,7 @@ def update_subscription_data(doctor_id=None):
 # def mark_otp_verified(token: str):
 #     redis_client.hset(token, "verified", "true")
 
+
 def get_subscription_active_status_by_doctor(db: Session, doctor_id):
     today = date.today()
     active_subscription = (
@@ -330,7 +391,7 @@ def get_subscription_active_status_by_doctor(db: Session, doctor_id):
             Subscription.user_id == doctor_id,
             Subscription.start_date <= today,
             Subscription.end_date >= today,
-            Subscription.is_active == True
+            Subscription.is_active == True,
         )
         .order_by(Subscription.start_date.desc())
         .first()
@@ -346,7 +407,7 @@ def get_appointments_left_by_doctor(db: Session, doctor_id):
             Subscription.user_id == doctor_id,
             Subscription.start_date <= today,
             Subscription.end_date >= today,
-            Subscription.is_active == True
+            Subscription.is_active == True,
         )
         .order_by(Subscription.start_date.desc())
         .first()
@@ -356,12 +417,15 @@ def get_appointments_left_by_doctor(db: Session, doctor_id):
         if active_subscription.plan.name == "Professional":
             appointment_left = -1
         else:
-            used_appointments = db.query(Appointment).filter(
-                Appointment.doctor_id == str(doctor_id),
-                Appointment.created_at.between(
-                    active_subscription.start_date,
-                    active_subscription.end_date
+            used_appointments = (
+                db.query(Appointment)
+                .filter(
+                    Appointment.doctor_id == str(doctor_id),
+                    Appointment.created_at.between(
+                        active_subscription.start_date, active_subscription.end_date
+                    ),
                 )
-            ).count()
+                .count()
+            )
             appointment_left = total_appointments_basic_plan - used_appointments
     return appointment_left

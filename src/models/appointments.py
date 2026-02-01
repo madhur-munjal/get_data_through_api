@@ -17,6 +17,7 @@ class AppointmentCreate(BaseModel):
 
 class AppointmentOut(BaseModel):
     """Schema for appointment output, used in response of create_appointment and update appointment API"""
+
     patient_id: str
     doctor_id: str
     # scheduled_date_time: datetime
@@ -29,12 +30,13 @@ class AppointmentOut(BaseModel):
 
 class AppointmentResponse(BaseModel):
     """Schema for appointment output., used in get_appointment_list API"""
+
     appointment_id: str
     scheduled_date: str
     scheduled_time: str
     patient_id: str
     mobile: str
-    type: int # New Patient, Follow-up
+    type: int  # New Patient, Follow-up
     status: int  # Completed, Upcoming, Cancelled
     paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)  # Paid, Unpaid
     firstName: Optional[str] = None
@@ -48,19 +50,21 @@ class AppointmentResponse(BaseModel):
     @classmethod
     def from_row(cls, row):
         return cls(
-            appointment_id=row['appointment'].id,
-            scheduled_date=row['appointment'].scheduled_date.strftime("%m/%d/%Y"),
-            scheduled_time=row['appointment'].scheduled_time.strftime("%H:%M:%S"),  # datetime.strptime( "%H:%M"),
-            patient_id=row['appointment'].patient_id,
-            mobile=row['patient'].mobile,
-            firstName=row['patient'].firstName,
-            lastName=row['patient'].lastName,
-            type=row['appointment'].type,
-            status=row['appointment'].status,
-            paymentStatus=row['appointment'].payment_status,
-            paymentDetails=row['billing'].get('billing_summary'),
-            amount=row['billing'].get('total_amount'),
-            pulseRate=row['appointment'].pulseRate
+            appointment_id=row["appointment"].id,
+            scheduled_date=row["appointment"].scheduled_date.strftime("%m/%d/%Y"),
+            scheduled_time=row["appointment"].scheduled_time.strftime(
+                "%H:%M:%S"
+            ),  # datetime.strptime( "%H:%M"),
+            patient_id=row["appointment"].patient_id,
+            mobile=row["patient"].mobile,
+            firstName=row["patient"].firstName,
+            lastName=row["patient"].lastName,
+            type=row["appointment"].type,
+            status=row["appointment"].status,
+            paymentStatus=row["appointment"].payment_status,
+            paymentDetails=row["billing"].get("billing_summary"),
+            amount=row["billing"].get("total_amount"),
+            pulseRate=row["appointment"].pulseRate,
             # get_appointment_status(
             #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
             #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
@@ -77,6 +81,7 @@ class AppointmentUpdate(BaseModel):
 
 class AppointmentById(BaseModel):
     """Schema to get patient and appointment details by appointment id"""
+
     patient_id: str
     firstName: str  # Required
     lastName: Optional[str] = None
@@ -85,9 +90,9 @@ class AppointmentById(BaseModel):
     gender: Optional[Gender] = None
     address: Optional[str] = None
     lastVisit: Optional[date] = None
-    bloodGroup: Optional[
-        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
-    ] = None
+    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+        None
+    )
     weight: Optional[float] = None
     bloodPressureUpper: Optional[int] = None
     bloodPressureLower: Optional[int] = None
@@ -121,7 +126,7 @@ class AppointmentById(BaseModel):
             type=row.type,
             status=row.status,
             paymentStatus=row.payment_status,
-            pulseRate=row.pulseRate
+            pulseRate=row.pulseRate,
         )
 
 

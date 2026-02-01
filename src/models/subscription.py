@@ -58,6 +58,7 @@ class SubscriptionRead(SubscriptionSchema):
 #             updated_at=obj.updated_at
 #         )
 
+
 class SubscriptionOutWithPlan(BaseModel):
     appointment_left: Optional[int] = None
     subscription_id: str
@@ -81,7 +82,9 @@ class SubscriptionOutWithPlan(BaseModel):
             user_id=row.user_id,
             plan_id=row.plan.id,
             plan_name=row.plan.name,
-            plan_description=[description.strip() for description in row.plan.description.split(",")],
+            plan_description=[
+                description.strip() for description in row.plan.description.split(",")
+            ],
             plan_price=row.plan.price,
             plan_currency=row.plan.currency,
             start_date=row.start_date.date(),
@@ -89,5 +92,5 @@ class SubscriptionOutWithPlan(BaseModel):
             is_active=row.is_active,
             auto_renew=row.auto_renew,
             created_at=row.created_at,
-            updated_at=row.updated_at
+            updated_at=row.updated_at,
         )
