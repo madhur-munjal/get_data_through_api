@@ -25,6 +25,7 @@ class SubscriptionCreate(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     auto_renew: bool = False
+    price: float = None
 
     model_config = {"from_attributes": True}
 

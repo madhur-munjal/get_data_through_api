@@ -110,10 +110,9 @@ def get_subscriptions_details_particular_doctor(
 
 
 @router.put("/users/")
-def update_user_details(
-        user_id: str, payload: DeveloperUserUpdate, db: Session = Depends(get_db)
-):
-    user = db.query(User).filter(User.id == user_id).first()
+def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_db)
+                        ):
+    user = db.query(User).filter(User.id == payload.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -121,14 +120,18 @@ def update_user_details(
     if payload.firstName is not None:
         user.firstName = payload.firstName
     if payload.lastName is not None:
-        user.lastName = payload.firstName
+        user.lastName = payload.lastName
     if payload.email is not None:
         user.email = payload.email
+    if payload.country is not None:
+        user.country = payload.country
+    if payload.mobile is not None:
+        user.mobile = payload.mobile
 
     # Update subscription if provided
     if payload.subscription:
         subscription = (
-            db.query(Subscription).filter(Subscription.user_id == user_id).first()
+            db.query(Subscription).filter(Subscription.user_id == payload.user_id).first()
         )
         # if not subscription:
         #     # If no subscription exists, create one
@@ -136,10 +139,10 @@ def update_user_details(
         #     db.add(subscription)
 
         if subscription:
-            # if payload.subscription.plan_name is not None:
-            #     subscription.plan.plan_name = payload.subscription.plan_name
-            # if payload.subscription.start_date is not None:
-            #     subscription.start_date = payload.subscription.start_date
+            if payload.subscription.plan_name is not None:
+                subscription.plan.plan_name = payload.subscription.plan_name
+            if payload.subscription.start_date is not None:
+                subscription.start_date = payload.subscription.start_date
             if payload.subscription.end_date is not None:
                 subscription.end_date = payload.subscription.end_date
             if payload.subscription.is_active is not None:

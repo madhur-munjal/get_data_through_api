@@ -48,17 +48,19 @@ class DevelopersTabOut(BaseModel):
 
 
 class SubscriptionUpdate(BaseModel):
-    # plan_name: Optional[str] = None
-    # start_date: Optional[date] = None
+    plan_name: Optional[str] = None
+    start_date: Optional[date] = None
     end_date: Optional[date] = None
     is_active: Optional[bool] = None
 
 
 class DeveloperUserUpdate(BaseModel):
-    firstName: Optional[constr(min_length=3, max_length=15)]  # Required
+    user_id: str  # Required
+    firstName: Optional[constr(min_length=3, max_length=15)] = None
     lastName: Optional[constr(min_length=3, max_length=15)] = None
     email: Optional[str]
     country: Optional[str] = None
+    mobile: Optional[constr(min_length=5)] = None
     subscription: Optional[SubscriptionUpdate] = None
 
     model_config = {"from_attributes": True}

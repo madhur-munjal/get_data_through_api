@@ -19,6 +19,7 @@ class Subscription(Base):
     auto_renew = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    price = Column(float, nullable=True)
 
     plan = relationship("Plan", back_populates="subscription")
     user = relationship("User", back_populates="subscription")
