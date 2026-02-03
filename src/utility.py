@@ -20,7 +20,7 @@ from pydantic_core import InitErrorDetails, PydanticCustomError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from src.constants import total_appointments_basic_plan
+from src.constants import total_appointments_basic_plan, total_appointments_professional_plan
 from src.database import SessionLocal
 from src.models.enums import AppointmentStatus
 from src.schemas.tables.appointments import Appointment
@@ -396,6 +396,11 @@ def get_subscription_active_status_by_doctor(db: Session, doctor_id):
         .order_by(Subscription.start_date.desc())
         .first()
     )
+    if not active_subscription:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your subscription has expired. Please renew your subscription to access this feature."
+        )
     return active_subscription is not None
 
 
@@ -414,18 +419,20 @@ def get_appointments_left_by_doctor(db: Session, doctor_id):
     )
     appointment_left = 0
     if active_subscription:
-        if active_subscription.plan.name == "Professional":
-            appointment_left = -1
-        else:
-            used_appointments = (
-                db.query(Appointment)
-                .filter(
-                    Appointment.doctor_id == str(doctor_id),
-                    Appointment.created_at.between(
-                        active_subscription.start_date, active_subscription.end_date
-                    ),
-                )
-                .count()
+        used_appointments = (
+            db.query(Appointment)
+            .filter(
+                Appointment.doctor_id == str(doctor_id),
+                Appointment.created_at.between(
+                    active_subscription.start_date, active_subscription.end_date
+                ),
             )
+            .count()
+        )
+        if active_subscription.plan.name == "Professional":
+            appointment_left = total_appointments_professional_plan - used_appointments
+        elif active_subscription.plan.name == "Basic":
             appointment_left = total_appointments_basic_plan - used_appointments
+        else:
+            appointment_left = active_subscription.appointment_credits - used_appointments
     return appointment_left

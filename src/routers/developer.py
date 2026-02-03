@@ -13,6 +13,7 @@ from src.models.response import APIResponse
 from src.schemas.tables.interested_users import InterestedUser
 from src.schemas.tables.subscription import Subscription
 from src.schemas.tables.users import User
+from src.schemas.tables.plans import Plan
 
 router = APIRouter(
     prefix="/developers",
@@ -32,12 +33,12 @@ def get_all_users_list(db: Session = Depends(get_db)):
     # user_query = db.query(User).all()
     # subscription_query = db.query(Subscription).filter(Subscription.user_id == user_id).first()
 
-    results = (
-        db.query(User, Subscription)
-        .join(Subscription, User.id == Subscription.user_id)
-        .filter(Subscription.is_active == True)
-        .all()
-    )
+    # results = (
+    #     db.query(User, Subscription)
+    #     .join(Subscription, User.id == Subscription.user_id)
+    #     .filter(Subscription.is_active == True)
+    #     .all()
+    # )
     latest_sub = (
         db.query(
             Subscription.user_id,
@@ -109,7 +110,7 @@ def get_subscriptions_details_particular_doctor(
     ).model_dump()
 
 
-@router.put("/users/")
+@router.put("/users")
 def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_db)
                         ):
     user = db.query(User).filter(User.id == payload.user_id).first()
@@ -127,31 +128,33 @@ def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_
         user.country = payload.country
     if payload.mobile is not None:
         user.mobile = payload.mobile
+    db.add(user)
 
     # Update subscription if provided
-    if payload.subscription:
-        subscription = (
-            db.query(Subscription).filter(Subscription.user_id == payload.user_id).first()
-        )
+    # if payload.subscription:
+    subscription = (
+        db.query(Subscription).filter(Subscription.user_id == payload.user_id).order_by(Subscription.created_at.desc()).first()
+    )
         # if not subscription:
         #     # If no subscription exists, create one
         #     subscription = Subscription(user_id=user_id)
         #     db.add(subscription)
-
-        if subscription:
-            if payload.subscription.plan_name is not None:
-                subscription.plan.plan_name = payload.subscription.plan_name
-            if payload.subscription.start_date is not None:
-                subscription.start_date = payload.subscription.start_date
-            if payload.subscription.end_date is not None:
-                subscription.end_date = payload.subscription.end_date
-            if payload.subscription.is_active is not None:
-                subscription.is_active = payload.subscription.is_active
-        else:
-            raise HTTPException(status_code=404, detail="Subscription not found")
-
+    if subscription:
+        plans = db.query(Plan).filter(Plan.name == payload.subscription.plan_name).first()
+        if plans:
+            subscription.plan = plans
+        if payload.subscription.start_date is not None:
+            subscription.start_date = payload.subscription.start_date
+        if payload.subscription.end_date is not None:
+            subscription.end_date = payload.subscription.end_date
+        if payload.subscription.is_active is not None:
+            subscription.is_active = payload.subscription.is_active
+    else:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    db.add(subscription)
     db.commit()
     db.refresh(user)
+    db.refresh(subscription)
 
     return APIResponse(
         status_code=200,

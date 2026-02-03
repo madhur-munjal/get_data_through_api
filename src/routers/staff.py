@@ -14,6 +14,7 @@ from src.models.response import APIResponse
 from src.models.staff import StaffCreate, StaffOut, DeleteStaffRequest, StaffUpdate
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
+from src.utility import get_subscription_active_status_by_doctor
 
 router = APIRouter(
     prefix="/staff",
@@ -30,6 +31,16 @@ def register(
     doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Register a new staff."""
+    get_subscription_active_status = get_subscription_active_status_by_doctor(
+        db, doctor_id
+    )
+    # if get_subscription_active_status is False:
+    #     return APIResponse(
+    #         status_code=200,
+    #         success=False,
+    #         message="Your subscription has expired. Please renew your subscription to access this feature.",
+    #         data=None,
+    #     ).model_dump()
     db_user = (
         db.query(Staff)
         .filter_by(doc_id=doctor_id)

@@ -16,6 +16,7 @@ from src.auth_utils import (
     create_refresh_token,
     hash_password,
 )
+from src.constants import total_appointments_basic_plan
 from src.database import get_db
 from src.models.billing import DoctorsBillingSave
 from src.models.response import APIResponse
@@ -82,6 +83,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         start_date=start_date,  # .isoformat() + "T07:11:38.682Z",
         end_date=end_date,  # "2025-12-28T07:11:38.682Z",
         auto_renew=False,
+        appointment_credits=total_appointments_basic_plan
     )
     create_subscription(subscription=subscription_data, db=db)
     return APIResponse(

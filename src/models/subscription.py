@@ -26,6 +26,7 @@ class SubscriptionCreate(BaseModel):
     end_date: Optional[datetime] = None
     auto_renew: bool = False
     price: float = None
+    appointment_credits: int = 0
 
     model_config = {"from_attributes": True}
 

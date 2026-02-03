@@ -237,13 +237,13 @@ def get_patients_list_on_basis_of_mobile(
     get_subscription_active_status = get_subscription_active_status_by_doctor(
         db, doctor_id
     )
-    if get_subscription_active_status is False:
-        return APIResponse(
-            status_code=200,
-            success=False,
-            message="Your subscription has expired. Please renew your subscription to access this feature.",
-            data=None,
-        ).model_dump()
+    # if get_subscription_active_status is False:
+    #     return APIResponse(
+    #         status_code=200,
+    #         success=False,
+    #         message="Your subscription has expired. Please renew your subscription to access this feature.",
+    #         data=None,
+    #     ).model_dump()
     query = db.query(Patient).filter_by(assigned_doctor_id=doctor_id)
 
     if mobile:

@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from src.constants import total_appointments_basic_plan, total_appointments_professional_plan
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
 from src.models.plans import PlanDetailsOnMail
@@ -18,7 +19,7 @@ from src.schemas.tables.interested_users import InterestedUser
 from src.schemas.tables.plans import Plan
 from src.schemas.tables.subscription import Subscription  # SQLAlchemy model
 from src.schemas.tables.users import User
-from src.utility import update_subscription_data, send_msg_on_email, save_data_to_db
+from src.utility import update_subscription_data, send_msg_on_email, save_data_to_db, get_appointments_left_by_doctor
 
 router = APIRouter(
     prefix="/subscriptions",
@@ -41,6 +42,15 @@ def create_subscription(
         input_data["user_id"] = str(doctor_id)
     else:
         input_data["user_id"] = str(subscription.user_id)
+    appointments_left = get_appointments_left_by_doctor(db, doctor_id)
+    # TODO: set appointment credits to zero for old subscription on new subscription creation
+    plan_details = db.query(Plan).filter_by(id=subscription.plan_id).first()
+    if plan_details.name == "Basic":
+        input_data["appointment_credits"] = total_appointments_basic_plan + appointments_left
+    elif plan_details.name == "Professional":
+        input_data["appointment_credits"] = total_appointments_professional_plan + appointments_left
+    else:
+        input_data["appointment_credits"] = subscription.appointment_credits + appointments_left
     new_sub = Subscription(**input_data)
     db.add(new_sub)
     db.commit()
