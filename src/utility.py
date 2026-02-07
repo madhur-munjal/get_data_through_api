@@ -462,6 +462,8 @@ def can_add_staff(db: Session, doctor_id) -> bool:
             limit = total_staff_basic_plans
         else:
             limit = None
+    else:
+        limit = 0
 
     current_staff_count = db.query(Staff).filter_by(doc_id=doctor_id).count()  # Staff count for the doctor
     return current_staff_count < limit if limit is not None else True
