@@ -9,21 +9,23 @@ from email.mime.text import MIMEText
 from typing import Optional
 from zoneinfo import ZoneInfo  # Python 3.9+, or use pytz for older versions
 
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 import pytz
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
 from jinja2 import Environment, FileSystemLoader
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from src.constants import total_appointments_basic_plan, total_appointments_professional_plan
+from src.constants import total_appointments_basic_plan, total_appointments_professional_plan, total_staff_basic_plans, \
+    total_staff_professional_plan
 from src.database import SessionLocal
 from src.models.enums import AppointmentStatus
 from src.schemas.tables.appointments import Appointment
+from src.schemas.tables.staff import Staff
 from src.schemas.tables.subscription import Subscription
 
 load_dotenv()
@@ -125,7 +127,7 @@ def validate_user_fields(values, cls):
 
     # Email validation
     if "email" in cls.model_fields and not EMAIL_REGEX.fullmatch(
-        values.email
+            values.email
     ):  # "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): #
         errors.append(
             InitErrorDetails(
@@ -137,7 +139,7 @@ def validate_user_fields(values, cls):
 
     # Username validation
     if "username" in cls.model_fields and not USERNAME_REGEX.fullmatch(
-        values.username
+            values.username
     ):  # "username" in values and not values["username"].isalnum() and not USERNAME_REGEX.fullmatch(values.username): #
         errors.append(
             InitErrorDetails(
@@ -150,11 +152,11 @@ def validate_user_fields(values, cls):
     # Password validation
     # password can be NOne in setting page, as user only update mobile
     if (
-        "password" in cls.model_fields and values.password is None
+            "password" in cls.model_fields and values.password is None
     ):  # "password" in values and values.password is None: # :
         return values
     elif "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(
-        values.password
+            values.password
     ):  # "password" in values and not PASSWORD_REGEX.fullmatch(values.password):#"password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
         errors.append(
             InitErrorDetails(
@@ -199,13 +201,13 @@ def save_data_to_db(data: dict, db_model, db_session):
 
 
 def get_appointment_status(
-    appointment_date_time: datetime, comparision_date_time: Optional[datetime] = None
+        appointment_date_time: datetime, comparision_date_time: Optional[datetime] = None
 ) -> str:
     if comparision_date_time is None:
         comparision_date_time = datetime.now(pytz.timezone("Asia/Kolkata"))
     if (
-        appointment_date_time.tzinfo is None
-        or appointment_date_time.tzinfo.utcoffset(appointment_date_time) is None
+            appointment_date_time.tzinfo is None
+            or appointment_date_time.tzinfo.utcoffset(appointment_date_time) is None
     ):
         # It's naive — localize it
         appointment_date_time = pytz.timezone("Asia/Kolkata").localize(
@@ -383,25 +385,25 @@ def update_subscription_data(doctor_id=None):
 #     redis_client.hset(token, "verified", "true")
 
 
-def get_subscription_active_status_by_doctor(db: Session, doctor_id):
-    today = date.today()
-    active_subscription = (
-        db.query(Subscription)
-        .filter(
-            Subscription.user_id == doctor_id,
-            Subscription.start_date <= today,
-            Subscription.end_date >= today,
-            Subscription.is_active == True,
-        )
-        .order_by(Subscription.start_date.desc())
-        .first()
-    )
-    if not active_subscription:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your subscription has expired. Please renew your subscription to access this feature."
-        )
-    return active_subscription is not None
+# def get_subscription_active_status_by_doctor(db: Session, doctor_id):
+#     today = date.today()
+#     active_subscription = (
+#         db.query(Subscription)
+#         .filter(
+#             Subscription.user_id == doctor_id,
+#             Subscription.start_date <= today,
+#             Subscription.end_date >= today,
+#             Subscription.is_active == True,
+#         )
+#         .order_by(Subscription.start_date.desc())
+#         .first()
+#     )
+#     if not active_subscription:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Your subscription has expired. Please renew your subscription to access this feature."
+#         )
+#     return active_subscription is not None
 
 
 def get_appointments_left_by_doctor(db: Session, doctor_id):
@@ -436,3 +438,30 @@ def get_appointments_left_by_doctor(db: Session, doctor_id):
         else:
             appointment_left = active_subscription.appointment_credits - used_appointments
     return appointment_left
+
+
+def can_add_staff(db: Session, doctor_id) -> bool:
+    # plan_name: str, current_staff_count: int
+
+    today = date.today()
+    active_subscription = (
+        db.query(Subscription)
+        .filter(
+            Subscription.user_id == doctor_id,
+            Subscription.start_date <= today,
+            Subscription.end_date >= today,
+            Subscription.is_active == True,
+        )
+        .order_by(Subscription.start_date.desc())
+        .first()
+    )
+    if active_subscription:
+        if active_subscription.plan.name == "Professional":
+            limit = total_staff_professional_plan
+        elif active_subscription.plan.name == "Basic":
+            limit = total_staff_basic_plans
+        else:
+            limit = None
+
+    current_staff_count = db.query(Staff).filter_by(doc_id=doctor_id).count()  # Staff count for the doctor
+    return current_staff_count < limit if limit is not None else True

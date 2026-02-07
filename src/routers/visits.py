@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from src.utility import get_subscription_active_status_by_doctor
+# from src.utility import get_subscription_active_status_by_doctor
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
@@ -32,9 +32,9 @@ def add_visits(
     current_user=Depends(get_current_user_payload),
 ):
     """Register a new visit details."""
-    get_subscription_active_status = get_subscription_active_status_by_doctor(
-        db, doctor_id
-    )
+    # get_subscription_active_status = get_subscription_active_status_by_doctor(
+    #     db, doctor_id
+    # )
     # if get_subscription_active_status is False:
     #     return APIResponse(
     #         status_code=200,

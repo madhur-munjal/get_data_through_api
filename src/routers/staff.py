@@ -1,7 +1,6 @@
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.auth_utils import hash_password
@@ -10,11 +9,9 @@ from src.dependencies import get_current_doctor_id
 from src.dependencies import require_admin_owner
 from src.models.response import APIResponse
 
-# from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.models.staff import StaffCreate, StaffOut, DeleteStaffRequest, StaffUpdate
 from src.schemas.tables.staff import Staff
-from src.schemas.tables.users import User
-from src.utility import get_subscription_active_status_by_doctor
+from src.utility import can_add_staff  # get_subscription_active_status_by_doctor
 
 router = APIRouter(
     prefix="/staff",
@@ -31,9 +28,18 @@ def register(
     doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Register a new staff."""
-    get_subscription_active_status = get_subscription_active_status_by_doctor(
-        db, doctor_id
-    )
+    can_add_staff_bool = can_add_staff(db, doctor_id)
+    if can_add_staff_bool is False:
+        return APIResponse(
+            status_code=200,
+            success=False,
+            message="You have reached the maximum limit to add the staff.",
+            data=None,
+        ).model_dump()
+
+    # get_subscription_active_status = get_subscription_active_status_by_doctor(
+    #     db, doctor_id
+    # )
     # if get_subscription_active_status is False:
     #     return APIResponse(
     #         status_code=200,

@@ -95,6 +95,7 @@ def require_admin_owner(user_payload=Depends(get_current_user_payload)):
         raise HTTPException(status_code=403, detail="Permission denied.")
     return user_payload
 
+
 def get_subscription_active_status_by_doctor(db: Session = Depends(get_db), doctor_id=Depends(get_current_doctor_id)):
 
     today = date.today()

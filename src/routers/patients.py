@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, or_, func
 from sqlalchemy.orm import Session, aliased
 
-from src.utility import get_subscription_active_status_by_doctor
+# from src.utility import get_subscription_active_status_by_doctor
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.models.patients import (
@@ -234,9 +234,9 @@ def get_patients_list_on_basis_of_mobile(
     db: Session = Depends(get_db),
     doctor_id: UUID = Depends(get_current_doctor_id),
 ):
-    get_subscription_active_status = get_subscription_active_status_by_doctor(
-        db, doctor_id
-    )
+    # get_subscription_active_status = get_subscription_active_status_by_doctor(
+    #     db, doctor_id
+    # )
     # if get_subscription_active_status is False:
     #     return APIResponse(
     #         status_code=200,

@@ -15,11 +15,11 @@ from src.models.medicines import (
 from src.models.response import APIResponse
 from src.schemas.tables.medicines import Medicine
 from src.utility import save_data_to_db
-from src.dependencies import get_subscription_active_status_by_doctor
+# from src.dependencies import get_subscription_active_status_by_doctor
 
 router = APIRouter(prefix="/medicines", tags=["Medicines"],
                    responses={404: {"error": "Not found"}},
-                   dependencies=[Depends(get_subscription_active_status_by_doctor)],
+                   # dependencies=[Depends(get_subscription_active_status_by_doctor)],
                    )
 
 

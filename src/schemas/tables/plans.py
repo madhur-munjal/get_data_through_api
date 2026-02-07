@@ -22,9 +22,9 @@ class Plan(Base):
     s_no = Column(Integer, nullable=False)
     name = Column(String(36), nullable=False)  # e.g., "Basic", "Premium"
     description = Column(Text, nullable=True)  # optional description
-    price = Column(Float, nullable=False)  # monthly or one-time price
+    price = Column(Float, nullable=True)  # monthly or one-time price
     currency = Column(String(5), default="INR")  # e.g., "INR", "USD"
-    duration_months = Column(Integer, nullable=False)  # plan duration
+    duration_months = Column(Integer, nullable=True)  # plan duration
 
     subscription = relationship("Subscription", back_populates="plan")
     interested_users = relationship("InterestedUser", back_populates="plan")
