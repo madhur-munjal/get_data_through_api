@@ -17,6 +17,7 @@ from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -406,14 +407,15 @@ def update_subscription_data(doctor_id=None):
 #     return active_subscription is not None
 
 
-def get_appointments_left_by_doctor(db: Session, doctor_id):
+def get_appointments_left_by_doctor(db: Session, doctor_id) -> int:
     today = date.today()
+
     active_subscription = (
         db.query(Subscription)
         .filter(
             Subscription.user_id == doctor_id,
-            Subscription.start_date <= today,
-            Subscription.end_date >= today,
+            func.date(Subscription.start_date) <= today,
+            func.date(Subscription.end_date) >= today,
             Subscription.is_active == True,
         )
         .order_by(Subscription.start_date.desc())

@@ -38,8 +38,9 @@ def create_subscription(
         dependencies=Depends(require_owner),
 ):
     input_data = subscription.dict()
+    doctor_id = str(doctor_id)
     if subscription.user_id is None:
-        input_data["user_id"] = str(doctor_id)
+        input_data["user_id"] = doctor_id
     else:
         input_data["user_id"] = str(subscription.user_id)
     appointments_left = get_appointments_left_by_doctor(db, doctor_id)
