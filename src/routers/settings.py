@@ -18,7 +18,7 @@ from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.subscription import Subscription
 from src.schemas.tables.users import User
-from src.utility import get_appointments_left_by_doctor
+from src.utility import get_appointments_left_by_doctor, get_staff_left_count
 
 router = APIRouter(
     prefix="/settings",
@@ -201,6 +201,7 @@ def get_doctor_billing_details(
     final_data["subscription"].appointment_left = get_appointments_left_by_doctor(
         db, doctor_id
     )
+    final_data["staff_left"] = get_staff_left_count(db, doctor_id)
 
     return APIResponse(
         status_code=200,

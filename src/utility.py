@@ -442,7 +442,7 @@ def get_appointments_left_by_doctor(db: Session, doctor_id) -> int:
     return appointment_left
 
 
-def can_add_staff(db: Session, doctor_id) -> bool:
+def get_staff_left_count(db: Session, doctor_id) -> bool:
     # plan_name: str, current_staff_count: int
 
     today = date.today()
@@ -468,4 +468,5 @@ def can_add_staff(db: Session, doctor_id) -> bool:
         limit = 0
 
     current_staff_count = db.query(Staff).filter_by(doc_id=doctor_id).count()  # Staff count for the doctor
-    return current_staff_count < limit if limit is not None else True
+    return limit - current_staff_count
+    # return current_staff_count < limit if limit is not None else True
