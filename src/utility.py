@@ -15,8 +15,6 @@ from fastapi import HTTPException, status
 from jinja2 import Environment, FileSystemLoader
 from pydantic import ValidationError
 from pydantic_core import InitErrorDetails, PydanticCustomError
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -59,26 +57,32 @@ def send_otp_email(to_email, otp):
     server.quit()
 
 
-def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
-    """
-    Send a message to the specified email address.
-    :param to_email:
-    :param message:
-    :return:
-    """
+async def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
+    BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+    BREVO_URL = "https://api.brevo.com/v3/smtp/email"
+    from_email = os.getenv("SMTP_USER")
 
-    message = Mail(
-        from_email=os.getenv("from_email_id"),  # must be verified in SendGrid
-        to_emails=to_email,
-        subject=Subject,
-        plain_text_content=message,
-    )
-    try:
-        sg = SendGridAPIClient(os.getenv("SendGridAPI"))
-        response = sg.send(message)
+    # def send_email(to_email: str, subject: str, text_content: str):
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    payload = {
+        "sender": {"name": "SmartHeal App", "email": from_email},
+        "to": [{"email": to_email}],
+        "subject": Subject,
+        "textContent": message
+    }
+    import httpx
+    async with httpx.AsyncClient() as client:
+        response = await client.post(BREVO_URL, headers=headers, json=payload)
+        print(response.json())
+        print("************")
         return {"status": response.status_code, "message": "Email sent successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    # response = requests.post(BREVO_URL, headers=headers, data=json.dumps(payload))
+    # return response.json()
 
 
 # def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
@@ -88,23 +92,68 @@ def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
 #     :param message:
 #     :return:
 #     """
-#     message = MIMEText(f"{message}")
-#     from_email = os.getenv("from_email_id")
-#     message["From"] = from_email
+#
+#     message = Mail(
+#         from_email=os.getenv("from_email_id"),  # must be verified in SendGrid
+#         to_emails=to_email,
+#         subject=Subject,
+#         plain_text_content=message,
+#     )
+#     try:
+#         sg = SendGridAPIClient(os.getenv("SendGridAPI"))
+#         response = sg.send(message)
+#         return {"status": response.status_code, "message": "Email sent successfully"}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+# async def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
+#     """
+#     Send a message to the specified email address.
+#     :param to_email:
+#     :param message:
+#     :return:
+#     """
+#     from email.message import EmailMessage
+#     SMTP_SERVER = os.getenv("SMTP_SERVER")
+#     SMTP_PORT = int(os.getenv("SMTP_PORT"))
+#     SMTP_USER = os.getenv("SMTP_USER")
+#     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+#
+#     msg = EmailMessage()
+#     message["From"] = SMTP_USER
 #     message["To"] = to_email
 #     message["Subject"] = Subject
-#     smtp_server = "smtpout.secureserver.net"
-#     with smtplib.SMTP(smtp_server, 587, timeout=30) as server:
-#         server.starttls()
-#         server.login(from_email, os.getenv("email_password"))
-#         server.sendmail(from_email, to_email, message.as_string())
-#         server.quit()
+#     message.set_content(message)
 #
-#     # server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
-#     # status_code, response = server.ehlo()
-#     # status_code, response = server.login(from_email, os.getenv("email_password"))
-#     # server.sendmail(from_email, to_email, message.as_string())
-#     # server.quit()
+#     await aiosmtplib.send(
+#         msg,
+#         hostname=SMTP_SERVER,
+#         port=SMTP_PORT,
+#         start_tls=True,
+#         username=SMTP_USER,
+#         password=SMTP_PASSWORD,
+#     )
+#     return {"message": "Email sent successfully"}
+# return {"status": "sent"}
+
+# message = MIMEText(f"{message}")
+# from_email = os.getenv("from_email_id")
+# message["From"] = from_email
+# message["To"] = to_email
+# message["Subject"] = Subject
+# smtp_server = "smtpout.secureserver.net"
+# with smtplib.SMTP(smtp_server, 587, timeout=30) as server:
+#     server.starttls()
+#     server.login(from_email, os.getenv("email_password"))
+#     server.sendmail(from_email, to_email, message.as_string())
+#     server.quit()
+
+# server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
+# status_code, response = server.ehlo()
+# status_code, response = server.login(from_email, os.getenv("email_password"))
+# server.sendmail(from_email, to_email, message.as_string())
+# server.quit()
 
 
 def validate_user_fields(values, cls):

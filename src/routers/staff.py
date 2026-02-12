@@ -11,6 +11,7 @@ from src.models.response import APIResponse
 from src.models.staff import StaffCreate, StaffOut, DeleteStaffRequest, StaffUpdate
 from src.schemas.tables.staff import Staff
 from src.utility import get_staff_left_count  # get_subscription_active_status_by_doctor
+from src.utility import send_msg_on_email
 
 router = APIRouter(
     prefix="/staff",
@@ -21,7 +22,7 @@ router = APIRouter(
 
 
 @router.post("/register", response_model=APIResponse[StaffOut])
-def register(
+async def register(
         user: StaffCreate,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
@@ -78,12 +79,11 @@ def register(
     db.refresh(db_user)
     if user.sendToEmail:
         # send email to staff with updated details
-        from src.utility import send_msg_on_email as send_email
 
         subject = "Your staff account details - SmartHealApp"
         body = f"""
 
-        Here are your staff account details:
+        Here are your account details:
 
         First Name: {user.firstName}
         Last Name: {user.lastName}
@@ -99,7 +99,7 @@ def register(
         Best regards,
         SmartHealApp Management Team
         """
-        send_email(to_email=user.email, message=body, Subject=subject)
+        await send_msg_on_email(to_email=user.email, message=body, Subject=subject)
 
     return APIResponse(
         status_code=200,
@@ -199,7 +199,7 @@ def delete_staff(
 
 
 @router.post("/update", response_model=APIResponse[StaffOut])
-def update_staff(
+async def update_staff(
         staff_updated_data: StaffUpdate,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
@@ -215,8 +215,7 @@ def update_staff(
     db.commit()
     db.refresh(staff_details)
     if staff_updated_data.sendToEmail:
-        # send email to staff with updated details
-        from src.utility import send_msg_on_email as send_email
+        # send email to staff with updated details]
 
         subject = "Your staff account details have been updated"
         body = f"""
@@ -237,7 +236,7 @@ def update_staff(
         Best regards,
         SmartHealApp Management Team
         """
-        send_email(to_email=staff_details.email, message=body, Subject=subject)
+        await send_msg_on_email(to_email=staff_details.email, message=body, Subject=subject)
     return APIResponse(
         status_code=200,
         success=True,

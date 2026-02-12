@@ -68,7 +68,7 @@ def create_subscription(
 @router.post(
     "/send_subscription_details_on_mail", response_model=APIResponse[SubscriptionRead]
 )
-def send_subscription_details_on_mail(
+async def send_subscription_details_on_mail(
         plan_details: PlanDetailsOnMail,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
@@ -114,7 +114,7 @@ def send_subscription_details_on_mail(
     """
     interested_users_data = {'doctor_id': str(doctor_id), 'plan_id': plan_details.id}
     save_data_to_db(interested_users_data, InterestedUser, db)
-    send_msg_on_email(
+    await send_msg_on_email(
         to_email=os.getenv("from_email_id"), message=body, Subject=subject
     )
     # send_email(to_email=os.getenv("from_email_id"), message=body, Subject=subject)
