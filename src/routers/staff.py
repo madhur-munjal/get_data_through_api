@@ -99,7 +99,7 @@ async def register(
         Best regards,
         SmartHeal App Management Team
         """
-        await send_msg_on_email(to_email=user.email, message=body, Subject=subject)
+        await send_msg_on_email(to_email=user.email, text_message=body, Subject=subject)
 
     return APIResponse(
         status_code=200,
@@ -236,7 +236,7 @@ async def update_staff(
         Best regards,
         SmartHeal App Management Team
         """
-        await send_msg_on_email(to_email=staff_details.email, message=body, Subject=subject)
+        await send_msg_on_email(to_email=staff_details.email, text_message=body, Subject=subject)
     return APIResponse(
         status_code=200,
         success=True,

@@ -76,8 +76,8 @@ async def send_subscription_details_on_mail(
     db_user = db.query(User).filter_by(id=doctor_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    plan_details = db.query(Plan).filter_by(id=plan_details.plan_id).first()
-    if not plan_details:
+    plan_details_query = db.query(Plan).filter_by(id=plan_details.plan_id).first()
+    if not plan_details_query:
         raise HTTPException(status_code=404, detail="Plan details not found")
 
     subject = "User Interested in Subscription – Action Required"
@@ -98,10 +98,10 @@ async def send_subscription_details_on_mail(
 
 
     Subscription Details:
-    - Name: {plan_details.name}
-    - Description: {plan_details.description}
-    - Price: {plan_details.price}
-    - Currency: {plan_details.currency}
+    - Name: {plan_details_query.name}
+    - Description: {plan_details_query.description}
+    - Price: {plan_details_query.price}
+    - Currency: {plan_details_query.currency}
     
     Next Steps:
     - [ ] Send follow-up email
@@ -113,15 +113,18 @@ async def send_subscription_details_on_mail(
     SmartHeal App Management Team
     """
     extra_fields = {}
-    for k, v in plan_details.items():
-        if k != "plan_id":
-            extra_fields[k] = f"{k}={v}"
+    provided_data = plan_details.dict(exclude_unset=True)
+    # return {"provided_keys": list(provided_data.keys()), "data": provided_data}
 
-    interested_users_data = {'doctor_id': str(doctor_id), 'plan_id': plan_details.id,
+    for k, v in provided_data.items():
+        if k != "plan_id":
+            extra_fields[k] = v
+
+    interested_users_data = {'doctor_id': str(doctor_id), 'plan_id': plan_details_query.id,
                              'source': 'website_subscription_page', 'status': 'interested', 'notes': str(extra_fields)}
     save_data_to_db(interested_users_data, InterestedUser, db)
     await send_msg_on_email(
-        to_email=os.getenv("from_email_id"), message=body, Subject=subject
+        to_email=os.getenv("from_email_id"), text_message=body, Subject=subject
     )
     # send_email(to_email=os.getenv("from_email_id"), message=body, Subject=subject)
     return APIResponse(
