@@ -38,26 +38,28 @@ def generate_otp(length=4):
     return "".join(random.choices(string.digits, k=length))
 
 
-def send_otp_email(to_email, otp):
+async def send_otp_email(to_email, otp):
     template = env.get_template("otp_email.html")
     html_content = template.render(otp=otp)
-    message = MIMEText(html_content, "html")
-    print(message)
+    await send_msg_on_email(to_email, html_message=html_content, Subject="SmartHeal App, Password Reset OTP")
+    #
+    # message = MIMEText(html_content, "html")
+    # print(message)
+    #
+    # # message = MIMEText(f"Your OTP is: {otp}")
+    # from_email = os.getenv("from_email_id")  # "support@smarthealapp.com"
+    # message["From"] = from_email
+    # message["To"] = to_email
+    # message["Subject"] = "SmartHeal App, Password Reset OTP"
+    # smtp_server = "smtpout.secureserver.net"  # 'mail.firsttoothclinic.com'
+    # server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
+    # status_code, response = server.ehlo()
+    # status_code, response = server.login(from_email, os.getenv("email_password"))
+    # server.sendmail(from_email, to_email, message.as_string())
+    # server.quit()
 
-    # message = MIMEText(f"Your OTP is: {otp}")
-    from_email = os.getenv("from_email_id")  # "support@smarthealapp.com"
-    message["From"] = from_email
-    message["To"] = to_email
-    message["Subject"] = "Smart-Heal, Password Reset OTP"
-    smtp_server = "smtpout.secureserver.net"  # 'mail.firsttoothclinic.com'
-    server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
-    status_code, response = server.ehlo()
-    status_code, response = server.login(from_email, os.getenv("email_password"))
-    server.sendmail(from_email, to_email, message.as_string())
-    server.quit()
 
-
-async def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
+async def send_msg_on_email(to_email, text_message: str = None, html_message: str = None, Subject="SmartHeal App"):
     BREVO_API_KEY = os.getenv("BREVO_API_KEY")
     BREVO_URL = "https://api.brevo.com/v3/smtp/email"
     from_email = os.getenv("SMTP_USER")
@@ -68,12 +70,17 @@ async def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
         "api-key": BREVO_API_KEY,
         "content-type": "application/json"
     }
+
     payload = {
         "sender": {"name": "SmartHeal App", "email": from_email},
         "to": [{"email": to_email}],
-        "subject": Subject,
-        "textContent": message
+        "subject": Subject
     }
+    if text_message:
+        payload["textContent"] = text_message
+    if html_message:
+        payload["htmlContent"] = html_message
+
     import httpx
     async with httpx.AsyncClient() as client:
         response = await client.post(BREVO_URL, headers=headers, json=payload)

@@ -110,9 +110,15 @@ async def send_subscription_details_on_mail(
     
     Thank you,
     Best regards,
-    SmartHealApp Management Team
+    SmartHeal App Management Team
     """
-    interested_users_data = {'doctor_id': str(doctor_id), 'plan_id': plan_details.id}
+    extra_fields = {}
+    for k, v in plan_details.items():
+        if k != "plan_id":
+            extra_fields[k] = f"{k}={v}"
+
+    interested_users_data = {'doctor_id': str(doctor_id), 'plan_id': plan_details.id,
+                             'source': 'website_subscription_page', 'status': 'interested', 'notes': str(extra_fields)}
     save_data_to_db(interested_users_data, InterestedUser, db)
     await send_msg_on_email(
         to_email=os.getenv("from_email_id"), message=body, Subject=subject
@@ -121,7 +127,7 @@ async def send_subscription_details_on_mail(
     return APIResponse(
         status_code=200,
         success=True,
-        message=f"Thank you for showing interest on Smart Heal. Smart-Heal support team will get back to you shortly!",
+        message=f"Thank you for showing interest on SmartHeal App. Smart-Heal App support team will get back to you shortly!",
         # data=None,
     ).model_dump()
 

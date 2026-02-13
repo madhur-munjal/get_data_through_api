@@ -80,7 +80,7 @@ async def register(
     if user.sendToEmail:
         # send email to staff with updated details
 
-        subject = "Your staff account details - SmartHealApp"
+        subject = "Your staff account details - SmartHeal App"
         body = f"""
 
         Here are your account details:
@@ -97,7 +97,7 @@ async def register(
         If you did not request this change, please contact the administrator immediately.
 
         Best regards,
-        SmartHealApp Management Team
+        SmartHeal App Management Team
         """
         await send_msg_on_email(to_email=user.email, message=body, Subject=subject)
 
@@ -234,7 +234,7 @@ async def update_staff(
         If you did not request this change, please contact the administrator immediately.
 
         Best regards,
-        SmartHealApp Management Team
+        SmartHeal App Management Team
         """
         await send_msg_on_email(to_email=staff_details.email, message=body, Subject=subject)
     return APIResponse(

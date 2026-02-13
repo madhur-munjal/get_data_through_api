@@ -228,7 +228,7 @@ def logout(
 
 
 @router.post("/forgot-password", response_model=APIResponse)
-def forgot_password(
+async def forgot_password(
     request: ForgotPasswordRequest,
     db: Session = Depends(get_db),
     redis_client=Depends(get_redis_client),
@@ -250,7 +250,7 @@ def forgot_password(
     redis_client.hmset(token, session_data)
     redis_client.expire(token, timedelta(minutes=expiry_minutes))
     try:
-        send_otp_email(request.email, otp)
+        await send_otp_email(request.email, otp)
         return APIResponse(
             status_code=200,
             success=True,

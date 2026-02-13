@@ -42,5 +42,9 @@ class PlanOut(BaseModel):
 
 class PlanDetailsOnMail(BaseModel):
     plan_id: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    company_name: Optional[str] = None
+    description: Optional[str] = None
 
     model_config = {"from_attributes": True}
