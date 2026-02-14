@@ -1,38 +1,57 @@
 import os
-from datetime import datetime, date
+from datetime import datetime
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from src.constants import total_appointments_basic_plan, total_appointments_professional_plan
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
-from src.models.plans import PlanOut, PlanDetailsOnMail
-from src.models.subscription import SubscriptionOutWithPlan
-
+from src.models.plans import PlanDetailsOnMail
 from src.models.response import APIResponse
-from src.models.subscription import SubscriptionCreate, SubscriptionRead  # Pydantic models
-from src.models.users import UserOut
+from src.models.subscription import (
+    SubscriptionCreate,
+    SubscriptionRead,
+)  # Pydantic models
+from src.models.subscription import SubscriptionOutWithPlan
+from src.schemas.tables.interested_users import InterestedUser
 from src.schemas.tables.plans import Plan
 from src.schemas.tables.subscription import Subscription  # SQLAlchemy model
 from src.schemas.tables.users import User
-from src.utility import update_subscription_data
+from src.utility import update_subscription_data, send_msg_on_email, save_data_to_db, get_appointments_left_by_doctor
 
 router = APIRouter(
-    prefix="/subscriptions", tags=["Subscriptions"], responses={404: {"error": "Not found"}}
+    prefix="/subscriptions",
+    tags=["Subscriptions"],
+    responses={404: {"error": "Not found"}},
     # , dependencies=[Depends(require_owner)]
 )
 
 
 # 📥 Create a new subscription
 @router.post("", response_model=APIResponse[SubscriptionRead])
-def create_subscription(subscription: SubscriptionCreate, db: Session = Depends(get_db),
-                        doctor_id: UUID = Depends(get_current_doctor_id),
-                        dependencies=Depends(require_owner)):
+def create_subscription(
+        subscription: SubscriptionCreate,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        dependencies=Depends(require_owner),
+):
     input_data = subscription.dict()
+    doctor_id = str(doctor_id)
     if subscription.user_id is None:
-        input_data["user_id"] = str(doctor_id)
+        input_data["user_id"] = doctor_id
     else:
         input_data["user_id"] = str(subscription.user_id)
+    appointments_left = get_appointments_left_by_doctor(db, doctor_id)
+    # TODO: set appointment credits to zero for old subscription on new subscription creation
+    plan_details = db.query(Plan).filter_by(id=subscription.plan_id).first()
+    if plan_details.name == "Basic":
+        input_data["appointment_credits"] = total_appointments_basic_plan + appointments_left
+    elif plan_details.name == "Professional":
+        input_data["appointment_credits"] = total_appointments_professional_plan + appointments_left
+    else:
+        input_data["appointment_credits"] = subscription.appointment_credits + appointments_left
     new_sub = Subscription(**input_data)
     db.add(new_sub)
     db.commit()
@@ -46,25 +65,21 @@ def create_subscription(subscription: SubscriptionCreate, db: Session = Depends(
     ).model_dump()
 
 
-@router.post("/send_subscription_details_on_mail", response_model=APIResponse[SubscriptionRead])
-def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Session = Depends(get_db),
-                                      doctor_id: UUID = Depends(get_current_doctor_id)):
-    db_user = (
-        db.query(User)
-        .filter_by(id=doctor_id)
-        .first()
-    )
+@router.post(
+    "/send_subscription_details_on_mail", response_model=APIResponse[SubscriptionRead]
+)
+async def send_subscription_details_on_mail(
+        plan_details: PlanDetailsOnMail,
+        db: Session = Depends(get_db),
+        doctor_id: UUID = Depends(get_current_doctor_id),
+):
+    db_user = db.query(User).filter_by(id=doctor_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    plan_details = (
-        db.query(Plan)
-        .filter_by(id=plan_details.plan_id)
-        .first()
-    )
-    if not plan_details:
-        raise HTTPException(status_code=404, detail="User not found")
+    plan_details_query = db.query(Plan).filter_by(id=plan_details.plan_id).first()
+    if not plan_details_query:
+        raise HTTPException(status_code=404, detail="Plan details not found")
 
-    from src.utility import send_msg_on_email as send_email
     subject = "User Interested in Subscription – Action Required"
     body = f"""
     Dear team,
@@ -83,10 +98,10 @@ def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Sessi
 
 
     Subscription Details:
-    - Name: {plan_details.name}
-    - Description: {plan_details.description}
-    - Price: {plan_details.price}
-    - Currency: {plan_details.currency}
+    - Name: {plan_details_query.name}
+    - Description: {plan_details_query.description}
+    - Price: {plan_details_query.price}
+    - Currency: {plan_details_query.currency}
     
     Next Steps:
     - [ ] Send follow-up email
@@ -95,13 +110,27 @@ def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Sessi
     
     Thank you,
     Best regards,
-    SmartHealApp Management Team
+    SmartHeal App Management Team
     """
-    send_email(to_email=os.getenv("from_email_id"), message=body, Subject=subject)
+    extra_fields = {}
+    provided_data = plan_details.dict(exclude_unset=True)
+    # return {"provided_keys": list(provided_data.keys()), "data": provided_data}
+
+    for k, v in provided_data.items():
+        if k != "plan_id":
+            extra_fields[k] = v
+
+    interested_users_data = {'doctor_id': str(doctor_id), 'plan_id': plan_details_query.id,
+                             'source': 'website_subscription_page', 'status': 'interested', 'notes': str(extra_fields)}
+    save_data_to_db(interested_users_data, InterestedUser, db)
+    await send_msg_on_email(
+        to_email=os.getenv("from_email_id"), text_message=body, Subject=subject
+    )
+    # send_email(to_email=os.getenv("from_email_id"), message=body, Subject=subject)
     return APIResponse(
         status_code=200,
         success=True,
-        message=f"Thank you for showing interest on Smart Heal. Smart-Heal support team will get back to you shortly!",
+        message=f"Thank you for showing interest on SmartHeal App. Smart-Heal App support team will get back to you shortly!",
         # data=None,
     ).model_dump()
 
@@ -146,16 +175,20 @@ def send_subscription_details_on_mail(plan_details: PlanDetailsOnMail, db: Sessi
 #     ).model_dump()
 
 
-@router.get("/get_subscription_billing", response_model=APIResponse)
-def get_subscription_billing(db: Session = Depends(get_db),
-                             doctor_id: UUID = Depends(get_current_doctor_id)):
-    all_subscription_details = db.query(Subscription, Plan).join(Plan, Subscription.plan_id == Plan.id).filter(
-        Subscription.user_id == doctor_id).all()
+@router.get("/get_subscription", response_model=APIResponse)
+def get_subscription(
+        db: Session = Depends(get_db), doctor_id: UUID = Depends(get_current_doctor_id)
+):
+    all_subscription_details = (
+        db.query(Subscription).filter(Subscription.user_id == doctor_id).all()
+    )
     return APIResponse(
         status_code=200,
         success=True,
         message=f"Successfully fetched the subscription data!",
-        data=[SubscriptionOutWithPlan.from_orm(subscription, plan) for subscription, plan in all_subscription_details],
+        data=[
+            SubscriptionOutWithPlan.from_orm(row) for row in all_subscription_details
+        ],
     ).model_dump()
 
 # # 📄 Get all subscriptions

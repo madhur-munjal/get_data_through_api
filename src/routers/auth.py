@@ -1,6 +1,6 @@
 import uuid
+from datetime import date, timedelta
 from datetime import datetime, timezone
-from datetime import timedelta
 
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -16,6 +16,7 @@ from src.auth_utils import (
     create_refresh_token,
     hash_password,
 )
+from src.constants import total_appointments_basic_plan
 from src.database import get_db
 from src.models.billing import DoctorsBillingSave
 from src.models.response import APIResponse
@@ -26,10 +27,12 @@ from src.models.users import (
     UserCreate,
     UserLogin,
     UserOut,
-    VerifyOTPRequest
+    VerifyOTPRequest,
 )
 from src.redis_client import get_redis_client
+from src.routers.subscription import create_subscription
 from src.schemas.tables.doctor_payment_details import DoctorPaymentDetails
+from src.schemas.tables.plans import Plan
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.users import User
 from src.utility import generate_otp, send_otp_email
@@ -66,17 +69,21 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    from src.routers.subscription import create_subscription
-    from datetime import date, timedelta
 
     start_date = date.today()
-    end_date = start_date + timedelta(days=180)
+    end_date = start_date + timedelta(days=14)
+    plan = db.query(Plan).filter(Plan.name == "Basic").first()
+
+    # if not plan:
+    #     raise HTTPException(400, "Plan not found")
+
     subscription_data = SubscriptionCreate(
         user_id=db_user.id,
-        plan_id="7d6c3a9a-3907-448e-aa38-effc448007ab",  # id of free plan
+        plan_id=plan.id,  # "7d6c3a9a-3907-448e-aa38-effc448007ab",  # id of free plan
         start_date=start_date,  # .isoformat() + "T07:11:38.682Z",
         end_date=end_date,  # "2025-12-28T07:11:38.682Z",
-        auto_renew=False
+        auto_renew=False,
+        appointment_credits=total_appointments_basic_plan
     )
     create_subscription(subscription=subscription_data, db=db)
     return APIResponse(
@@ -89,7 +96,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=APIResponse)
 def login(
-        request: Request, user: UserLogin, response: Response, db: Session = Depends(get_db)
+    request: Request, user: UserLogin, response: Response, db: Session = Depends(get_db)
 ):
     """Login a user and return an access token."""
     username = user.username
@@ -123,17 +130,29 @@ def login(
             status_code=200, success=False, message="Incorrect password.", data=None
         )
     db_user = doc_db_user or staff_db_user
-    billing_details_db = db.query(DoctorPaymentDetails).filter_by(doctor_id=doc_id).first()
+    billing_details_db = (
+        db.query(DoctorPaymentDetails).filter_by(doctor_id=doc_id).first()
+    )
     if billing_details_db:
-        billing_details = DoctorsBillingSave(doctor_id=doc_id, upi_id=billing_details_db.upi_id,
-                                             name=billing_details_db.name,
-                                             currency=billing_details_db.currency).model_dump()
+        billing_details = DoctorsBillingSave(
+            doctor_id=doc_id,
+            upi_id=billing_details_db.upi_id,
+            name=billing_details_db.name,
+            currency=billing_details_db.currency,
+        ).model_dump()
     else:
         billing_details = None
     # TODO: add id in below
     access_token = create_access_token(
-        {"sub": username, "doc_id": doc_id, "role": db_user.role, "firstName": db_user.firstName,
-         "lastName": db_user.lastName, "billingDetails": billing_details}, request=request
+        {
+            "sub": username,
+            "doc_id": doc_id,
+            "role": db_user.role,
+            "firstName": db_user.firstName,
+            "lastName": db_user.lastName,
+            "billingDetails": billing_details,
+        },
+        request=request,
     )
     refresh_token = create_refresh_token(username)
     response.set_cookie(
@@ -189,8 +208,8 @@ def refresh(request: Request, response: Response, response_model=APIResponse):
 
 @router.post("/logout")
 def logout(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
-        redis=Depends(get_redis_client),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    redis=Depends(get_redis_client),
 ):
     token = credentials.credentials
     payload = jwt.decode(
@@ -209,8 +228,11 @@ def logout(
 
 
 @router.post("/forgot-password", response_model=APIResponse)
-def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db),
-                    redis_client=Depends(get_redis_client)):
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+    redis_client=Depends(get_redis_client),
+):
     user = db.query(User).filter_by(email=request.email).first()
     if not user:
         return APIResponse(
@@ -224,17 +246,16 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     expiry_minutes: int = 10  # OTP expiry time in minutes
     otp = generate_otp()
     # otp_store[request.email] = otp  # TODO: Save OTP (with expiry in production)
-    session_data = {
-        "email": request.email,
-        "otp": otp,
-        "verified": "false"
-    }
+    session_data = {"email": request.email, "otp": otp, "verified": "false"}
     redis_client.hmset(token, session_data)
     redis_client.expire(token, timedelta(minutes=expiry_minutes))
     try:
-        send_otp_email(request.email, otp)
+        await send_otp_email(request.email, otp)
         return APIResponse(
-            status_code=200, success=True, message="OTP sent successfully", data={'token': token}
+            status_code=200,
+            success=True,
+            message="OTP sent successfully",
+            data={"token": token},
         ).model_dump()
 
     except Exception as e:
@@ -247,8 +268,11 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 
 
 @router.post("/verify-otp", response_model=APIResponse, status_code=status.HTTP_200_OK)
-def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db),
-               redis_client=Depends(get_redis_client)):
+def verify_otp(
+    request: VerifyOTPRequest,
+    db: Session = Depends(get_db),
+    redis_client=Depends(get_redis_client),
+):
     # stored_otp = otp_store.get(request.email)
     # session = get_otp_session(token)
     session = redis_client.hgetall(request.token)
@@ -275,16 +299,21 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db),
 @router.post(
     "/reset-password", response_model=APIResponse, status_code=status.HTTP_200_OK
 )
-def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db),
-                   redis_client=Depends(get_redis_client)):
+def reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+    redis_client=Depends(get_redis_client),
+):
     session = redis_client.hgetall(request.token)
-    if not session or session.get('verified') == 'false':
+    if not session or session.get("verified") == "false":
         return APIResponse(
-            status_code=200, success=False, message="Session is either expired or has not been verified"
+            status_code=200,
+            success=False,
+            message="Session is either expired or has not been verified",
         ).model_dump()
     # mark_otp_verified(token)
 
-    user = db.query(User).filter(User.email == session.get('email')).first()
+    user = db.query(User).filter(User.email == session.get("email")).first()
     if not user:
         return APIResponse(
             status_code=200, success=False, message="User not found.", data=None
@@ -298,7 +327,7 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db),
 
 @router.put("/config/token-expiry")
 def update_token_expiry(
-        minutes: int, request: Request, redis: Redis = Depends(get_redis_client)
+    minutes: int, request: Request, redis: Redis = Depends(get_redis_client)
 ):
     if minutes <= 0 or minutes > 1440:
         return APIResponse(

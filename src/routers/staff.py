@@ -1,7 +1,6 @@
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.auth_utils import hash_password
@@ -9,24 +8,45 @@ from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.dependencies import require_admin_owner
 from src.models.response import APIResponse
-# from src.models.users import UserIDRequest, UserOut, UserCreate
 from src.models.staff import StaffCreate, StaffOut, DeleteStaffRequest, StaffUpdate
 from src.schemas.tables.staff import Staff
-from src.schemas.tables.users import User
+from src.utility import get_staff_left_count  # get_subscription_active_status_by_doctor
+from src.utility import send_msg_on_email
 
 router = APIRouter(
-    prefix="/staff", tags=["staff"], responses={404: {"error": "Not found"}},
-    dependencies=[Depends(require_admin_owner)]
+    prefix="/staff",
+    tags=["staff"],
+    responses={404: {"error": "Not found"}},
+    dependencies=[Depends(require_admin_owner)],
 )
 
 
 @router.post("/register", response_model=APIResponse[StaffOut])
-def register(
+async def register(
         user: StaffCreate,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Register a new staff."""
+    staff_left_count = get_staff_left_count(db, doctor_id)
+    if staff_left_count <= 0:
+        return APIResponse(
+            status_code=200,
+            success=False,
+            message="You have reached the maximum limit to add the staff.",
+            data=None,
+        ).model_dump()
+
+    # get_subscription_active_status = get_subscription_active_status_by_doctor(
+    #     db, doctor_id
+    # )
+    # if get_subscription_active_status is False:
+    #     return APIResponse(
+    #         status_code=200,
+    #         success=False,
+    #         message="Your subscription has expired. Please renew your subscription to access this feature.",
+    #         data=None,
+    #     ).model_dump()
     db_user = (
         db.query(Staff)
         .filter_by(doc_id=doctor_id)
@@ -52,18 +72,18 @@ def register(
         username=user.username,
         password=hashed_pw,
         doc_id=doctor_id,
-        role=user.role
+        role=user.role,
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     if user.sendToEmail:
         # send email to staff with updated details
-        from src.utility import send_msg_on_email as send_email
-        subject = "Your staff account details - SmartHealApp"
+
+        subject = "Your staff account details - SmartHeal App"
         body = f"""
 
-        Here are your staff account details:
+        Here are your account details:
 
         First Name: {user.firstName}
         Last Name: {user.lastName}
@@ -77,9 +97,9 @@ def register(
         If you did not request this change, please contact the administrator immediately.
 
         Best regards,
-        SmartHealApp Management Team
+        SmartHeal App Management Team
         """
-        send_email(to_email=user.email, message=body, Subject=subject)
+        await send_msg_on_email(to_email=user.email, text_message=body, Subject=subject)
 
     return APIResponse(
         status_code=200,
@@ -143,7 +163,8 @@ def get_staff_list(
 @router.get("/staff_details/{staff_id}", response_model=APIResponse)
 def get_staff_detail(
         staff_id: str,
-        doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        db: Session = Depends(get_db),
 ):
     """Fetch staff details."""
     staff_detail = db.query(Staff).filter_by(doc_id=doctor_id, id=staff_id).first()
@@ -159,7 +180,11 @@ def get_staff_detail(
 
 
 @router.post("/delete", response_model=APIResponse)
-def delete_staff(delete_payload: DeleteStaffRequest, doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)):
+def delete_staff(
+        delete_payload: DeleteStaffRequest,
+        doctor_id: UUID = Depends(get_current_doctor_id),
+        db: Session = Depends(get_db),
+):
     user = db.query(Staff).filter_by(doc_id=doctor_id, id=delete_payload.id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -174,7 +199,7 @@ def delete_staff(delete_payload: DeleteStaffRequest, doctor_id: UUID = Depends(g
 
 
 @router.post("/update", response_model=APIResponse[StaffOut])
-def update_staff(
+async def update_staff(
         staff_updated_data: StaffUpdate,
         db: Session = Depends(get_db),
         doctor_id: UUID = Depends(get_current_doctor_id),
@@ -190,8 +215,8 @@ def update_staff(
     db.commit()
     db.refresh(staff_details)
     if staff_updated_data.sendToEmail:
-        # send email to staff with updated details
-        from src.utility import send_msg_on_email as send_email
+        # send email to staff with updated details]
+
         subject = "Your staff account details have been updated"
         body = f"""
         Dear {staff_details.firstName},
@@ -209,9 +234,9 @@ def update_staff(
         If you did not request this change, please contact the administrator immediately.
 
         Best regards,
-        SmartHealApp Management Team
+        SmartHeal App Management Team
         """
-        send_email(to_email=staff_details.email, message=body, Subject=subject)
+        await send_msg_on_email(to_email=staff_details.email, text_message=body, Subject=subject)
     return APIResponse(
         status_code=200,
         success=True,

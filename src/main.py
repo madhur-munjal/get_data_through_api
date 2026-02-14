@@ -10,14 +10,17 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
+from src.scheduler import start_scheduler, shutdown_scheduler
 from src.routers import api_router
-from src.database import engine, Base
+from src.database import engine, Base, SessionLocal
+from src.schemas.tables.plans import Plan
 from src.core.exception_handlers import (
     custom_validation_handler,
     custom_http_exception_handler,
 )
 from src.models.response import APIResponse
 from src.models.response import TokenRevoked
+from src.utility import update_appointment_status, update_subscription_data
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 load_dotenv()
@@ -33,11 +36,16 @@ app = FastAPI(
     },
     # root_path="/src",
     docs_url="/api-docs",
+    apenapi_url="/openapi.json",
     redoc_url="/redoc-ui",
 )
 app.include_router(api_router.router)
 
-app.mount("/images", StaticFiles(directory=os.path.join(os.getcwd(), "uploads")), name="images")
+app.mount(
+    "/images",
+    StaticFiles(directory=os.path.join(os.getcwd(), "uploads")),
+    name="images",
+)
 
 
 @app.on_event("startup")
@@ -51,6 +59,58 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
     print(Base.metadata.tables.keys())
     print("Database tables created successfully.")
+
+
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    shutdown_scheduler()
+
+
+@app.on_event("startup")
+def seed_data():
+    db = SessionLocal()
+    try:
+        existing_plan = db.query(Plan).first()
+        if existing_plan is None:
+            plans = [
+                Plan(
+                    s_no=1,
+                    name="Basic",
+                    price=2500,
+                    description="""Access to Dashboard,
+                          Appointment Scheduling (Upto 110 appointments/months),
+                          View Patient Records,
+                          Notification Alerts on Application,
+                          Staff Management (Upto 3 Staff Members),
+                          Role Based Access Control for Staff Members
+                """,
+                    duration_months=1,
+                ),
+                Plan(
+                    s_no=2,
+                    name="Professional",
+                    price=5000,
+                    description="""Access to Dashboard,
+                          Appointment Scheduling (Unlimited Patients),
+                          View Patient Records (Unlimited Patients),
+                          Track Billing for Cash/UPI/Card Payments,
+                          Billing breakdown chart for Cash/UPI/Card Payments,
+                          Export Billing Data,
+                          Notification Alerts on Application,
+                          Staff Management (Unlimited Staff Members),
+                          Role Based Access Control for Staff Members""",
+                    duration_months=1,
+                ),
+            ]
+            db.add_all(plans)
+            db.commit()
+    finally:
+        db.close()
 
 
 @app.on_event("startup")
@@ -73,7 +133,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,  # Or specify your frontend URL
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],  # ["*"],  # Or ["GET", "POST", "OPTIONS"]
+    allow_methods=[
+        "GET",
+        "POST",
+        "OPTIONS",
+        "PUT",
+    ],  # ["*"],  # Or ["GET", "POST", "OPTIONS"]
     allow_headers=["*"],  # Or ["Authorization", "Content-Type"]
 )
 
@@ -98,10 +163,13 @@ async def status():
         status_code=200, success=True, message="{'status': 'online'}", data=None
     ).model_dump()
 
-# @app.post("/run-scheduler", tags=["Scheduler"])
-# def run_scheduler_manually():
-#     update_appointment_status()
-#     return {"message": "Scheduler task executed successfully"}
+
+@app.post("/run-scheduler", tags=["Scheduler"])
+def run_scheduler_manually():
+    update_appointment_status()
+    update_subscription_data()
+    return {"message": "Scheduler task executed successfully"}
+
 
 # if __name__ == "__main__":
 #     import uvicorn

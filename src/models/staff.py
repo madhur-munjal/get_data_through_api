@@ -46,7 +46,7 @@ class StaffOut(BaseModel):
         return validate_user_fields(values, cls)
 
     @staticmethod
-    def build_image_url(staff_obj) -> Optional[str]: # , request: Request
+    def build_image_url(staff_obj) -> Optional[str]:  # , request: Request
         image_filename = staff_obj.profile_image_url  # e.g., "id.jpg"
         if image_filename:
             # base_url = request.base_url._url.rstrip("/")
@@ -56,11 +56,11 @@ class StaffOut(BaseModel):
         #     return f"https://smarthealapp.com/static/{filename}"
         return None
 
-    @classmethod
-    def from_orm_with_image(cls, staff_obj):
-        data = staff_obj.__dict__.copy()
-        data["profile_image_url"] = cls.build_image_url(staff_obj)
-        return cls(**data)
+    # @classmethod
+    # def from_orm_with_image(cls, staff_obj):
+    #     data = staff_obj.__dict__.copy()
+    #     data["profile_image_url"] = cls.build_image_url(staff_obj)
+    #     return cls(**data)
 
 
 class DeleteStaffRequest(BaseModel):

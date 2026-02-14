@@ -11,6 +11,10 @@ from jose import jwt, JWTError, ExpiredSignatureError
 from redis import Redis
 
 from src.models.response import APIResponse, TokenRevoked
+from datetime import date
+from src.schemas.tables.subscription import Subscription
+from sqlalchemy.orm import Session
+from src.database import get_db
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
@@ -21,8 +25,8 @@ from src.redis_client import get_redis_client
 
 
 def get_current_user_payload(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
-        redis=Depends(get_redis_client),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    redis=Depends(get_redis_client),
 ):
     token = credentials.credentials
     if redis.get(f"blacklist:{token}"):  # is_token_blacklisted(redis, token):
@@ -52,7 +56,8 @@ def get_current_user_payload(
 
 
 def get_current_doctor_id(
-        credentials: HTTPAuthorizationCredentials = Depends(security), current_user=Depends(get_current_user_payload),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user=Depends(get_current_user_payload),
 ) -> UUID:
     token = credentials.credentials
     if not token:
@@ -89,3 +94,25 @@ def require_admin_owner(user_payload=Depends(get_current_user_payload)):
     if user_payload.get("role").lower() not in ["owner", "admin"]:  # != "owner":
         raise HTTPException(status_code=403, detail="Permission denied.")
     return user_payload
+
+
+def get_subscription_active_status_by_doctor(db: Session = Depends(get_db), doctor_id=Depends(get_current_doctor_id)):
+
+    today = date.today()
+    active_subscription = (
+        db.query(Subscription)
+        .filter(
+            Subscription.user_id == doctor_id,
+            Subscription.start_date <= today,
+            Subscription.end_date >= today,
+            Subscription.is_active == True,
+        )
+        .order_by(Subscription.start_date.desc())
+        .first()
+    )
+    if not active_subscription:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your subscription has expired. Please renew your subscription to access this feature."
+        )
+    return active_subscription is not None

@@ -8,14 +8,19 @@ from src.models.users import UserOut, UserUpdate
 from src.schemas.tables.users import User
 
 router = APIRouter(
-    prefix="/users", tags=["users"], responses={404: {"error": "Not found"}}
+    prefix="/users",
+    tags=["users"],
+    responses={404: {"error": "Not found"}},
     # , dependencies=[Depends(require_owner)]
 )
 
 
 @router.get("/users_list", response_model=APIResponse)
-def get_users(current_user=Depends(get_current_user_payload), db: Session = Depends(get_db),
-              role=Depends(require_owner)):
+def get_users(
+    current_user=Depends(get_current_user_payload),
+    db: Session = Depends(get_db),
+    role=Depends(require_owner),
+):
     """Fetch all users."""
     users = db.query(User).all()
     user_dtos = [UserOut.model_validate(user) for user in users]
@@ -58,9 +63,9 @@ def get_users(current_user=Depends(get_current_user_payload), db: Session = Depe
 
 @router.patch("/", response_model=APIResponse)
 def update_user(
-        update_data: UserUpdate,
-        db: Session = Depends(get_db),
-        current_user=Depends(get_current_user_payload)
+    update_data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user_payload),
 ):
     doc_id = current_user.get("doc_id")
     user_db = db.query(User).filter(User.id == doc_id).first()

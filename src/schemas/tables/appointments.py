@@ -1,11 +1,24 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Date, Time, Enum, Integer, Float
+from sqlalchemy import (
+    Column,
+    String,
+    DateTime,
+    ForeignKey,
+    Date,
+    Time,
+    Enum,
+    Integer,
+    Float,
+    JSON,
+)
 from sqlalchemy.orm import relationship
-from src.models.enums import AppointmentStatus, AppointmentType, PaymentStatus
+
 from src.database import Base
+from src.models.enums import AppointmentStatus, AppointmentType, PaymentStatus
 from src.models.enums import TemperatureUnit
+
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -19,18 +32,17 @@ class Appointment(Base):
     type = Column(Integer, nullable=False, default=AppointmentType.NEW.value)
     status = Column(Integer, nullable=False, default=AppointmentStatus.UPCOMING.value)
     payment_status = Column(Integer, nullable=False, default=PaymentStatus.UNPAID.value)
-    bloodGroup = Column(
-        String(5), nullable=True
-    )  # e.g., "A+", "O-", etc.
+    bloodGroup = Column(String(5), nullable=True)  # e.g., "A+", "O-", etc.
     weight = Column(Float, nullable=True)
     bloodPressureUpper = Column(Integer, nullable=True)
     bloodPressureLower = Column(Integer, nullable=True)
     temperature = Column(Float, nullable=True)
     temperatureType = Column(Enum(TemperatureUnit), nullable=True)
+    pulseRate = Column(Integer, nullable=True)
+    # extra_fields = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     patient = relationship("Patient", back_populates="appointments")
     user = relationship("User", back_populates="appointments")
     visits = relationship("Visit", back_populates="appointments")
     billing = relationship("Billing", back_populates="appointment", uselist=False)
-

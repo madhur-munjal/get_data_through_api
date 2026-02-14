@@ -7,7 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     CheckConstraint,
     UniqueConstraint,
-    DateTime
+    DateTime,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -43,6 +43,4 @@ class Staff(Base):
 
     doctor = relationship("User", back_populates="staff")
 
-    __table_args__ = (
-        UniqueConstraint("doc_id", "email", name="uq_doc_staff"),
-    )
+    __table_args__ = (UniqueConstraint("doc_id", "email", name="uq_doc_staff"),)

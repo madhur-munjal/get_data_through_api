@@ -25,6 +25,8 @@ class SubscriptionCreate(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     auto_renew: bool = False
+    price: float = None
+    appointment_credits: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -58,7 +60,9 @@ class SubscriptionRead(SubscriptionSchema):
 #             updated_at=obj.updated_at
 #         )
 
+
 class SubscriptionOutWithPlan(BaseModel):
+    appointment_left: Optional[int] = None
     subscription_id: str
     user_id: str
     plan_id: str
@@ -74,19 +78,21 @@ class SubscriptionOutWithPlan(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_orm(cls, subscription, plan):
+    def from_orm(cls, row):
         return cls(
-            subscription_id=subscription.id,
-            user_id=subscription.user_id,
-            plan_id=subscription.plan.id,
-            plan_name=plan.name,
-            plan_description=[description.strip() for description in plan.description.split(",")],
-            plan_price=plan.price,
-            plan_currency=plan.currency,
-            start_date=subscription.start_date.date(),
-            end_date=subscription.end_date.date() if subscription.end_date else None,
-            is_active=subscription.is_active,
-            auto_renew=subscription.auto_renew,
-            created_at=subscription.created_at,
-            updated_at=subscription.updated_at
+            subscription_id=row.id,
+            user_id=row.user_id,
+            plan_id=row.plan.id,
+            plan_name=row.plan.name,
+            plan_description=[
+                description.strip() for description in row.plan.description.split(",")
+            ],
+            plan_price=row.plan.price,
+            plan_currency=row.plan.currency,
+            start_date=row.start_date.date(),
+            end_date=row.end_date.date() if row.end_date else None,
+            is_active=row.is_active,
+            auto_renew=row.auto_renew,
+            created_at=row.created_at,
+            updated_at=row.updated_at,
         )

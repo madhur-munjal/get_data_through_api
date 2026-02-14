@@ -21,9 +21,7 @@ class Patient(Base):
     address = Column(String(45), nullable=True)
     # currentVisit = Column(DateTime, nullable=True)
     lastVisit = Column(Date, nullable=True)
-    bloodGroup = Column(
-        String(5), nullable=True
-    )  # e.g., "A+", "O-", etc.
+    bloodGroup = Column(String(5), nullable=True)  # e.g., "A+", "O-", etc.
     weight = Column(Float, nullable=True)
     bloodPressureUpper = Column(Integer, nullable=True)
     bloodPressureLower = Column(Integer, nullable=True)

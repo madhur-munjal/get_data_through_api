@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Float, Text, Enum, Integer
+from sqlalchemy import Column, String, DateTime, ForeignKey, Float, Text, Enum, Boolean
 from sqlalchemy.orm import relationship
-from src.models.enums import AppointmentStatus, AppointmentType
 from src.database import Base
 
 
@@ -26,5 +25,7 @@ class Billing(Base):
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     created_by = Column(String(100), nullable=True)
+    is_deleted = Column(Boolean, nullable=False, default=False)
+    deleted_at = Column(DateTime, nullable=True)
 
     appointment = relationship("Appointment", back_populates="billing")

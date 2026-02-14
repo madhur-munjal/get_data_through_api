@@ -8,36 +8,40 @@ from .enums import Gender, TemperatureUnit, PaymentStatus
 
 class MedicationDetails(BaseModel):
     """
-    Data to store for medicationDetails for  visit page, sample data:
-        "medicationDetails": [
-        {
-            "medicine": "Dolo 500",
-            "type": "tablet",
-            "count": 1,
-            "morning": true,
-            "afternoon": false,
-            "night": true,
-            "beforeMeal": false,
-            "duration": "5 days",
-            "notes": ""
-        },
-        {
-            "medicine": "Multivitamin Syrup",
-            "type": "syrup",
-            "count": "10ml",
-            "morning": true,
-            "afternoon": true,
-            "night": true,
-            "beforeMeal": "true",
-            "duration": "5 days",
-            "notes": "SOS"
-}
-]
+        Data to store for medicationDetails for  visit page, sample data:
+            "medicationDetails": [
+            {
+                "medicine": "Dolo 500",
+                "type": "tablet",
+                "count": 1,
+                "morning": true,
+                "afternoon": false,
+                "night": true,
+                "beforeMeal": false,
+                "duration": "5 days",
+                "notes": ""
+            },
+            {
+                "medicine": "Multivitamin Syrup",
+                "type": "syrup",
+                "count": "10ml",
+                "morning": true,
+                "afternoon": true,
+                "night": true,
+                "beforeMeal": "true",
+                "duration": "5 days",
+                "notes": "SOS"
+    }
+    ]
     """
 
     medicine: Optional[str] = None
-    type: Optional[Literal["tablet", "syrup", "injection", "ointment", "capsule"]] = None
-    count: Optional[Union[int, str]] = None  # int for tablets, str for ml or other units
+    type: Optional[Literal["tablet", "syrup", "injection", "ointment", "capsule"]] = (
+        None
+    )
+    count: Optional[Union[int, str]] = (
+        None  # int for tablets, str for ml or other units
+    )
     morning: Optional[bool] = None
     afternoon: Optional[bool] = None
     night: Optional[bool] = None
@@ -110,6 +114,7 @@ class VisitResponse(BaseModel):
 
 class VisitAllResponse(BaseModel):
     """Schema to get patient and appointment and visits details by appointment id"""
+
     patient_id: str
     firstName: str  # Required
     lastName: Optional[str] = None
@@ -118,9 +123,9 @@ class VisitAllResponse(BaseModel):
     gender: Optional[Gender] = None
     address: Optional[str] = None
     lastVisit: Optional[date] = None
-    bloodGroup: Optional[
-        Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
-    ] = None
+    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+        None
+    )
     weight: Optional[float] = None
     bloodPressureUpper: Optional[int] = None
     bloodPressureLower: Optional[int] = None
@@ -135,11 +140,13 @@ class VisitAllResponse(BaseModel):
     advice: Optional[str] = None
     tests: Optional[str] = None  # or define a TestDetails model if structured
     followUpVisit: Optional[str] = None
-    medicationDetails: Optional[
-        Any] = None  # Optional[List[MedicationDetails]] = None  # Optional[List[MedicationDetails]] = None
+    medicationDetails: Optional[Any] = (
+        None  # Optional[List[MedicationDetails]] = None  # Optional[List[MedicationDetails]] = None
+    )
     paymentDetails: Optional[list] = None
     scheduled_date: Optional[date] = None
     scheduled_time: Optional[time] = None
+    pulseRate: Optional[int] = None
 
     model_config = {"from_attributes": True}
 
@@ -172,7 +179,8 @@ class VisitAllResponse(BaseModel):
             # medicationDetails=row.medicationDetails,
             paymentStatus=row.payment_status,
             paymentType=row.billing.type if row.billing else None,
-            amount=row.billing.amount if row.billing else None
+            amount=row.billing.amount if row.billing else None,
+            pulseRate=row.pulseRate,
         )
 
     @classmethod
@@ -200,9 +208,14 @@ class VisitAllResponse(BaseModel):
             followUpVisit=row.followUpVisit,
             medicationDetails=row.medicationDetails,
             paymentStatus=row.appointments.payment_status,
-            paymentType=row.appointments.billing.type if row.appointments.billing else None,
-            amount=row.appointments.billing.amount if row.appointments.billing else None,
+            paymentType=(
+                row.appointments.billing.type if row.appointments.billing else None
+            ),
+            amount=(
+                row.appointments.billing.amount if row.appointments.billing else None
+            ),
             paymentDetails=row.payment_details,
             scheduled_date=row.appointments.scheduled_date,
             scheduled_time=row.appointments.scheduled_time,
+            pulseRate=row.appointments.pulseRate,
         )

@@ -5,7 +5,9 @@ import uuid
 from fastapi import APIRouter
 
 router = APIRouter(
-    prefix="/upload_images", tags=["upload_images"], responses={404: {"error": "Not found"}}
+    prefix="/upload_images",
+    tags=["upload_images"],
+    responses={404: {"error": "Not found"}},
     # , dependencies=[Depends(require_owner)]
 )
 # app = FastAPI()

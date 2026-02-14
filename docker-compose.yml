@@ -5,14 +5,16 @@ services:
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
-      retries: 5
+      timeout: 5s
+      retries: 20
+#      retries: 5
     image: mysql:8
     container_name: mysql_container_db
     restart: always
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: my_db
+    env_file:
+      - .env
     ports:
       - "3306:3306"
     volumes:
@@ -25,6 +27,9 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
+#    volumes:
+#      - /app/backend/src/uploads:/src/uploads
+
     env_file:
       - .env
 

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Float, Integer
 from sqlalchemy.orm import relationship
 from src.database import Base
 
@@ -19,5 +19,8 @@ class Subscription(Base):
     auto_renew = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    price = Column(Float, nullable=True)
+    appointment_credits = Column(Integer, default=0)
 
     plan = relationship("Plan", back_populates="subscription")
+    user = relationship("User", back_populates="subscription")

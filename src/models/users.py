@@ -61,28 +61,26 @@ class UserOut(BaseModel):
     role: str
     profile_image_url: Optional[str] = None
 
-
-
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
 
-    @staticmethod
-    def build_image_url(user_obj) -> Optional[str]:
-        image_filename = user_obj.profile_image_url  # e.g., "id.jpg"
-        if image_filename:
-            # base_url = request.base_url._url.rstrip("/")
-            # return base_url + f"/static/{image_filename}"
-            return f"https://api.smarthealapp.com/images/{image_filename}"
-        # if filename:
-        #     return f"https://smarthealapp.com/static/{filename}"
-        return None
+    # @staticmethod
+    # def build_image_url(user_obj) -> Optional[str]:
+    #     image_filename = user_obj.profile_image_url  # e.g., "id.jpg"
+    #     if image_filename:
+    #         # base_url = request.base_url._url.rstrip("/")
+    #         # return base_url + f"/static/{image_filename}"
+    #         return f"https://api.smarthealapp.com/images/{image_filename}"
+    #     # if filename:
+    #     #     return f"https://smarthealapp.com/static/{filename}"
+    #     return None
 
-    @classmethod
-    def from_orm_with_image(cls, user_obj):
-        data = user_obj.__dict__.copy()
-        data["profile_image_url"] = cls.build_image_url(user_obj)
-        return cls(**data)
+    # @classmethod
+    # def from_orm_with_image(cls, user_obj):
+    #     data = user_obj.__dict__.copy()
+    #     data["profile_image_url"] = cls.build_image_url(user_obj)
+    #     return cls(**data)
 
     model_config = {"from_attributes": True}
 
@@ -101,6 +99,7 @@ class ResetPasswordRequest(BaseModel):
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
+
     # password: str
     #
     # model_config = {"from_attributes": True}
@@ -108,7 +107,6 @@ class ResetPasswordRequest(BaseModel):
     # @model_validator(mode="after")
     # def validate(cls, values):
     #     return validate_user_fields(values, cls)
-
 
 
 class VerifyOTPRequest(BaseModel):
@@ -123,9 +121,9 @@ class UserIDRequest(BaseModel):
 
 
 class UpdateLoginRecord(BaseModel):
-    mobile: Optional[str] = Form(None),
-    current_password: Optional[str] = Form(None),
-    password: Optional[constr(min_length=5)] = Form(None),
+    mobile: Optional[str] = (Form(None),)
+    current_password: Optional[str] = (Form(None),)
+    password: Optional[constr(min_length=5)] = (Form(None),)
     image: Optional[UploadFile] = File(None)
 
     # mobile: Optional[str] = None
@@ -139,4 +137,3 @@ class UpdateLoginRecord(BaseModel):
     @model_validator(mode="after")
     def validate(cls, values):
         return validate_user_fields(values, cls)
-
