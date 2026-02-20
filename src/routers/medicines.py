@@ -89,8 +89,8 @@ def get_medicines(
         query = query.filter(
             (Medicine.medicine_name.ilike(f"%{search}%"))
             |
-            # (Medicine.generic_name.ilike(f"%{search}%")) |
-            (Medicine.composition.ilike(f"%{search}%"))  # NEW: Search in composition
+            (Medicine.manufacturer.ilike(f"%{search}%")) |
+            (Medicine.composition.ilike(f"%{search}%"))
         )
 
     # medicines = query.offset(skip).limit(limit).all()

@@ -1,11 +1,9 @@
 import os
 import random
 import re
-import smtplib
 import string
 from datetime import date
 from datetime import datetime
-from email.mime.text import MIMEText
 from typing import Optional
 from zoneinfo import ZoneInfo  # Python 3.9+, or use pytz for older versions
 
@@ -171,13 +169,13 @@ def validate_user_fields(values, cls):
     :return: Validated values or raises ValueError if validation fails.
     """
     PASSWORD_REGEX = re.compile(
-        r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+        r"^.*$"
     )
     USERNAME_REGEX = re.compile(
-        "^(?=[a-zA-Z])(?=.*[._-])(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]{1,18}[a-zA-Z0-9]$"
+        "^[a-zA-Z][a-zA-Z0-9._-]{2,9}$"
     )
     EMAIL_REGEX = re.compile(
-        "^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$"
+        "^[a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$"
     )  # Indian mobile numbers
 
     errors: list[InitErrorDetails] = []
