@@ -121,39 +121,30 @@ def create_appointment(
 ):
     """Register a new appointment.
     If enter new mobile number, then it will create under new patients record."""
-    # get_subscription_active_status = get_subscription_active_status_by_doctor(
-    #     db, doctor_id
-    # )
-    # if get_subscription_active_status is False:
-    #     return APIResponse(
-    #         status_code=200,
-    #         success=False,
-    #         message="Your subscription has expired. Please renew your subscription to access this feature.",
-    #         data=None,
-    #     ).model_dump()
     patient_data = appointment.patient.dict(exclude_unset=True)
     patient_id = patient_data.get("patient_id")
-    valid_keys = {col.name for col in Patient.__table__.columns}
-    filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
-    # pulseRate = appointment.patient.pulseRate
-    # extra_data = appointment.patient.extra_fields
-    filtered_data["assigned_doctor_id"] = doctor_id
+    patient_valid_keys = {col.name for col in Patient.__table__.columns}
+    patient_filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
+    appointment_valid_keys = {col.name for col in Appointment.__table__.columns}
+    # filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
+    extra_data = {k: v for k, v in appointment.dict(exclude_unset=True).items() if k not in appointment_valid_keys and k != "patient"}
+    patient_filtered_data["assigned_doctor_id"] = doctor_id
 
     if patient_id is None:
-        type = AppointmentType.NEW.value
+        patient_type = AppointmentType.NEW.value
         patient_data["assigned_doctor_id"] = doctor_id
         # valid_keys = {col.name for col in Patient.__table__.columns}
         # filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
-        save_patient_data = save_data_to_db(filtered_data, Patient, db)
+        save_patient_data = save_data_to_db(patient_filtered_data, Patient, db)
         patient_id = save_patient_data.patient_id
     else:
-        type = AppointmentType.FOLLOW_UP.value
+        patient_type = AppointmentType.FOLLOW_UP.value
         patient = db.query(Patient).filter_by(patient_id=patient_id).first()
         if not patient:
             raise HTTPException(
                 status_code=404, detail=f"Patient not found with the id {patient_id}"
             )
-        for field, value in filtered_data.items():
+        for field, value in patient_filtered_data.items():
             setattr(patient, field, value)
     data = appointment.dict()
     db_appointment = Appointment(
@@ -161,21 +152,21 @@ def create_appointment(
         doctor_id=doctor_id,
         scheduled_date=datetime.strptime(data["scheduled_date"], "%m/%d/%Y").date(),
         scheduled_time=datetime.strptime(data["scheduled_time"], "%H:%M:%S").time(),
-        type=type,
+        type=patient_type,
         status=get_appointment_status(
             datetime.strptime(
                 f"{data.get('scheduled_date')} {data.get('scheduled_time')}",
                 "%m/%d/%Y %H:%M:%S",
             )
         ),
-        bloodGroup=patient_data.get("bloodGroup"),
-        weight=patient_data.get("weight"),
-        bloodPressureUpper=patient_data.get("bloodPressureUpper"),
-        bloodPressureLower=patient_data.get("bloodPressureLower"),
-        temperature=patient_data.get("temperature"),
-        temperatureType=patient_data.get("temperatureType"),
-        pulseRate=patient_data.get("pulseRate"),
-        # extra_fields=extra_data
+        # bloodGroup=patient_data.get("bloodGroup"),
+        # weight=patient_data.get("weight"),
+        # bloodPressureUpper=patient_data.get("bloodPressureUpper"),
+        # bloodPressureLower=patient_data.get("bloodPressureLower"),
+        # temperature=patient_data.get("temperature"),
+        # temperatureType=patient_data.get("temperatureType"),
+        # pulseRate=patient_data.get("pulseRate"),
+        extra_fields=extra_data
     )
     db.add(db_appointment)
     db.commit()
@@ -220,8 +211,25 @@ def update_appointment(
 
     patient_data = update_data.patient.dict(exclude_unset=True)
     patient_id = patient_data.get("patient_id")
-    valid_keys = {col.name for col in Patient.__table__.columns}
-    filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
+    patient_valid_keys = {col.name for col in Patient.__table__.columns}
+
+
+    patient_filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
+
+
+    appointment_valid_keys = {col.name for col in Appointment.__table__.columns}
+    appointment_filtered_data = {k: v for k, v in update_data.dict(exclude_unset=True).items() if k in appointment_valid_keys and k != "patient"}
+
+    # filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
+    appointment_extra_data = {k: v for k, v in update_data.dict(exclude_unset=True).items() if k not in appointment_valid_keys and k != "patient"}
+    # appointment_filtered_data["extra_fields"] = appointment_extra_data
+    # appointment_filtered_data["scheduled_date"] = datetime.strptime(appointment_filtered_data["scheduled_date"], "%m/%d/%Y").date()
+    # appointment_filtered_data["scheduled_time"] = datetime.strptime(appointment_filtered_data["scheduled_time"], "%H:%M:%S").time(),
+    # patient_filtered_data["assigned_doctor_id"] = doctor_id
+
+
+    # patient_filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
+    # extra_data = {k: v for k, v in patient_data.items() if k not in valid_keys}
     # filtered_data["assigned_doctor_id"] = doctor_id
 
     if patient_id:
@@ -230,8 +238,11 @@ def update_appointment(
             raise HTTPException(
                 status_code=404, detail=f"Patient not found with the id {patient_id}"
             )
-        for field, value in filtered_data.items():
+        for field, value in patient_filtered_data.items():
             setattr(patient, field, value)
+
+    # for field, value in appointment_filtered_data.items():
+    #     setattr(appointment, field, value)
 
     if update_data.scheduled_date:
         appointment.scheduled_date = datetime.strptime(
@@ -243,8 +254,13 @@ def update_appointment(
         appointment.scheduled_time = datetime.strptime(
             update_data.scheduled_time, "%H:%M:%S"
         ).time()
-    if update_data.patient.pulseRate:
-        appointment.pulseRate = update_data.patient.pulseRate
+    if appointment_extra_data:
+        # if appointment.extra_fields:
+        #     appointment.extra_fields.update(appointment_extra_data)
+        # else:
+        appointment.extra_fields = appointment_extra_data
+    # if update_data.patient.pulseRate:
+    #     appointment.pulseRate = update_data.patient.pulseRate
     db.commit()
     db.refresh(appointment)
     return APIResponse(

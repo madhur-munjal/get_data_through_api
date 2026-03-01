@@ -1,7 +1,7 @@
 from datetime import date, time
 from typing import Optional, Literal, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.models.patients import PatientUpdateWhileAppointment
 from .enums import AppointmentStatus, PaymentStatus, Gender, TemperatureUnit
@@ -9,8 +9,25 @@ from .enums import AppointmentStatus, PaymentStatus, Gender, TemperatureUnit
 
 class AppointmentCreate(BaseModel):
     patient: PatientUpdateWhileAppointment  # Nested patient data
+    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+        None
+    )
+    weight: Optional[float] = None
+    bloodPressureUpper: Optional[int] = None
+    bloodPressureLower: Optional[int] = None
+    temperature: Optional[float] = None
+    temperatureType: Optional[TemperatureUnit] = None
+    pulseRate: Optional[int] = None
+    bloodSugar: Optional[float] = None
+
     scheduled_date: str  # "08/25/2025"
     scheduled_time: str  # "16:00:00"
+
+    @field_validator("bloodGroup", mode="before")
+    def normalize_case(cls, v):
+        if isinstance(v, str):
+            return v.upper()
+        return v
 
     model_config = {"from_attributes": True}
 
@@ -64,7 +81,7 @@ class AppointmentResponse(BaseModel):
             paymentStatus=row["appointment"].payment_status,
             paymentDetails=row["billing"].get("billing_summary"),
             amount=row["billing"].get("total_amount"),
-            pulseRate=row["appointment"].pulseRate,
+            pulseRate=row["appointment"].extra_fields.get("pulseRate"),
             # get_appointment_status(
             #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
             #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
@@ -75,8 +92,24 @@ class AppointmentResponse(BaseModel):
 
 class AppointmentUpdate(BaseModel):
     patient: PatientUpdateWhileAppointment  # Nested patient data
+    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+        None
+    )
+    weight: Optional[float] = None
+    bloodPressureUpper: Optional[int] = None
+    bloodPressureLower: Optional[int] = None
+    temperature: Optional[float] = None
+    temperatureType: Optional[TemperatureUnit] = None
+    pulseRate: Optional[int] = None
+    bloodSugar: Optional[float] = None
     scheduled_date: str  # "08/25/2025"
     scheduled_time: str  # "16:00:00"
+
+    @field_validator("bloodGroup", mode="before")
+    def normalize_case(cls, v):
+        if isinstance(v, str):
+            return v.upper()
+        return v
 
 
 class AppointmentById(BaseModel):
@@ -117,12 +150,12 @@ class AppointmentById(BaseModel):
             gender=row.patient.gender,
             address=row.patient.address,
             lastVisit=row.patient.lastVisit,
-            bloodGroup=row.patient.bloodGroup,
-            weight=row.patient.weight,
-            bloodPressureUpper=row.patient.bloodPressureUpper,
-            bloodPressureLower=row.patient.bloodPressureLower,
-            temperature=row.patient.temperature,
-            temperatureType=row.patient.temperatureType,
+            bloodGroup=row.extra_fields.get("bloodGroup"),
+            weight=row.extra_fields.get("weight"),
+            bloodPressureUpper=row.extra_fields.get("bloodPressureUpper"),
+            bloodPressureLower=row.extra_fields.get("bloodPressureLower"),
+            temperature=row.extra_fields.get("temperature"),
+            temperatureType=row.extra_fields.get("temperatureType"),
             type=row.type,
             status=row.status,
             paymentStatus=row.payment_status,

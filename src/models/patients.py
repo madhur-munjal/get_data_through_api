@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Literal, Optional, List, Dict, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from .enums import Gender, TemperatureUnit
 
@@ -13,15 +13,21 @@ class PatientRecord(BaseModel):
     mobile: str  # Required
     gender: Optional[Gender] = None
     address: Optional[str] = None
-    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
-        None
-    )
-    weight: Optional[float] = None
-    bloodPressureUpper: Optional[int] = None
-    bloodPressureLower: Optional[int] = None
-    temperature: Optional[float] = None
-    temperatureType: Optional[TemperatureUnit] = None
+    # bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+    #     None
+    # )
+    # weight: Optional[float] = None
+    # bloodPressureUpper: Optional[int] = None
+    # bloodPressureLower: Optional[int] = None
+    # temperature: Optional[float] = None
+    # temperatureType: Optional[TemperatureUnit] = None
     list_of_appointments: Optional[List] = None  # List of appointment dates
+
+    # @field_validator("bloodGroup", mode="before")
+    # def normalize_case(cls, v):
+    #     if isinstance(v, str):
+    #         return v.upper()
+    #     return v
 
     model_config = {"from_attributes": True}
 
@@ -33,14 +39,20 @@ class PatientUpdate(BaseModel):
     mobile: str  # Required
     gender: Optional[Gender] = None
     address: Optional[str] = None
-    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
-        None
-    )
-    weight: Optional[float] = None
-    bloodPressureUpper: Optional[int] = None
-    bloodPressureLower: Optional[int] = None
-    temperature: Optional[float] = None
-    temperatureType: Optional[TemperatureUnit] = None
+    # bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+    #     None
+    # )
+    # weight: Optional[float] = None
+    # bloodPressureUpper: Optional[int] = None
+    # bloodPressureLower: Optional[int] = None
+    # temperature: Optional[float] = None
+    # temperatureType: Optional[TemperatureUnit] = None
+
+    # @field_validator("bloodGroup", mode="before")
+    # def normalize_case(cls, v):
+    #     if isinstance(v, str):
+    #         return v.upper()
+    #     return v
 
     model_config = {"from_attributes": True}
 
@@ -54,15 +66,21 @@ class PatientOut(BaseModel):
     gender: Optional[Gender] = None
     address: Optional[str] = None
     lastVisit: Optional[date] = None
-    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
-        None
-    )
-    weight: Optional[float] = None
-    bloodPressureUpper: Optional[int] = None
-    bloodPressureLower: Optional[int] = None
-    temperature: Optional[float] = None
-    temperatureType: Optional[TemperatureUnit] = None
+    # bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+    #     None
+    # )
+    # weight: Optional[float] = None
+    # bloodPressureUpper: Optional[int] = None
+    # bloodPressureLower: Optional[int] = None
+    # temperature: Optional[float] = None
+    # temperatureType: Optional[TemperatureUnit] = None
     type: Optional[int] = None
+    #
+    # @field_validator("bloodGroup", mode="before")
+    # def normalize_case(cls, v):
+    #     if isinstance(v, str):
+    #         return v.upper()
+    #     return v
 
     model_config = {"from_attributes": True}
 
@@ -77,12 +95,12 @@ class PatientOut(BaseModel):
             gender=row.Patient.gender,
             address=row.Patient.address,
             lastVisit=row.Patient.lastVisit,
-            bloodGroup=row.Patient.bloodGroup,
-            weight=row.Patient.weight,
-            bloodPressureUpper=row.Patient.bloodPressureUpper,
-            bloodPressureLower=row.Patient.bloodPressureLower,
-            temperature=row.Patient.temperature,
-            temperatureType=row.Patient.temperatureType,
+            # bloodGroup=row.Patient.bloodGroup,
+            # weight=row.Patient.weight,
+            # bloodPressureUpper=row.Patient.bloodPressureUpper,
+            # bloodPressureLower=row.Patient.bloodPressureLower,
+            # temperature=row.Patient.temperature,
+            # temperatureType=row.Patient.temperatureType,
             type=row.latest_appointment_type,
         )
 
@@ -102,15 +120,22 @@ class PatientUpdateWhileAppointment(BaseModel):
     mobile: str  # Required
     gender: Optional[Gender] = None
     address: Optional[str] = None
-    bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
-        None
-    )
-    weight: Optional[float] = None
-    bloodPressureUpper: Optional[int] = None
-    bloodPressureLower: Optional[int] = None
-    temperature: Optional[float] = None
-    temperatureType: Optional[TemperatureUnit] = None
-    pulseRate: Optional[int] = None
+    # bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
+    #     None
+    # )
+    # weight: Optional[float] = None
+    # bloodPressureUpper: Optional[int] = None
+    # bloodPressureLower: Optional[int] = None
+    # temperature: Optional[float] = None
+    # temperatureType: Optional[TemperatureUnit] = None
+    # pulseRate: Optional[int] = None
+    # bloodSugar: Optional[float] = None
     # extra_fields: Optional[Dict[str, Any]] = None  # To capture any additional fields
+
+    # @field_validator("bloodGroup", mode="before")
+    # def normalize_case(cls, v):
+    #     if isinstance(v, str):
+    #         return v.upper()
+    #     return v
 
     model_config = {"from_attributes": True}

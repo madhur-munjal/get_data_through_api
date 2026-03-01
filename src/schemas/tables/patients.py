@@ -21,12 +21,12 @@ class Patient(Base):
     address = Column(String(45), nullable=True)
     # currentVisit = Column(DateTime, nullable=True)
     lastVisit = Column(Date, nullable=True)
-    bloodGroup = Column(String(5), nullable=True)  # e.g., "A+", "O-", etc.
-    weight = Column(Float, nullable=True)
-    bloodPressureUpper = Column(Integer, nullable=True)
-    bloodPressureLower = Column(Integer, nullable=True)
-    temperature = Column(Float, nullable=True)
-    temperatureType = Column(Enum(TemperatureUnit), nullable=True)
+    # bloodGroup = Column(String(5), nullable=True)  # e.g., "A+", "O-", etc.
+    # weight = Column(Float, nullable=True)
+    # bloodPressureUpper = Column(Integer, nullable=True)
+    # bloodPressureLower = Column(Integer, nullable=True)
+    # temperature = Column(Float, nullable=True)
+    # temperatureType = Column(Enum(TemperatureUnit), nullable=True)
 
     assigned_doctor_id = Column(String(36), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
