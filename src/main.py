@@ -20,7 +20,11 @@ from src.core.exception_handlers import (
 )
 from src.models.response import APIResponse
 from src.models.response import TokenRevoked
-from src.utility import update_appointment_status, update_subscription_data
+from src.utility import (
+    update_appointment_status,
+    update_subscription_data,
+    backup_mysql,
+)
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 load_dotenv()
@@ -168,6 +172,12 @@ async def status():
 def run_scheduler_manually():
     update_appointment_status()
     update_subscription_data()
+    return {"message": "Scheduler task executed successfully"}
+
+
+@app.post("/run-mysql-scheduler", tags=["Scheduler"])
+def run_mysql_scheduler_manually():
+    backup_mysql()
     return {"message": "Scheduler task executed successfully"}
 
 

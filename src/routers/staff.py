@@ -23,9 +23,9 @@ router = APIRouter(
 
 @router.post("/register", response_model=APIResponse[StaffOut])
 async def register(
-        user: StaffCreate,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    user: StaffCreate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Register a new staff."""
     staff_left_count = get_staff_left_count(db, doctor_id)
@@ -111,7 +111,7 @@ async def register(
 
 @router.get("/staff_list", response_model=APIResponse)
 def get_staff_list(
-        doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
+    doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
 ):
     """Fetch all users."""
     users = db.query(Staff).filter(Staff.doc_id == doctor_id).all()
@@ -162,9 +162,9 @@ def get_staff_list(
 
 @router.get("/staff_details/{staff_id}", response_model=APIResponse)
 def get_staff_detail(
-        staff_id: str,
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        db: Session = Depends(get_db),
+    staff_id: str,
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    db: Session = Depends(get_db),
 ):
     """Fetch staff details."""
     staff_detail = db.query(Staff).filter_by(doc_id=doctor_id, id=staff_id).first()
@@ -181,9 +181,9 @@ def get_staff_detail(
 
 @router.post("/delete", response_model=APIResponse)
 def delete_staff(
-        delete_payload: DeleteStaffRequest,
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        db: Session = Depends(get_db),
+    delete_payload: DeleteStaffRequest,
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    db: Session = Depends(get_db),
 ):
     user = db.query(Staff).filter_by(doc_id=doctor_id, id=delete_payload.id).first()
     if not user:
@@ -200,9 +200,9 @@ def delete_staff(
 
 @router.post("/update", response_model=APIResponse[StaffOut])
 async def update_staff(
-        staff_updated_data: StaffUpdate,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    staff_updated_data: StaffUpdate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     """Update staff details."""
     staff_details = db.query(Staff).filter(Staff.id == staff_updated_data.id).first()
@@ -236,7 +236,9 @@ async def update_staff(
         Best regards,
         SmartHeal App Management Team
         """
-        await send_msg_on_email(to_email=staff_details.email, text_message=body, Subject=subject)
+        await send_msg_on_email(
+            to_email=staff_details.email, text_message=body, Subject=subject
+        )
     return APIResponse(
         status_code=200,
         success=True,

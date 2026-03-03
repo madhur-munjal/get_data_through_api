@@ -25,6 +25,7 @@ from src.schemas.tables.billing import Billing
 from src.schemas.tables.notifications import Notification
 from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
+
 # from src.utility import get_subscription_active_status_by_doctor
 from src.utility import save_data_to_db, get_appointment_status
 
@@ -124,10 +125,16 @@ def create_appointment(
     patient_data = appointment.patient.dict(exclude_unset=True)
     patient_id = patient_data.get("patient_id")
     patient_valid_keys = {col.name for col in Patient.__table__.columns}
-    patient_filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
+    patient_filtered_data = {
+        k: v for k, v in patient_data.items() if k in patient_valid_keys
+    }
     appointment_valid_keys = {col.name for col in Appointment.__table__.columns}
     # filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
-    extra_data = {k: v for k, v in appointment.dict(exclude_unset=True).items() if k not in appointment_valid_keys and k != "patient"}
+    extra_data = {
+        k: v
+        for k, v in appointment.dict(exclude_unset=True).items()
+        if k not in appointment_valid_keys and k != "patient"
+    }
     patient_filtered_data["assigned_doctor_id"] = doctor_id
 
     if patient_id is None:
@@ -166,7 +173,7 @@ def create_appointment(
         # temperature=patient_data.get("temperature"),
         # temperatureType=patient_data.get("temperatureType"),
         # pulseRate=patient_data.get("pulseRate"),
-        extra_fields=extra_data
+        extra_fields=extra_data,
     )
     db.add(db_appointment)
     db.commit()
@@ -213,20 +220,27 @@ def update_appointment(
     patient_id = patient_data.get("patient_id")
     patient_valid_keys = {col.name for col in Patient.__table__.columns}
 
-
-    patient_filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
-
+    patient_filtered_data = {
+        k: v for k, v in patient_data.items() if k in patient_valid_keys
+    }
 
     appointment_valid_keys = {col.name for col in Appointment.__table__.columns}
-    appointment_filtered_data = {k: v for k, v in update_data.dict(exclude_unset=True).items() if k in appointment_valid_keys and k != "patient"}
+    appointment_filtered_data = {
+        k: v
+        for k, v in update_data.dict(exclude_unset=True).items()
+        if k in appointment_valid_keys and k != "patient"
+    }
 
     # filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
-    appointment_extra_data = {k: v for k, v in update_data.dict(exclude_unset=True).items() if k not in appointment_valid_keys and k != "patient"}
+    appointment_extra_data = {
+        k: v
+        for k, v in update_data.dict(exclude_unset=True).items()
+        if k not in appointment_valid_keys and k != "patient"
+    }
     # appointment_filtered_data["extra_fields"] = appointment_extra_data
     # appointment_filtered_data["scheduled_date"] = datetime.strptime(appointment_filtered_data["scheduled_date"], "%m/%d/%Y").date()
     # appointment_filtered_data["scheduled_time"] = datetime.strptime(appointment_filtered_data["scheduled_time"], "%H:%M:%S").time(),
     # patient_filtered_data["assigned_doctor_id"] = doctor_id
-
 
     # patient_filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
     # extra_data = {k: v for k, v in patient_data.items() if k not in valid_keys}

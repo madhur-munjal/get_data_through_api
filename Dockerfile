@@ -7,6 +7,7 @@ WORKDIR /src
 COPY requirements.txt .
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    default-mysql-client \
     redis-server \
     build-essential \
     default-libmysqlclient-dev \

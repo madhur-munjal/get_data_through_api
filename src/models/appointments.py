@@ -61,6 +61,7 @@ class AppointmentResponse(BaseModel):
     paymentDetails: Optional[list] = None
     amount: Optional[float] = None
     pulseRate: Optional[int] = None
+    bloodSugar: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
@@ -82,6 +83,7 @@ class AppointmentResponse(BaseModel):
             paymentDetails=row["billing"].get("billing_summary"),
             amount=row["billing"].get("total_amount"),
             pulseRate=row["appointment"].extra_fields.get("pulseRate"),
+            bloodSugar=row["appointment"].extra_fields.get("bloodSugar"),
             # get_appointment_status(
             #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
             #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status
@@ -136,6 +138,7 @@ class AppointmentById(BaseModel):
     status: int
     paymentStatus: int = Field(default=PaymentStatus.UNPAID.value)
     pulseRate: Optional[int] = None
+    bloodSugar: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
@@ -159,7 +162,8 @@ class AppointmentById(BaseModel):
             type=row.type,
             status=row.status,
             paymentStatus=row.payment_status,
-            pulseRate=row.pulseRate,
+            pulseRate=row.extra_fields.get("pulseRate"),
+            bloodSugar=row.extra_fields.get("bloodSugar"),
         )
 
 

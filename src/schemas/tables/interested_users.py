@@ -1,7 +1,17 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Float, Text, Enum, Boolean, TIMESTAMP
+from sqlalchemy import (
+    Column,
+    String,
+    DateTime,
+    ForeignKey,
+    Float,
+    Text,
+    Enum,
+    Boolean,
+    TIMESTAMP,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 

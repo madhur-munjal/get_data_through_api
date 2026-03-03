@@ -11,7 +11,7 @@ router = APIRouter(
     prefix="/users",
     tags=["users"],
     responses={404: {"error": "Not found"}},
-    dependencies=[Depends(require_owner)]
+    dependencies=[Depends(require_owner)],
 )
 
 

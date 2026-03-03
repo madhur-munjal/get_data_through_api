@@ -83,7 +83,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         start_date=start_date,  # .isoformat() + "T07:11:38.682Z",
         end_date=end_date,  # "2025-12-28T07:11:38.682Z",
         auto_renew=False,
-        appointment_credits=total_appointments_basic_plan
+        appointment_credits=total_appointments_basic_plan,
     )
     create_subscription(subscription=subscription_data, db=db)
     return APIResponse(

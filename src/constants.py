@@ -6,3 +6,4 @@ total_staff_basic_plans = 3
 total_staff_professional_plan = total_staff_basic_plans * 3  # 9
 total_staff_enterprise_plan = total_staff_basic_plans * 5  # 15
 total_staff_unlimited_plan = -1  # Unlimited
+mysql_backup_dir = "/backups"

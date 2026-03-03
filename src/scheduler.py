@@ -16,7 +16,11 @@
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from src.utility import update_appointment_status, update_subscription_data
+from src.utility import (
+    update_appointment_status,
+    update_subscription_data,
+    backup_mysql,
+)
 
 scheduler = BackgroundScheduler()
 
@@ -25,9 +29,10 @@ def start_scheduler():
     """Initialize and start the scheduler"""
     scheduler.add_job(update_appointment_status, "cron", hour=23, minute=45)
     scheduler.add_job(update_subscription_data, "cron", hour=00, minute=1)
+    scheduler.add_job(backup_mysql, "cron", hour=23, minute=15)
     scheduler.start()
     print(
-        "Scheduler's started - Will run update_appointment_status daily at 23:45 and update_subscription_data at 00:00"
+        "Scheduler's started - Will run update_appointment_status daily at 23:45 and update_subscription_data at 00:00 and backup_mysql at 16:25"
     )
 
 

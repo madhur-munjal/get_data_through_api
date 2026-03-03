@@ -9,7 +9,7 @@ from src.dependencies import get_current_doctor_id, require_owner
 from src.dependencies import get_current_user_payload
 from src.models.enums import AppointmentStatus
 from src.models.response import APIResponse
-from src.models.appointments import AppointmentResponse, AppointmentById
+from src.models.appointments import AppointmentById
 from src.models.visits import VisitOut, VisitCreate, VisitResponse, VisitAllResponse
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.patients import Patient

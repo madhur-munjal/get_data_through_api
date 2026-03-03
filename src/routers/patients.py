@@ -74,7 +74,9 @@ def update_patent(
         status_code=200,
         success=True,
         message="Patient updated successfully.",
-        data=PatientOut.model_validate(patient).model_dump() #None,  # return updated patient record
+        data=PatientOut.model_validate(
+            patient
+        ).model_dump(),  # None,  # return updated patient record
     ).model_dump()
 
 
