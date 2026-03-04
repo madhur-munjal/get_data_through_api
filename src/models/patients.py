@@ -7,6 +7,7 @@ from .enums import Gender, TemperatureUnit
 
 
 class PatientRecord(BaseModel):
+    patient_code: str
     firstName: str  # Required
     lastName: Optional[str] = None
     age: Optional[int] = None
@@ -59,6 +60,7 @@ class PatientUpdate(BaseModel):
 
 class PatientOut(BaseModel):
     patient_id: str
+    patient_code: str
     firstName: str  # Required
     lastName: Optional[str] = None
     age: Optional[int] = None
@@ -88,6 +90,7 @@ class PatientOut(BaseModel):
     def from_row(cls, row):
         return cls(
             patient_id=row.Patient.patient_id,
+            patient_code=row.Patient.patient_code,
             firstName=row.Patient.firstName,
             lastName=row.Patient.lastName,
             age=row.Patient.age,

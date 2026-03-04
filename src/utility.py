@@ -32,6 +32,8 @@ from src.models.enums import AppointmentStatus
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.subscription import Subscription
+from src.schemas.tables.users import User
+from src.schemas.tables.patients import Patient
 
 load_dotenv()
 
@@ -402,3 +404,27 @@ def backup_mysql():
         print(f"Backup failed: {result.stderr.decode()}")
     else:
         print(f"Backup created: {backup_file}")
+
+
+def generate_patient_code(doctor_id: str, db: Session) -> str:
+    """
+    Generate a human-friendly patient code unique per doctor.
+    Example format: PAT-STR-26-000002
+    """
+    doctor = db.query(User).filter(User.id == doctor_id).first()
+    if not doctor:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(
+                "Doctor not found"
+            )
+        )
+
+    # Count existing patients for this doctor
+    count = db.query(Patient).filter(Patient.assigned_doctor_id == doctor_id).count()
+    # Increment count for new patient
+    new_number = count + 1
+
+    doctor_short = doctor.firstName[:3].upper() if doctor.firstName else "DOC"
+    year = datetime.now().strftime("%y")
+    return f"PAT-{doctor_short}-{year}-{new_number:06d}"

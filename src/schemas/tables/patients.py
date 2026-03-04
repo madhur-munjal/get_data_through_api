@@ -1,18 +1,18 @@
 import uuid
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
-from sqlalchemy import ForeignKey, Date
+from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, ForeignKey, Date, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from src.database import Base
-from src.models.enums import Gender, TemperatureUnit
+from src.models.enums import Gender
 
 
 class Patient(Base):
     __tablename__ = "patients"
 
     patient_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    patient_code = Column(String(20), nullable=False)  # e.g., "PAT-STR-26-000002" etc.
     firstName = Column(String(15), nullable=False)  # mandatory
     lastName = Column(String(15), nullable=True)
     age = Column(Integer, nullable=True)
@@ -35,6 +35,6 @@ class Patient(Base):
     appointments = relationship("Appointment", back_populates="patient")
     visits = relationship("Visit", back_populates="patient")
 
-    # __table_args__ = (
-    #     UniqueConstraint("assigned_doctor_id", "mobile", name="uq_doc_patient"),
-    # )
+    __table_args__ = (
+        UniqueConstraint("assigned_doctor_id", "patient_code", name="uq_doc_patient_code"),
+    )

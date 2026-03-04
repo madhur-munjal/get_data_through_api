@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, or_, func
 from sqlalchemy.orm import Session, aliased
 
-# from src.utility import get_subscription_active_status_by_doctor
+from src.utility import generate_patient_code
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.models.patients import (
@@ -43,8 +43,12 @@ def create_patient(
             message="Mobile number already exists",
             data=None,
         ).model_dump()
+    try:
+        patient_code = generate_patient_code(str(doctor_id), db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
-    patient = Patient(**request.model_dump(), assigned_doctor_id=doctor_id)
+    patient = Patient(**request.model_dump(), assigned_doctor_id=str(doctor_id), patient_code=patient_code)
     db.add(patient)
     db.commit()
     db.refresh(patient)
@@ -52,7 +56,7 @@ def create_patient(
         status_code=200,
         success=True,
         message="Patient created successfully.",
-        data={"id": patient.patient_id},
+        data={"id": patient.patient_id, "patient_code": patient_code},
     ).model_dump()
 
 
