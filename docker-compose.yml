@@ -10,8 +10,8 @@ services:
     image: mysql:8
     container_name: mysql_container_db
     restart: always
-    environment:
-      MYSQL_DATABASE: my_qa_db # delete this will show error unknown database my_db
+#    environment:
+#      MYSQL_DATABASE: my_qa_db # delete this will show error unknown database my_db
     env_file:
       - .env
     ports:
@@ -30,7 +30,6 @@ services:
       - "8000:8000"
     volumes:
       - ./backups:/backups   # same mount so both containers can see backups
-
     env_file:
       - .env
 

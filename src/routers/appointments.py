@@ -27,7 +27,7 @@ from src.schemas.tables.patients import Patient
 from src.schemas.tables.visits import Visit
 
 # from src.utility import get_subscription_active_status_by_doctor
-from src.utility import save_data_to_db, get_appointment_status
+from src.utility import save_data_to_db, get_appointment_status, generate_patient_code
 
 router = APIRouter(
     prefix="/appointments",
@@ -136,6 +136,7 @@ def create_appointment(
         if k not in appointment_valid_keys and k != "patient"
     }
     patient_filtered_data["assigned_doctor_id"] = doctor_id
+    patient_filtered_data["patient_code"] = generate_patient_code(str(doctor_id), db)
 
     if patient_id is None:
         patient_type = AppointmentType.NEW.value
