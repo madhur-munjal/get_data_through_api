@@ -425,6 +425,6 @@ def generate_patient_code(doctor_id: str, db: Session) -> str:
     # Increment count for new patient
     new_number = count + 1
 
-    doctor_short = doctor.firstName[:3].upper() if doctor.firstName else "DOC"
-    year = datetime.now().strftime("%y")
-    return f"PAT-{doctor_short}-{year}-{new_number:06d}"
+    # doctor_short = doctor.firstName[:3].upper() if doctor.firstName else "DOC"
+    # year = datetime.now().strftime("%y")
+    return f"SHA{new_number:06d}"
