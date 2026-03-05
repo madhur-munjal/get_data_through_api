@@ -1,18 +1,17 @@
 #version: "3.8"
 
 services:
-  db:
+  qadb:
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       timeout: 5s
-      retries: 20
-#      retries: 5
+      retries: 10
     image: mysql:8
     container_name: mysql_container_db
     restart: always
     environment:
-      MYSQL_DATABASE: my_db # delete this will show error unknown database my_db
+      MYSQL_DATABASE: my_qa_db # delete this will show error unknown database my_db
     env_file:
       - .env
     ports:
@@ -25,13 +24,12 @@ services:
   fastapi_web:
     build: .
     depends_on:
-      db:
+      qadb:
         condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
       - ./backups:/backups   # same mount so both containers can see backups
-    #      - /app/backend/src/uploads:/src/uploads
 
     env_file:
       - .env
