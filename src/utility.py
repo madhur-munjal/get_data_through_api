@@ -94,7 +94,7 @@ def validate_user_fields(values, cls):
     :return: Validated values or raises ValueError if validation fails.
     """
     PASSWORD_REGEX = re.compile(r"^.*$")
-    USERNAME_REGEX = re.compile("^[a-zA-Z][a-zA-Z0-9._-]{2,9}$")
+    USERNAME_REGEX = re.compile("^[a-zA-Z][a-zA-Z0-9._-]{2,19}$")
     EMAIL_REGEX = re.compile(
         "^[a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$"
     )  # Indian mobile numbers
