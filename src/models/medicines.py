@@ -62,7 +62,7 @@ class MedicineResponse(MedicineBase):
     manufacturer: Optional[str] = Field(None, max_length=255)
     type: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Tablet", "Syrup", etc.
     count: Optional[int] = Field(default=0, ge=0)  # NEW: e.g., number of pills in a pack
-    dosage: List[Literal["morning", "afternoon", "nightg"]] = Field(None, description="Array of duration")
+    dosage: List[Literal["morning", "afternoon", "night"]] = Field(None, description="Array of duration")
     # dosage: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Morning", "Afternoon", "Night"
     timing: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Before Food", "After Food", "With Food"
     duration: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "5 days", "1 week", etc.
