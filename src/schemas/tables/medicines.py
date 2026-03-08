@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, Boolean, Text, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, String, Boolean, Text, DateTime, ForeignKey, Integer, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -19,7 +19,7 @@ class Medicine(Base):
     manufacturer = Column(String(255), nullable=True)
     type = Column(String(100), nullable=True)  # e.g., Tablet, Syrup, etc.
     count = Column(Integer, default=0)  # e.g., number of pills in a pack
-    dosage = Column(String(100), nullable=True)  # e.g., Morning, Afternoon, Night
+    dosage = Column(JSON, nullable=True)  # e.g., Morning, Afternoon, Night
     timing = Column(String(100), nullable=True)  # e.g., Before Food, After Food, With Food
     duration = Column(String(100), nullable=True)  # e.g., 5 days, 1 week, etc.
     notes = Column(Text, nullable=True)  # Additional instructions or notes
