@@ -140,7 +140,9 @@ def create_appointment(
     if patient_id is None:
         patient_type = AppointmentType.NEW.value
         patient_data["assigned_doctor_id"] = doctor_id
-        patient_filtered_data["patient_code"] = generate_patient_code(str(doctor_id), db)
+        patient_filtered_data["patient_code"] = generate_patient_code(
+            str(doctor_id), db
+        )
 
         # valid_keys = {col.name for col in Patient.__table__.columns}
         # filtered_data = {k: v for k, v in patient_data.items() if k in valid_keys}
@@ -168,13 +170,6 @@ def create_appointment(
                 "%m/%d/%Y %H:%M:%S",
             )
         ),
-        # bloodGroup=patient_data.get("bloodGroup"),
-        # weight=patient_data.get("weight"),
-        # bloodPressureUpper=patient_data.get("bloodPressureUpper"),
-        # bloodPressureLower=patient_data.get("bloodPressureLower"),
-        # temperature=patient_data.get("temperature"),
-        # temperatureType=patient_data.get("temperatureType"),
-        # pulseRate=patient_data.get("pulseRate"),
         extra_fields=extra_data,
     )
     db.add(db_appointment)
@@ -227,11 +222,11 @@ def update_appointment(
     }
 
     appointment_valid_keys = {col.name for col in Appointment.__table__.columns}
-    appointment_filtered_data = {
-        k: v
-        for k, v in update_data.dict(exclude_unset=True).items()
-        if k in appointment_valid_keys and k != "patient"
-    }
+    # appointment_filtered_data = {
+    #     k: v
+    #     for k, v in update_data.dict(exclude_unset=True).items()
+    #     if k in appointment_valid_keys and k != "patient"
+    # }
 
     # filtered_data = {k: v for k, v in patient_data.items() if k in patient_valid_keys}
     appointment_extra_data = {
@@ -271,12 +266,7 @@ def update_appointment(
             update_data.scheduled_time, "%H:%M:%S"
         ).time()
     if appointment_extra_data:
-        # if appointment.extra_fields:
-        #     appointment.extra_fields.update(appointment_extra_data)
-        # else:
         appointment.extra_fields = appointment_extra_data
-    # if update_data.patient.pulseRate:
-    #     appointment.pulseRate = update_data.patient.pulseRate
     db.commit()
     db.refresh(appointment)
     return APIResponse(

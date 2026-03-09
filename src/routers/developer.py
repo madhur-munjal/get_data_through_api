@@ -135,18 +135,12 @@ def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_
         user.mobile = payload.mobile
     db.add(user)
 
-    # Update subscription if provided
-    # if payload.subscription:
     subscription = (
         db.query(Subscription)
         .filter(Subscription.user_id == payload.user_id)
         .order_by(Subscription.created_at.desc())
         .first()
     )
-    # if not subscription:
-    #     # If no subscription exists, create one
-    #     subscription = Subscription(user_id=user_id)
-    #     db.add(subscription)
     if subscription:
         plans = (
             db.query(Plan).filter(Plan.name == payload.subscription.plan_name).first()

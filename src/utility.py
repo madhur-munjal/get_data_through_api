@@ -414,10 +414,7 @@ def generate_patient_code(doctor_id: str, db: Session) -> str:
     doctor = db.query(User).filter(User.id == doctor_id).first()
     if not doctor:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(
-                "Doctor not found"
-            )
+            status_code=status.HTTP_409_CONFLICT, detail=str("Doctor not found")
         )
 
     # Count existing patients for this doctor

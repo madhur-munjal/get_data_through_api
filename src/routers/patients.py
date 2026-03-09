@@ -48,7 +48,11 @@ def create_patient(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    patient = Patient(**request.model_dump(), assigned_doctor_id=str(doctor_id), patient_code=patient_code)
+    patient = Patient(
+        **request.model_dump(),
+        assigned_doctor_id=str(doctor_id),
+        patient_code=patient_code,
+    )
     db.add(patient)
     db.commit()
     db.refresh(patient)

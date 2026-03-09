@@ -82,8 +82,16 @@ class AppointmentResponse(BaseModel):
             paymentStatus=row["appointment"].payment_status,
             paymentDetails=row["billing"].get("billing_summary"),
             amount=row["billing"].get("total_amount"),
-            pulseRate=row["appointment"].extra_fields.get("pulseRate") if row["appointment"].extra_fields else None,
-            bloodSugar=row["appointment"].extra_fields.get("bloodSugar") if row["appointment"].extra_fields else None,
+            pulseRate=(
+                row["appointment"].extra_fields.get("pulseRate")
+                if row["appointment"].extra_fields
+                else None
+            ),
+            bloodSugar=(
+                row["appointment"].extra_fields.get("bloodSugar")
+                if row["appointment"].extra_fields
+                else None
+            ),
             # get_appointment_status(
             #     datetime.strptime(f"{row.scheduled_date} {row.scheduled_time}", "%Y-%m-%d %H:%M:%S")
             #     ) if str(row.status) != AppointmentStatus.COMPLETED.value else row.status

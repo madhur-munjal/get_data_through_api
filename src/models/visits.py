@@ -114,6 +114,7 @@ class VisitResponse(BaseModel):
 
 class VisitAllResponse(BaseModel):
     """Schema to get patient and appointment and visits details by appointment id"""
+
     patient_id: str
     firstName: str  # Required
     lastName: Optional[str] = None
@@ -183,7 +184,7 @@ class VisitAllResponse(BaseModel):
             paymentType=row.billing.type if row.billing else None,
             amount=row.billing.amount if row.billing else None,
             pulseRate=row.extra_fields.get("pulseRate"),
-            bloodSugar=row.extra_fields.get("bloodSugar")
+            bloodSugar=row.extra_fields.get("bloodSugar"),
         )
 
     @classmethod
