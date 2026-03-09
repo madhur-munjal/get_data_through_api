@@ -7,8 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 load_dotenv()  # ✅ This loads .env variables into os.environ
-mysql_username = os.getenv("MYSQL_USER")
-mysql_password = os.getenv("MYSQL_PASSWORD")
+mysql_username = os.getenv("mysql_username")
+mysql_password = os.getenv("MYSQL_ROOT_PASSWORD")
 hostname = os.getenv("hostname")
 database = os.getenv("MYSQL_DATABASE")
 db_port = os.getenv("db_port")
