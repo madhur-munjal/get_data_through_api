@@ -114,7 +114,6 @@ class VisitResponse(BaseModel):
 
 class VisitAllResponse(BaseModel):
     """Schema to get patient and appointment and visits details by appointment id"""
-
     patient_id: str
     firstName: str  # Required
     lastName: Optional[str] = None
@@ -123,6 +122,7 @@ class VisitAllResponse(BaseModel):
     gender: Optional[Gender] = None
     address: Optional[str] = None
     lastVisit: Optional[date] = None
+    patient_code: Optional[str] = None
     bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
         None
     )
@@ -162,6 +162,7 @@ class VisitAllResponse(BaseModel):
             gender=row.patient.gender,
             address=row.patient.address,
             lastVisit=row.patient.lastVisit,
+            patient_code=row.patient.patient_code,
             bloodGroup=row.extra_fields.get("bloodGroup"),
             weight=row.extra_fields.get("weight"),
             bloodPressureUpper=row.extra_fields.get("bloodPressureUpper"),
@@ -196,6 +197,7 @@ class VisitAllResponse(BaseModel):
             gender=row.patient.gender,
             address=row.patient.address,
             lastVisit=row.patient.lastVisit,
+            patient_code=row.patient.patient_code,
             bloodGroup=row.appointments.extra_fields.get("bloodGroup"),
             weight=row.appointments.extra_fields.get("weight"),
             bloodPressureUpper=row.appointments.extra_fields.get("bloodPressureUpper"),
