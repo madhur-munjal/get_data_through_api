@@ -20,7 +20,8 @@ class Medicine(Base):
     type = Column(String(100), nullable=True)  # e.g., Tablet, Syrup, etc.
     count = Column(Integer, default=0)  # e.g., number of pills in a pack
     dosage = Column(JSON, nullable=True)  # e.g., Morning, Afternoon, Night
-    timing = Column(String(100), nullable=True)  # e.g., Before Food, After Food, With Food
+    before_meal = Column(Boolean, default=False)  # NEW: Indicates if the medicine should be taken before meals
+    # timing = Column(String(100), nullable=True)  # e.g., Before Food, After Food, With Food
     duration = Column(String(100), nullable=True)  # e.g., 5 days, 1 week, etc.
     notes = Column(Text, nullable=True)  # Additional instructions or notes
     is_deleted = Column(Boolean, default=False)

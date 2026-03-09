@@ -10,13 +10,6 @@ class MedicineBase(BaseModel):
     # generic_name: Optional[str] = Field(None, max_length=255)
     composition: Optional[str] = None  # NEW: e.g., "Paracetamol 500mg, Caffeine 65mg"
     manufacturer: Optional[str] = Field(None, max_length=255)
-    # description: Optional[str] = None
-    # dosage_form: Optional[str] = Field(None, max_length=100)
-    # strength: Optional[str] = Field(None, max_length=100)
-    # price: float = Field(..., gt=0)
-    # stock_quantity: int = Field(default=0, ge=0)
-    # is_prescription_required: bool = False
-    # is_active: bool = True
     is_deleted: bool = False
 
     model_config = {"from_attributes": True}
@@ -28,8 +21,9 @@ class MedicineCreate(MedicineBase):
     manufacturer: Optional[str] = Field(None, max_length=255)
     type: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Tablet", "Syrup", etc.
     count: Optional[int] = Field(default=0, ge=0)  # NEW: e.g., number of pills in a pack
-    dosage: List[Literal["morning", "afternoon", "night"]] = Field(None, description="Array of duration") #Optional[json] = Field(None, max_length=100)  # NEW: e.g., "Morning", "Afternoon", "Night"
-    timing: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Before Food", "After Food", "With Food"
+    dosage: List[Literal["morning", "afternoon", "night"]] = Field(None, description="Array of duration") # e.g., ["morning", "night"]
+    before_meal: Optional[bool] = False  # NEW: Indicates if the medicine should be taken before meals
+    # timing: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Before Food", "After Food", "With Food"
     duration: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "5 days", "1 week", etc.
     notes: Optional[str] = Field(None, max_length=655)  # NEW: Additional instructions or notes
     # is_deleted: Optional[bool] = False
@@ -46,7 +40,8 @@ class MedicineUpdate(BaseModel):
     count: Optional[int] = Field(default=0, ge=0)  # NEW: e.g., number of pills in a pack
     dosage: List[Literal["morning", "afternoon", "night"]] = Field(None, description="Array of duration")
     # dosage: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Morning", "Afternoon", "Night"
-    timing: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Before Food", "After Food", "With Food"
+    before_meal: Optional[bool] = False  # NEW: Indicates if the medicine should be taken before meals
+    # timing: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Before Food", "After Food", "With Food"
     duration: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "5 days", "1 week", etc.
     notes: Optional[str] = Field(None, max_length=655)  # NEW: Additional instructions or notes
 
@@ -64,7 +59,8 @@ class MedicineResponse(MedicineBase):
     count: Optional[int] = Field(default=0, ge=0)  # NEW: e.g., number of pills in a pack
     dosage: List[Literal["morning", "afternoon", "night"]] = Field(None, description="Array of duration")
     # dosage: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Morning", "Afternoon", "Night"
-    timing: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Before Food", "After Food", "With Food"
+    before_meal: Optional[bool] = False  # NEW: Indicates if the medicine should be taken before meals
+    # timing: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "Before Food", "After Food", "With Food"
     duration: Optional[str] = Field(None, max_length=100)  # NEW: e.g., "5 days", "1 week", etc.
     notes: Optional[str] = Field(None, max_length=655)  # NEW: Additional instructions or notes
 
@@ -85,7 +81,7 @@ class MedicineResponse(MedicineBase):
             type=row.type,
             count=row.count,
             dosage=row.dosage,
-            timing=row.timing,
+            before_meal=row.before_meal,
             duration=row.duration,
             notes=row.notes
         )
