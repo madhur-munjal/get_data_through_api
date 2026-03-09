@@ -147,6 +147,7 @@ class VisitAllResponse(BaseModel):
     scheduled_date: Optional[date] = None
     scheduled_time: Optional[time] = None
     pulseRate: Optional[int] = None
+    bloodSugar: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
@@ -181,6 +182,7 @@ class VisitAllResponse(BaseModel):
             paymentType=row.billing.type if row.billing else None,
             amount=row.billing.amount if row.billing else None,
             pulseRate=row.extra_fields.get("pulseRate"),
+            bloodSugar=row.extra_fields.get("bloodSugar")
         )
 
     @classmethod
@@ -217,5 +219,6 @@ class VisitAllResponse(BaseModel):
             paymentDetails=row.payment_details,
             scheduled_date=row.appointments.scheduled_date,
             scheduled_time=row.appointments.scheduled_time,
-            pulseRate=row.appointments.pulseRate,
+            pulseRate=row.appointments.extra_fields.get("pulseRate"),
+            bloodSugar=row.appointments.extra_fields.get("bloodSugar"),
         )
