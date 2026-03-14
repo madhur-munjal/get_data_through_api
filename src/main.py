@@ -85,29 +85,28 @@ def seed_data():
                 Plan(
                     s_no=1,
                     name="Basic",
-                    price=2500,
-                    description="""Access to Dashboard,
-                          Appointment Scheduling (Upto 110 appointments/months),
-                          View Patient Records,
-                          Notification Alerts on Application,
-                          Staff Management (Upto 3 Staff Members),
-                          Role Based Access Control for Staff Members
+                    price=1999,
+                    description="""Appointment Management – Schedule, reschedule & cancel appointments with automated reminders. |
+                    Patient Records (EMR/EHR) – Digital patient history, prescriptions & visit notes. |
+                    Billing & Invoicing – Generate invoices, track payments & dues for patients. |
+                    Prescription Builder – Digital prescription generation with drug templates. |
+                    Basic Reports – Daily appointment & revenue summaries. |
+                    Data Security – Encrypted patient data storage. |
+                    Email Support – Response within 48 hours.
                 """,
                     duration_months=1,
                 ),
                 Plan(
                     s_no=2,
                     name="Professional",
-                    price=5000,
-                    description="""Access to Dashboard,
-                          Appointment Scheduling (Unlimited Patients),
-                          View Patient Records (Unlimited Patients),
-                          Track Billing for Cash/UPI/Card Payments,
-                          Billing breakdown chart for Cash/UPI/Card Payments,
-                          Export Billing Data,
-                          Notification Alerts on Application,
-                          Staff Management (Unlimited Staff Members),
-                          Role Based Access Control for Staff Members""",
+                    price=4999,
+                    description="""Everything in basic, plus: |
+                    Multi-Doctor Management – Separate schedules, queues & records per doctor |
+Advanced Analytics & Reports – Revenue trends, doctor-wise performance, patient flow analysis |
+Insurance & TPA Billing – Generate insurance claims and track reimbursements |
+Lab & Investigation Orders – Order tests, receive reports & attach to patient records |
+Staff Task Management – Assign tasks, track follow-ups & internal notes
+Priority Support – Dedicated support with response within 24 hours + onboarding assistance""",
                     duration_months=1,
                 ),
             ]
@@ -179,7 +178,6 @@ def run_scheduler_manually():
 def run_mysql_scheduler_manually():
     backup_mysql()
     return {"message": "Scheduler task executed successfully"}
-
 
 # if __name__ == "__main__":
 #     import uvicorn

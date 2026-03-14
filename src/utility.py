@@ -25,6 +25,7 @@ from src.constants import (
     total_staff_basic_plans,
     total_staff_professional_plan,
     mysql_backup_dir,
+total_staff_doctor_professional_plan
 )
 from src.database import SessionLocal
 from src.database import hostname, mysql_username, mysql_password, database
@@ -317,40 +318,41 @@ def update_subscription_data(doctor_id=None):
 
 
 def get_appointments_left_by_doctor(db: Session, doctor_id) -> int:
-    today = date.today()
-
-    active_subscription = (
-        db.query(Subscription)
-        .filter(
-            Subscription.user_id == doctor_id,
-            func.date(Subscription.start_date) <= today,
-            func.date(Subscription.end_date) >= today,
-            Subscription.is_active == True,
-        )
-        .order_by(Subscription.start_date.desc())
-        .first()
-    )
-    appointment_left = 0
-    if active_subscription:
-        used_appointments = (
-            db.query(Appointment)
-            .filter(
-                Appointment.doctor_id == str(doctor_id),
-                Appointment.created_at.between(
-                    active_subscription.start_date, active_subscription.end_date
-                ),
-            )
-            .count()
-        )
-        if active_subscription.plan.name == "Professional":
-            appointment_left = total_appointments_professional_plan - used_appointments
-        elif active_subscription.plan.name == "Basic":
-            appointment_left = total_appointments_basic_plan - used_appointments
-        else:
-            appointment_left = (
-                active_subscription.appointment_credits - used_appointments
-            )
-    return appointment_left
+    # today = date.today()
+    #
+    # active_subscription = (
+    #     db.query(Subscription)
+    #     .filter(
+    #         Subscription.user_id == doctor_id,
+    #         func.date(Subscription.start_date) <= today,
+    #         func.date(Subscription.end_date) >= today,
+    #         Subscription.is_active == True,
+    #     )
+    #     .order_by(Subscription.start_date.desc())
+    #     .first()
+    # )
+    # appointment_left = 0
+    # if active_subscription:
+    #     used_appointments = (
+    #         db.query(Appointment)
+    #         .filter(
+    #             Appointment.doctor_id == str(doctor_id),
+    #             Appointment.created_at.between(
+    #                 active_subscription.start_date, active_subscription.end_date
+    #             ),
+    #         )
+    #         .count()
+    #     )
+    #     if active_subscription.plan.name == "Professional":
+    #         appointment_left = total_appointments_professional_plan - used_appointments
+    #     elif active_subscription.plan.name == "Basic":
+    #         appointment_left = total_appointments_basic_plan - used_appointments
+    #     else:
+    #         appointment_left = (
+    #             active_subscription.appointment_credits - used_appointments
+    #         )
+    # return appointment_left
+    return 0
 
 
 def get_staff_left_count(db: Session, doctor_id) -> bool:
@@ -383,6 +385,35 @@ def get_staff_left_count(db: Session, doctor_id) -> bool:
     )  # Staff count for the doctor
     return limit - current_staff_count
 
+
+def get_staff_left_doctor_count(db: Session, doctor_id) -> bool:
+    # plan_name: str, current_staff_count: int
+    today = date.today()
+    active_subscription = (
+        db.query(Subscription)
+        .filter(
+            Subscription.user_id == doctor_id,
+            Subscription.start_date <= today,
+            Subscription.end_date >= today,
+            Subscription.is_active == True,
+        )
+        .order_by(Subscription.start_date.desc())
+        .first()
+    )
+    if active_subscription:
+        if active_subscription.plan.name == "Professional":
+            limit = total_staff_doctor_professional_plan
+        else:
+            # return 0
+            limit = 0
+    else:
+        # return 0
+        limit = 0
+
+    current_staff_doctor_count = (
+        db.query(Staff).filter_by(doc_id=doctor_id, role="doctor").count()
+    )  # Staff count for the doctor
+    return limit - current_staff_doctor_count
 
 def backup_mysql():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
