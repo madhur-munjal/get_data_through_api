@@ -25,8 +25,8 @@ class DevelopersTabOut(BaseModel):
     subscription_endDate: datetime.datetime  # '2026-12-30',
     isActive: bool  # true,
     appointment_left: int  # 110 - actual,
-    staff_left_count: int  # 0
-    staff_left_doctor_count: int  # 0
+    staff_left_nondoctor: int  # 0
+    staff_left_doctor: int  # 0
 
     model_config = {"from_attributes": True}
 
@@ -46,8 +46,8 @@ class DevelopersTabOut(BaseModel):
             subscription_endDate=subscription.end_date,
             isActive=subscription.is_active,
             appointment_left=get_appointments_left_by_doctor(db, user.id),
-            staff_left_count=get_staff_left_count(db, user.id),
-            staff_left_doctor_count=get_staff_left_doctor_count(db, user.id),
+            staff_left_nondoctor=get_staff_left_count(db, user.id),
+            staff_left_doctor=get_staff_left_doctor_count(db, user.id),
         )
 
 

@@ -1,15 +1,12 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Column,
     String,
     DateTime,
     ForeignKey,
-    Float,
     Text,
-    Enum,
-    Boolean,
     TIMESTAMP,
 )
 from sqlalchemy.orm import relationship
@@ -19,12 +16,12 @@ from src.database import Base
 
 
 class InterestedUser(Base):
-    __tablename__ = "interested_users"
+    __tablename__: str = "interested_users"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     doctor_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     plan_id = Column(String(36), ForeignKey("plans.id"), nullable=False)
-    # created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     created_by = Column(String(100), nullable=True, default="website")
     interest_date = Column(TIMESTAMP, server_default=func.now())
     source = Column(String(100), nullable=True)
