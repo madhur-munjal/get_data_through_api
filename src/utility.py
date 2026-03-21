@@ -1,14 +1,14 @@
 import os
 import random
 import re
-import smtplib
 import string
+import subprocess
 from datetime import date
 from datetime import datetime
-from email.mime.text import MIMEText
 from typing import Optional
 from zoneinfo import ZoneInfo  # Python 3.9+, or use pytz for older versions
 
+import httpx
 import pytz
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
@@ -19,13 +19,22 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from src.constants import total_appointments_basic_plan, total_appointments_professional_plan, total_staff_basic_plans, \
-    total_staff_professional_plan
+from src.constants import (
+    total_appointments_basic_plan,
+    total_appointments_professional_plan,
+    total_staff_basic_plans,
+    total_staff_professional_plan,
+    mysql_backup_dir,
+total_staff_doctor_professional_plan
+)
 from src.database import SessionLocal
+from src.database import hostname, mysql_username, mysql_password, database
 from src.models.enums import AppointmentStatus
 from src.schemas.tables.appointments import Appointment
 from src.schemas.tables.staff import Staff
 from src.schemas.tables.subscription import Subscription
+from src.schemas.tables.users import User
+from src.schemas.tables.patients import Patient
 
 load_dotenv()
 
@@ -41,25 +50,17 @@ def generate_otp(length=4):
 async def send_otp_email(to_email, otp):
     template = env.get_template("otp_email.html")
     html_content = template.render(otp=otp)
-    await send_msg_on_email(to_email, html_message=html_content, Subject="SmartHeal App, Password Reset OTP")
-    #
-    # message = MIMEText(html_content, "html")
-    # print(message)
-    #
-    # # message = MIMEText(f"Your OTP is: {otp}")
-    # from_email = os.getenv("from_email_id")  # "support@smarthealapp.com"
-    # message["From"] = from_email
-    # message["To"] = to_email
-    # message["Subject"] = "SmartHeal App, Password Reset OTP"
-    # smtp_server = "smtpout.secureserver.net"  # 'mail.firsttoothclinic.com'
-    # server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
-    # status_code, response = server.ehlo()
-    # status_code, response = server.login(from_email, os.getenv("email_password"))
-    # server.sendmail(from_email, to_email, message.as_string())
-    # server.quit()
+    await send_msg_on_email(
+        to_email, html_message=html_content, Subject="SmartHeal App, Password Reset OTP"
+    )
 
 
-async def send_msg_on_email(to_email, text_message: str = None, html_message: str = None, Subject="SmartHeal App"):
+async def send_msg_on_email(
+    to_email,
+    text_message: str = None,
+    html_message: str = None,
+    Subject="SmartHeal App",
+):
     BREVO_API_KEY = os.getenv("BREVO_API_KEY")
     BREVO_URL = "https://api.brevo.com/v3/smtp/email"
     from_email = os.getenv("SMTP_USER")
@@ -68,99 +69,22 @@ async def send_msg_on_email(to_email, text_message: str = None, html_message: st
     headers = {
         "accept": "application/json",
         "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
+        "content-type": "application/json",
     }
 
     payload = {
         "sender": {"name": "SmartHeal App", "email": from_email},
         "to": [{"email": to_email}],
-        "subject": Subject
+        "subject": Subject,
     }
     if text_message:
         payload["textContent"] = text_message
     if html_message:
         payload["htmlContent"] = html_message
 
-    import httpx
     async with httpx.AsyncClient() as client:
         response = await client.post(BREVO_URL, headers=headers, json=payload)
-        print(response.json())
-        print("************")
         return {"status": response.status_code, "message": "Email sent successfully"}
-
-    # response = requests.post(BREVO_URL, headers=headers, data=json.dumps(payload))
-    # return response.json()
-
-
-# def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
-#     """
-#     Send a message to the specified email address.
-#     :param to_email:
-#     :param message:
-#     :return:
-#     """
-#
-#     message = Mail(
-#         from_email=os.getenv("from_email_id"),  # must be verified in SendGrid
-#         to_emails=to_email,
-#         subject=Subject,
-#         plain_text_content=message,
-#     )
-#     try:
-#         sg = SendGridAPIClient(os.getenv("SendGridAPI"))
-#         response = sg.send(message)
-#         return {"status": response.status_code, "message": "Email sent successfully"}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-
-# async def send_msg_on_email(to_email, message, Subject="Smart-Heal"):
-#     """
-#     Send a message to the specified email address.
-#     :param to_email:
-#     :param message:
-#     :return:
-#     """
-#     from email.message import EmailMessage
-#     SMTP_SERVER = os.getenv("SMTP_SERVER")
-#     SMTP_PORT = int(os.getenv("SMTP_PORT"))
-#     SMTP_USER = os.getenv("SMTP_USER")
-#     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-#
-#     msg = EmailMessage()
-#     message["From"] = SMTP_USER
-#     message["To"] = to_email
-#     message["Subject"] = Subject
-#     message.set_content(message)
-#
-#     await aiosmtplib.send(
-#         msg,
-#         hostname=SMTP_SERVER,
-#         port=SMTP_PORT,
-#         start_tls=True,
-#         username=SMTP_USER,
-#         password=SMTP_PASSWORD,
-#     )
-#     return {"message": "Email sent successfully"}
-# return {"status": "sent"}
-
-# message = MIMEText(f"{message}")
-# from_email = os.getenv("from_email_id")
-# message["From"] = from_email
-# message["To"] = to_email
-# message["Subject"] = Subject
-# smtp_server = "smtpout.secureserver.net"
-# with smtplib.SMTP(smtp_server, 587, timeout=30) as server:
-#     server.starttls()
-#     server.login(from_email, os.getenv("email_password"))
-#     server.sendmail(from_email, to_email, message.as_string())
-#     server.quit()
-
-# server = smtplib.SMTP_SSL(smtp_server, 465, timeout=30)
-# status_code, response = server.ehlo()
-# status_code, response = server.login(from_email, os.getenv("email_password"))
-# server.sendmail(from_email, to_email, message.as_string())
-# server.quit()
 
 
 def validate_user_fields(values, cls):
@@ -170,21 +94,17 @@ def validate_user_fields(values, cls):
     :param cls: Class type for which validation is being performed.
     :return: Validated values or raises ValueError if validation fails.
     """
-    PASSWORD_REGEX = re.compile(
-        r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
-    )
-    USERNAME_REGEX = re.compile(
-        "^(?=[a-zA-Z])(?=.*[._-])(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]{1,18}[a-zA-Z0-9]$"
-    )
+    PASSWORD_REGEX = re.compile(r"^.*$")
+    USERNAME_REGEX = re.compile("^[a-zA-Z][a-zA-Z0-9._-]{2,19}$")
     EMAIL_REGEX = re.compile(
-        "^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$"
+        "^[a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$"
     )  # Indian mobile numbers
 
     errors: list[InitErrorDetails] = []
 
     # Email validation
     if "email" in cls.model_fields and not EMAIL_REGEX.fullmatch(
-            values.email
+        values.email
     ):  # "email" in values and not values["email"].isalnum() and not EMAIL_REGEX.fullmatch(values.email): #
         errors.append(
             InitErrorDetails(
@@ -196,7 +116,7 @@ def validate_user_fields(values, cls):
 
     # Username validation
     if "username" in cls.model_fields and not USERNAME_REGEX.fullmatch(
-            values.username
+        values.username
     ):  # "username" in values and not values["username"].isalnum() and not USERNAME_REGEX.fullmatch(values.username): #
         errors.append(
             InitErrorDetails(
@@ -209,11 +129,11 @@ def validate_user_fields(values, cls):
     # Password validation
     # password can be NOne in setting page, as user only update mobile
     if (
-            "password" in cls.model_fields and values.password is None
+        "password" in cls.model_fields and values.password is None
     ):  # "password" in values and values.password is None: # :
         return values
     elif "password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(
-            values.password
+        values.password
     ):  # "password" in values and not PASSWORD_REGEX.fullmatch(values.password):#"password" in cls.model_fields and not PASSWORD_REGEX.fullmatch(values.password):
         errors.append(
             InitErrorDetails(
@@ -258,13 +178,13 @@ def save_data_to_db(data: dict, db_model, db_session):
 
 
 def get_appointment_status(
-        appointment_date_time: datetime, comparision_date_time: Optional[datetime] = None
+    appointment_date_time: datetime, comparision_date_time: Optional[datetime] = None
 ) -> str:
     if comparision_date_time is None:
         comparision_date_time = datetime.now(pytz.timezone("Asia/Kolkata"))
     if (
-            appointment_date_time.tzinfo is None
-            or appointment_date_time.tzinfo.utcoffset(appointment_date_time) is None
+        appointment_date_time.tzinfo is None
+        or appointment_date_time.tzinfo.utcoffset(appointment_date_time) is None
     ):
         # It's naive — localize it
         appointment_date_time = pytz.timezone("Asia/Kolkata").localize(
@@ -302,43 +222,7 @@ def get_appointment_summary(rows_as_query):
             # {"3a65d550-1612-4913-8819-4bb42f916744":{"billings":[{"type":"Cash"}]}}
             summary[appointment.id]["total_amount"] += billing.amount
 
-    # # Group by appointment
-    # summary = {}
-    # for appointment, patient, pay_type, amount in rows_as_query:
-    #     if appointment.id not in summary:
-    #         summary[appointment.id] = {
-    #             "appointment": {c.name: getattr(appointment, c.name) for c in appointment.__table__.columns},
-    #             "patient": {c.name: getattr(patient, c.name) for c in patient.__table__.columns},
-    #             "billings": [],
-    #             "total_amount": 0
-    #         }
-    #         summary[appointment.id]["appointment"].pop("_sa_instance_state", None)
-    #         summary[appointment.id]["patient"].pop("_sa_instance_state", None)
-    #
-    #     if amount:
-    #         summary[appointment.id]["billings"].append({
-    #             "type": pay_type,
-    #             "amount": amount
-    #         })
-    #         summary[appointment.id]["total_amount"] += amount
-
     return list(summary.values())
-
-
-# def update_appointment_status():
-#     db: Session = SessionLocal()
-#     now = datetime.now()
-#
-#     appointments = db.query(Appointment).filter(Appointment.status == 0).all()  # 0 = UPCOMING
-#
-#     for appt in appointments:
-#         scheduled_dt = datetime.combine(appt.scheduled_date, appt.scheduled_time)
-#         if now >= scheduled_dt:
-#             appt.status = AppointmentStatus.NO_SHOW.value  # 2 = NO_SHOW
-#             db.add(appt)
-#
-#     db.commit()
-#     db.close()
 
 
 def update_appointment_status():
@@ -433,69 +317,42 @@ def update_subscription_data(doctor_id=None):
     db.close()
 
 
-# def get_otp_session(token: str):
-#     session = redis_client.hgetall(token)
-#     return session if session else None
-#
-#
-# def mark_otp_verified(token: str):
-#     redis_client.hset(token, "verified", "true")
-
-
-# def get_subscription_active_status_by_doctor(db: Session, doctor_id):
-#     today = date.today()
-#     active_subscription = (
-#         db.query(Subscription)
-#         .filter(
-#             Subscription.user_id == doctor_id,
-#             Subscription.start_date <= today,
-#             Subscription.end_date >= today,
-#             Subscription.is_active == True,
-#         )
-#         .order_by(Subscription.start_date.desc())
-#         .first()
-#     )
-#     if not active_subscription:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Your subscription has expired. Please renew your subscription to access this feature."
-#         )
-#     return active_subscription is not None
-
-
 def get_appointments_left_by_doctor(db: Session, doctor_id) -> int:
-    today = date.today()
-
-    active_subscription = (
-        db.query(Subscription)
-        .filter(
-            Subscription.user_id == doctor_id,
-            func.date(Subscription.start_date) <= today,
-            func.date(Subscription.end_date) >= today,
-            Subscription.is_active == True,
-        )
-        .order_by(Subscription.start_date.desc())
-        .first()
-    )
-    appointment_left = 0
-    if active_subscription:
-        used_appointments = (
-            db.query(Appointment)
-            .filter(
-                Appointment.doctor_id == str(doctor_id),
-                Appointment.created_at.between(
-                    active_subscription.start_date, active_subscription.end_date
-                ),
-            )
-            .count()
-        )
-        if active_subscription.plan.name == "Professional":
-            appointment_left = total_appointments_professional_plan - used_appointments
-        elif active_subscription.plan.name == "Basic":
-            appointment_left = total_appointments_basic_plan - used_appointments
-        else:
-            appointment_left = active_subscription.appointment_credits - used_appointments
-    return appointment_left
+    # today = date.today()
+    #
+    # active_subscription = (
+    #     db.query(Subscription)
+    #     .filter(
+    #         Subscription.user_id == doctor_id,
+    #         func.date(Subscription.start_date) <= today,
+    #         func.date(Subscription.end_date) >= today,
+    #         Subscription.is_active == True,
+    #     )
+    #     .order_by(Subscription.start_date.desc())
+    #     .first()
+    # )
+    # appointment_left = 0
+    # if active_subscription:
+    #     used_appointments = (
+    #         db.query(Appointment)
+    #         .filter(
+    #             Appointment.doctor_id == str(doctor_id),
+    #             Appointment.created_at.between(
+    #                 active_subscription.start_date, active_subscription.end_date
+    #             ),
+    #         )
+    #         .count()
+    #     )
+    #     if active_subscription.plan.name == "Professional":
+    #         appointment_left = total_appointments_professional_plan - used_appointments
+    #     elif active_subscription.plan.name == "Basic":
+    #         appointment_left = total_appointments_basic_plan - used_appointments
+    #     else:
+    #         appointment_left = (
+    #             active_subscription.appointment_credits - used_appointments
+    #         )
+    # return appointment_left
+    return 0
 
 
 def get_staff_left_count(db: Session, doctor_id) -> bool:
@@ -523,6 +380,79 @@ def get_staff_left_count(db: Session, doctor_id) -> bool:
     else:
         limit = 0
 
-    current_staff_count = db.query(Staff).filter_by(doc_id=doctor_id).count()  # Staff count for the doctor
+    current_staff_count = (
+        db.query(Staff).filter_by(doc_id=doctor_id).count()
+    )  # Staff count for the doctor
     return limit - current_staff_count
-    # return current_staff_count < limit if limit is not None else True
+
+
+def get_staff_left_doctor_count(db: Session, doctor_id) -> bool:
+    # plan_name: str, current_staff_count: int
+    today = date.today()
+    active_subscription = (
+        db.query(Subscription)
+        .filter(
+            Subscription.user_id == doctor_id,
+            Subscription.start_date <= today,
+            Subscription.end_date >= today,
+            Subscription.is_active == True,
+        )
+        .order_by(Subscription.start_date.desc())
+        .first()
+    )
+    if active_subscription:
+        if active_subscription.plan.name == "Professional":
+            limit = total_staff_doctor_professional_plan
+        else:
+            # return 0
+            limit = 0
+    else:
+        # return 0
+        limit = 0
+
+    current_staff_doctor_count = (
+        db.query(Staff).filter_by(doc_id=doctor_id, role="doctor").count()
+    )  # Staff count for the doctor
+    return limit - current_staff_doctor_count
+
+def backup_mysql():
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_file = os.path.join(mysql_backup_dir, f"db_{timestamp}.sql")
+    os.makedirs(mysql_backup_dir, exist_ok=True)  # ensures /backups exists
+
+    cmd = [
+        "mysqldump",
+        "--ssl=0",  # disables SSL
+        f"-h{hostname}",
+        f"-u{mysql_username}",
+        f"-p{mysql_password}",
+        database,
+    ]
+
+    with open(backup_file, "w") as f:
+        result = subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        print(f"Backup failed: {result.stderr.decode()}")
+    else:
+        print(f"Backup created: {backup_file}")
+
+
+def generate_patient_code(doctor_id: str, db: Session) -> str:
+    """
+    Generate a human-friendly patient code unique per doctor.
+    Example format: PAT-STR-26-000002
+    """
+    doctor = db.query(User).filter(User.id == doctor_id).first()
+    if not doctor:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str("Doctor not found")
+        )
+
+    # Count existing patients for this doctor
+    count = db.query(Patient).filter(Patient.assigned_doctor_id == doctor_id).count()
+    # Increment count for new patient
+    new_number = count + 1
+
+    # doctor_short = doctor.firstName[:3].upper() if doctor.firstName else "DOC"
+    # year = datetime.now().strftime("%y")
+    return f"SHA{new_number:06d}"

@@ -32,14 +32,14 @@ class Appointment(Base):
     type = Column(Integer, nullable=False, default=AppointmentType.NEW.value)
     status = Column(Integer, nullable=False, default=AppointmentStatus.UPCOMING.value)
     payment_status = Column(Integer, nullable=False, default=PaymentStatus.UNPAID.value)
-    bloodGroup = Column(String(5), nullable=True)  # e.g., "A+", "O-", etc.
-    weight = Column(Float, nullable=True)
-    bloodPressureUpper = Column(Integer, nullable=True)
-    bloodPressureLower = Column(Integer, nullable=True)
-    temperature = Column(Float, nullable=True)
-    temperatureType = Column(Enum(TemperatureUnit), nullable=True)
-    pulseRate = Column(Integer, nullable=True)
-    # extra_fields = Column(JSON, nullable=True)
+    # bloodGroup = Column(String(5), nullable=True)  # e.g., "A+", "O-", etc.
+    # weight = Column(Float, nullable=True)
+    # bloodPressureUpper = Column(Integer, nullable=True)
+    # bloodPressureLower = Column(Integer, nullable=True)
+    # temperature = Column(Float, nullable=True)
+    # temperatureType = Column(Enum(TemperatureUnit), nullable=True)
+    # pulseRate = Column(Integer, nullable=True)
+    extra_fields = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     patient = relationship("Patient", back_populates="appointments")

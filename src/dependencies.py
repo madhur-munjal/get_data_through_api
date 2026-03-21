@@ -96,7 +96,9 @@ def require_admin_owner(user_payload=Depends(get_current_user_payload)):
     return user_payload
 
 
-def get_subscription_active_status_by_doctor(db: Session = Depends(get_db), doctor_id=Depends(get_current_doctor_id)):
+def get_subscription_active_status_by_doctor(
+    db: Session = Depends(get_db), doctor_id=Depends(get_current_doctor_id)
+):
 
     today = date.today()
     active_subscription = (
@@ -113,6 +115,6 @@ def get_subscription_active_status_by_doctor(db: Session = Depends(get_db), doct
     if not active_subscription:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your subscription has expired. Please renew your subscription to access this feature."
+            detail="Your subscription has expired. Please renew your subscription to access this feature.",
         )
     return active_subscription is not None

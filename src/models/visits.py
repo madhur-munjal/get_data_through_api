@@ -36,9 +36,10 @@ class MedicationDetails(BaseModel):
     """
 
     medicine: Optional[str] = None
-    type: Optional[Literal["tablet", "syrup", "injection", "ointment", "capsule"]] = (
+    type: Literal["tablet", "syrup", "injection", "ointment", "capsule"] | None = (
         None
     )
+    composition: Optional[str] = None
     count: Optional[Union[int, str]] = (
         None  # int for tablets, str for ml or other units
     )
@@ -123,6 +124,7 @@ class VisitAllResponse(BaseModel):
     gender: Optional[Gender] = None
     address: Optional[str] = None
     lastVisit: Optional[date] = None
+    patient_code: Optional[str] = None
     bloodGroup: Optional[Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]] = (
         None
     )
@@ -147,6 +149,7 @@ class VisitAllResponse(BaseModel):
     scheduled_date: Optional[date] = None
     scheduled_time: Optional[time] = None
     pulseRate: Optional[int] = None
+    bloodSugar: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
@@ -161,12 +164,13 @@ class VisitAllResponse(BaseModel):
             gender=row.patient.gender,
             address=row.patient.address,
             lastVisit=row.patient.lastVisit,
-            bloodGroup=row.patient.bloodGroup,
-            weight=row.patient.weight,
-            bloodPressureUpper=row.patient.bloodPressureUpper,
-            bloodPressureLower=row.patient.bloodPressureLower,
-            temperature=row.patient.temperature,
-            temperatureType=row.patient.temperatureType,
+            patient_code=row.patient.patient_code,
+            bloodGroup=row.extra_fields.get("bloodGroup"),
+            weight=row.extra_fields.get("weight"),
+            bloodPressureUpper=row.extra_fields.get("bloodPressureUpper"),
+            bloodPressureLower=row.extra_fields.get("bloodPressureLower"),
+            temperature=row.extra_fields.get("temperature"),
+            temperatureType=row.extra_fields.get("temperatureType"),
             type=row.type,
             status=row.status,
             paymentDetails=row.payment_details,
@@ -180,7 +184,8 @@ class VisitAllResponse(BaseModel):
             paymentStatus=row.payment_status,
             paymentType=row.billing.type if row.billing else None,
             amount=row.billing.amount if row.billing else None,
-            pulseRate=row.pulseRate,
+            pulseRate=row.extra_fields.get("pulseRate"),
+            bloodSugar=row.extra_fields.get("bloodSugar"),
         )
 
     @classmethod
@@ -194,12 +199,13 @@ class VisitAllResponse(BaseModel):
             gender=row.patient.gender,
             address=row.patient.address,
             lastVisit=row.patient.lastVisit,
-            bloodGroup=row.patient.bloodGroup,
-            weight=row.patient.weight,
-            bloodPressureUpper=row.patient.bloodPressureUpper,
-            bloodPressureLower=row.patient.bloodPressureLower,
-            temperature=row.patient.temperature,
-            temperatureType=row.patient.temperatureType,
+            patient_code=row.patient.patient_code,
+            bloodGroup=row.appointments.extra_fields.get("bloodGroup"),
+            weight=row.appointments.extra_fields.get("weight"),
+            bloodPressureUpper=row.appointments.extra_fields.get("bloodPressureUpper"),
+            bloodPressureLower=row.appointments.extra_fields.get("bloodPressureLower"),
+            temperature=row.appointments.extra_fields.get("temperature"),
+            temperatureType=row.appointments.extra_fields.get("temperatureType"),
             type=row.appointments.type,
             status=row.appointments.status,
             analysis=row.analysis,
@@ -217,5 +223,6 @@ class VisitAllResponse(BaseModel):
             paymentDetails=row.payment_details,
             scheduled_date=row.appointments.scheduled_date,
             scheduled_time=row.appointments.scheduled_time,
-            pulseRate=row.appointments.pulseRate,
+            pulseRate=row.appointments.extra_fields.get("pulseRate"),
+            bloodSugar=row.appointments.extra_fields.get("bloodSugar"),
         )

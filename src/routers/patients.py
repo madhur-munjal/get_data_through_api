@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, or_, func
 from sqlalchemy.orm import Session, aliased
 
-# from src.utility import get_subscription_active_status_by_doctor
+from src.utility import generate_patient_code
 from src.database import get_db
 from src.dependencies import get_current_doctor_id
 from src.models.patients import (
@@ -43,8 +43,16 @@ def create_patient(
             message="Mobile number already exists",
             data=None,
         ).model_dump()
+    try:
+        patient_code = generate_patient_code(str(doctor_id), db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
-    patient = Patient(**request.model_dump(), assigned_doctor_id=doctor_id)
+    patient = Patient(
+        **request.model_dump(),
+        assigned_doctor_id=str(doctor_id),
+        patient_code=patient_code,
+    )
     db.add(patient)
     db.commit()
     db.refresh(patient)
@@ -52,11 +60,11 @@ def create_patient(
         status_code=200,
         success=True,
         message="Patient created successfully.",
-        data={"id": patient.patient_id},
+        data={"id": patient.patient_id, "patient_code": patient_code},
     ).model_dump()
 
 
-@router.put("/{patient_id}", response_model=APIResponse[PatientRecord])
+@router.put("/{patient_id}", response_model=APIResponse[PatientOut])
 def update_patent(
     patient_id: str,
     update_data: PatientUpdate,
@@ -68,14 +76,15 @@ def update_patent(
         raise HTTPException(status_code=404, detail="Patient not found")
     for field, value in update_data.dict(exclude_unset=True).items():
         setattr(patient, field, value)
-
     db.commit()
     db.refresh(patient)
     return APIResponse(
         status_code=200,
         success=True,
         message="Patient updated successfully.",
-        data=None,  # return updated patient record
+        data=PatientOut.model_validate(
+            patient
+        ).model_dump(),  # None,  # return updated patient record
     ).model_dump()
 
 
@@ -156,7 +165,7 @@ def get_patients_list(
         )
         .subquery()
     )
-    patient_query = patient_query.join(
+    patient_query = patient_query.outerjoin(
         get_type, Patient.patient_id == get_type.c.patient_id
     ).add_columns(get_type.c.type.label("latest_appointment_type"))
     total_records = patient_query.count()

@@ -41,7 +41,7 @@ routers = [
     subscription.router,
     # upload_images.router
     plans.router,
-    medicines.router
+    medicines.router,
 ]
 
 # Include all routers

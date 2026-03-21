@@ -11,7 +11,7 @@ router = APIRouter(
     prefix="/users",
     tags=["users"],
     responses={404: {"error": "Not found"}},
-    # , dependencies=[Depends(require_owner)]
+    dependencies=[Depends(require_owner)],
 )
 
 
@@ -19,7 +19,6 @@ router = APIRouter(
 def get_users(
     current_user=Depends(get_current_user_payload),
     db: Session = Depends(get_db),
-    role=Depends(require_owner),
 ):
     """Fetch all users."""
     users = db.query(User).all()

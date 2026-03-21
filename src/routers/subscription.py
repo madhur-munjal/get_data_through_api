@@ -5,7 +5,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from src.constants import total_appointments_basic_plan, total_appointments_professional_plan
+from src.constants import (
+    total_appointments_basic_plan,
+    total_appointments_professional_plan,
+)
 from src.database import get_db
 from src.dependencies import get_current_doctor_id, require_owner
 from src.models.plans import PlanDetailsOnMail
@@ -19,7 +22,12 @@ from src.schemas.tables.interested_users import InterestedUser
 from src.schemas.tables.plans import Plan
 from src.schemas.tables.subscription import Subscription  # SQLAlchemy model
 from src.schemas.tables.users import User
-from src.utility import update_subscription_data, send_msg_on_email, save_data_to_db, get_appointments_left_by_doctor
+from src.utility import (
+    update_subscription_data,
+    send_msg_on_email,
+    save_data_to_db,
+    get_appointments_left_by_doctor,
+)
 
 router = APIRouter(
     prefix="/subscriptions",
@@ -32,10 +40,10 @@ router = APIRouter(
 # 📥 Create a new subscription
 @router.post("", response_model=APIResponse[SubscriptionRead])
 def create_subscription(
-        subscription: SubscriptionCreate,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
-        dependencies=Depends(require_owner),
+    subscription: SubscriptionCreate,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
+    dependencies=Depends(require_owner),
 ):
     input_data = subscription.dict()
     doctor_id = str(doctor_id)
@@ -47,11 +55,17 @@ def create_subscription(
     # TODO: set appointment credits to zero for old subscription on new subscription creation
     plan_details = db.query(Plan).filter_by(id=subscription.plan_id).first()
     if plan_details.name == "Basic":
-        input_data["appointment_credits"] = total_appointments_basic_plan + appointments_left
+        input_data["appointment_credits"] = (
+            total_appointments_basic_plan + appointments_left
+        )
     elif plan_details.name == "Professional":
-        input_data["appointment_credits"] = total_appointments_professional_plan + appointments_left
+        input_data["appointment_credits"] = (
+            total_appointments_professional_plan + appointments_left
+        )
     else:
-        input_data["appointment_credits"] = subscription.appointment_credits + appointments_left
+        input_data["appointment_credits"] = (
+            subscription.appointment_credits + appointments_left
+        )
     new_sub = Subscription(**input_data)
     db.add(new_sub)
     db.commit()
@@ -69,9 +83,9 @@ def create_subscription(
     "/send_subscription_details_on_mail", response_model=APIResponse[SubscriptionRead]
 )
 async def send_subscription_details_on_mail(
-        plan_details: PlanDetailsOnMail,
-        db: Session = Depends(get_db),
-        doctor_id: UUID = Depends(get_current_doctor_id),
+    plan_details: PlanDetailsOnMail,
+    db: Session = Depends(get_db),
+    doctor_id: UUID = Depends(get_current_doctor_id),
 ):
     db_user = db.query(User).filter_by(id=doctor_id).first()
     if not db_user:
@@ -120,8 +134,13 @@ async def send_subscription_details_on_mail(
         if k != "plan_id":
             extra_fields[k] = v
 
-    interested_users_data = {'doctor_id': str(doctor_id), 'plan_id': plan_details_query.id,
-                             'source': 'website_subscription_page', 'status': 'interested', 'notes': str(extra_fields)}
+    interested_users_data = {
+        "doctor_id": str(doctor_id),
+        "plan_id": plan_details_query.id,
+        "source": "website_subscription_page",
+        "status": "interested",
+        "notes": str(extra_fields),
+    }
     save_data_to_db(interested_users_data, InterestedUser, db)
     await send_msg_on_email(
         to_email=os.getenv("from_email_id"), text_message=body, Subject=subject
@@ -177,7 +196,7 @@ async def send_subscription_details_on_mail(
 
 @router.get("/get_subscription", response_model=APIResponse)
 def get_subscription(
-        db: Session = Depends(get_db), doctor_id: UUID = Depends(get_current_doctor_id)
+    db: Session = Depends(get_db), doctor_id: UUID = Depends(get_current_doctor_id)
 ):
     all_subscription_details = (
         db.query(Subscription).filter(Subscription.user_id == doctor_id).all()
@@ -190,6 +209,7 @@ def get_subscription(
             SubscriptionOutWithPlan.from_orm(row) for row in all_subscription_details
         ],
     ).model_dump()
+
 
 # # 📄 Get all subscriptions
 # @router.get("/", response_model=list[SubscriptionRead])

@@ -83,10 +83,16 @@ def get_interested_users_list(db: Session = Depends(get_db)):
         # plan_details = db.query(Plan).filter_by(id=row.plan_id).first()
         # if not plan_details:
         #     raise HTTPException(status_code=404, detail="Plan details not found")
-        interested_users_list.append({'user_firstName': row.user.firstName, "user_lastName": row.user.lastName,
-                                      "user_mobile": row.user.mobile, "plan_name": row.plan.name,
-                                      "plan_price": row.plan.price,
-                                      "created_at": row.created_at})
+        interested_users_list.append(
+            {
+                "user_firstName": row.user.firstName,
+                "user_lastName": row.user.lastName,
+                "user_mobile": row.user.mobile,
+                "plan_name": row.plan.name,
+                "plan_price": row.plan.price,
+                "created_at": row.created_at,
+            }
+        )
     return APIResponse(
         status_code=200,
         success=True,
@@ -97,7 +103,7 @@ def get_interested_users_list(db: Session = Depends(get_db)):
 
 @router.get("/{doctor_id}", response_model=APIResponse)
 def get_subscriptions_details_particular_doctor(
-        doctor_id: str, db: Session = Depends(get_db)
+    doctor_id: str, db: Session = Depends(get_db)
 ):
     # all_subscription_details = db.query(Subscription).filter(
     #     Subscription.user_id == doctor_id).all()
@@ -111,8 +117,7 @@ def get_subscriptions_details_particular_doctor(
 
 
 @router.put("/users")
-def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_db)
-                        ):
+def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == payload.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -130,17 +135,16 @@ def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_
         user.mobile = payload.mobile
     db.add(user)
 
-    # Update subscription if provided
-    # if payload.subscription:
     subscription = (
-        db.query(Subscription).filter(Subscription.user_id == payload.user_id).order_by(Subscription.created_at.desc()).first()
+        db.query(Subscription)
+        .filter(Subscription.user_id == payload.user_id)
+        .order_by(Subscription.created_at.desc())
+        .first()
     )
-        # if not subscription:
-        #     # If no subscription exists, create one
-        #     subscription = Subscription(user_id=user_id)
-        #     db.add(subscription)
     if subscription:
-        plans = db.query(Plan).filter(Plan.name == payload.subscription.plan_name).first()
+        plans = (
+            db.query(Plan).filter(Plan.name == payload.subscription.plan_name).first()
+        )
         if plans:
             subscription.plan = plans
         if payload.subscription.start_date is not None:
