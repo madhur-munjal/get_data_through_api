@@ -65,6 +65,8 @@ class DeveloperUserUpdate(BaseModel):
     email: Optional[str]
     country: Optional[str] = None
     mobile: Optional[constr(min_length=5)] = None
+    staff_left_nondoctor: int  # 0
+    staff_left_doctor: int  # 0
     subscription: Optional[SubscriptionUpdate] = None
 
     model_config = {"from_attributes": True}

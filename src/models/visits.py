@@ -36,9 +36,10 @@ class MedicationDetails(BaseModel):
     """
 
     medicine: Optional[str] = None
-    type: Optional[Literal["tablet", "syrup", "injection", "ointment", "capsule"]] = (
+    type: Literal["tablet", "syrup", "injection", "ointment", "capsule"] | None = (
         None
     )
+    composition: Optional[str] = None
     count: Optional[Union[int, str]] = (
         None  # int for tablets, str for ml or other units
     )

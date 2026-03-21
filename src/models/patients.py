@@ -69,10 +69,10 @@ class PaginatedPatientResponse(BaseModel):
 
 class PatientUpdateWhileAppointment(BaseModel):
     patient_id: Optional[str] = None
-    firstName: str  # Required
+    firstName: Optional[str]  # Required
     lastName: Optional[str] = None
     age: Optional[int] = None
-    mobile: str  # Required
+    mobile: Optional[str]  # Required
     gender: Optional[Gender] = None
     address: Optional[str] = None
 
