@@ -8,6 +8,7 @@ from sqlalchemy import (
     CheckConstraint,
     UniqueConstraint,
     DateTime,
+    Boolean
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -38,6 +39,7 @@ class Staff(Base):
     role = Column(String(50), nullable=False, default="staff")  # mandatory
     doc_id = Column(String(36), ForeignKey("users.id"), nullable=False)  # mandatory
     profile_image_url = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 

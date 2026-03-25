@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Text, String, CheckConstraint, DateTime
+from sqlalchemy import Column, Text, String, CheckConstraint, DateTime, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from src.database import Base
@@ -28,6 +28,7 @@ class User(Base):
         String(50), nullable=False, default="admin"
     )  # mandatory e.g., 'owner'(Madhur & Akash), 'admin'('doctor'), 'nurse'
     profile_image_url = Column(Text, nullable=True)
+    staff_limit = Column(Integer, default=0, nullable=False)  # 0 = no staff access
     created_at = Column(DateTime, server_default=func.now())
 
     visits = relationship("Visit", back_populates="user")

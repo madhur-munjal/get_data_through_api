@@ -114,7 +114,7 @@ def get_staff_list(
     doctor_id: UUID = Depends(get_current_doctor_id), db: Session = Depends(get_db)
 ):
     """Fetch all users."""
-    users = db.query(Staff).filter(Staff.doc_id == doctor_id).all()
+    users = db.query(Staff).filter(Staff.doc_id == doctor_id, is_active=True).all()
     user_dtos = [StaffOut.model_validate(user) for user in users]
     return APIResponse(
         status_code=200,
@@ -167,7 +167,7 @@ def get_staff_detail(
     db: Session = Depends(get_db),
 ):
     """Fetch staff details."""
-    staff_detail = db.query(Staff).filter_by(doc_id=doctor_id, id=staff_id).first()
+    staff_detail = db.query(Staff).filter_by(doc_id=doctor_id, id=staff_id, is_active=True).first()
     if not staff_detail:
         raise HTTPException(status_code=404, detail="Staff not found")
     # print([StaffOut.model_validate(staff_detail)])
@@ -188,8 +188,10 @@ def delete_staff(
     user = db.query(Staff).filter_by(doc_id=doctor_id, id=delete_payload.id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    db.delete(user)
+    # db.delete(user)
+    user.is_active = False
     db.commit()
+    db.refresh(user)
     return APIResponse(
         status_code=200,
         success=True,

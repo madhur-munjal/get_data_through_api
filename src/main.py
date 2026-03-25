@@ -86,27 +86,35 @@ def seed_data():
                     s_no=1,
                     name="Basic",
                     price=1999,
-                    description="""Appointment Management – Schedule, reschedule & cancel appointments with automated reminders. |
-                    Patient Records (EMR/EHR) – Digital patient history, prescriptions & visit notes. |
+                    description="""Appointment Management – Schedule, reschedule & cancel appointments. |
+                    Patient Records – Digital patient history, prescriptions & visit notes. |
                     Billing & Invoicing – Generate invoices, track payments & dues for patients. |
                     Prescription Builder – Digital prescription generation with drug templates. |
                     Basic Reports – Daily appointment & revenue summaries. |
                     Data Security – Encrypted patient data storage. |
                     Email Support – Response within 48 hours.
-                """,
+                    """,
                     duration_months=1,
                 ),
                 Plan(
                     s_no=2,
                     name="Professional",
                     price=4999,
-                    description="""Everything in basic, plus: |
-                    Multi-Doctor Management – Separate schedules, queues & records per doctor |
-Advanced Analytics & Reports – Revenue trends, doctor-wise performance, patient flow analysis |
-Insurance & TPA Billing – Generate insurance claims and track reimbursements |
-Lab & Investigation Orders – Order tests, receive reports & attach to patient records |
-Staff Task Management – Assign tasks, track follow-ups & internal notes
-Priority Support – Dedicated support with response within 24 hours + onboarding assistance""",
+                    description="""Multi-Doctor Management – Separate schedules, queues & records per doctor. |
+                    Staff Task Management – Assign tasks, track follow-ups & internal notes. |
+                    Priority Support – Dedicated support with response within 24 hours + onboarding assistance.
+                    """,
+                    duration_months=1,
+                ),
+                Plan(
+                    s_no=3,
+                    name="Custom",
+                    # price=4999,
+                    description="""Choose modules (appointments billing staff management etc.) based on your clinic’s exact needs. |
+                    Pay only for what you use — no fixed bundle. |
+                    Priority support with configuration assistance specific to your setup. |
+                    Ability to upgrade or downgrade features anytime as your practice grows. |
+                    Role Based Access Control for Staff Members.""",
                     duration_months=1,
                 ),
             ]
