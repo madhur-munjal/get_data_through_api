@@ -352,7 +352,7 @@ def get_appointments_left_by_doctor(db: Session, doctor_id) -> int:
     #             active_subscription.appointment_credits - used_appointments
     #         )
     # return appointment_left
-    return 0
+    return -1  # as we are not using appointment credit for now, so returning -1 as unlimited appointments
 
 
 def get_staff_left_count(db: Session, doctor_id) -> bool:
