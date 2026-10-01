@@ -7,11 +7,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 load_dotenv()  # ✅ This loads .env variables into os.environ
-mysql_username = os.getenv("mysql_username")
-mysql_password = os.getenv("MYSQL_ROOT_PASSWORD")
-hostname = os.getenv("hostname")
+mysql_username = os.getenv("MYSQL_USER")
+mysql_password = os.getenv("MYSQL_PASSWORD")
+hostname = os.getenv("MYSQL_HOST")
 database = os.getenv("MYSQL_DATABASE")
-db_port = os.getenv("db_port")
+db_port = os.getenv("MYSQL_PORT")
 DATABASE_URL = f"mysql+mysqlconnector://{mysql_username}:{mysql_password}@{hostname}:{db_port}/{database}"
 engine = create_engine(
     DATABASE_URL, pool_pre_ping=True, connect_args={"connect_timeout": 10}, echo=True
