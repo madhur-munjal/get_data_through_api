@@ -27,7 +27,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = 30
 refresh_token_store = {}
 
 # Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password, hashed_password):

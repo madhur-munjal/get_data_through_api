@@ -8,6 +8,7 @@ COPY requirements.txt .
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     redis-server \
+    default-mysql-client \
     build-essential \
     default-libmysqlclient-dev \
     python3-dev && \

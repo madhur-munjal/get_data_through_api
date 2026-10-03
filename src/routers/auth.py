@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
-from passlib.context import CryptContext
 from redis import Redis
 from sqlalchemy.orm import Session
 
@@ -15,6 +14,7 @@ from src.auth_utils import (
     verify_password,
     create_refresh_token,
     hash_password,
+    pwd_context,
 )
 from src.constants import total_appointments_basic_plan
 from src.database import get_db
@@ -38,7 +38,6 @@ from src.schemas.tables.users import User
 from src.utility import generate_otp, send_otp_email
 
 security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(
     prefix="/auth", tags=["auth"], responses={404: {"error": "Not found"}}
 )
