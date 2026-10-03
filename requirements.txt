@@ -6,7 +6,7 @@ uvicorn
 fastapi[all]
 python-jose[cryptography]
 passlib
-bcrypt
+bcrypt<5
 alembic
 dotenv
 python-dotenv

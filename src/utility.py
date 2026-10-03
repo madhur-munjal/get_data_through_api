@@ -25,7 +25,7 @@ from src.constants import (
     total_staff_basic_plans,
     total_staff_professional_plan,
     mysql_backup_dir,
-total_staff_doctor_professional_plan
+    total_staff_doctor_professional_plan, total_staff_enterprise_plan
 )
 from src.database import SessionLocal
 from src.database import hostname, mysql_username, mysql_password, database
@@ -376,7 +376,7 @@ def get_staff_left_count(db: Session, doctor_id) -> bool:
         elif active_subscription.plan.name == "Basic":
             limit = total_staff_basic_plans
         else:
-            limit = None
+            limit = total_staff_enterprise_plan #None
     else:
         limit = 0
 
