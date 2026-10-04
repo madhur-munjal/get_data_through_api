@@ -7,6 +7,9 @@ from datetime import date
 from datetime import datetime
 from typing import Optional
 from zoneinfo import ZoneInfo  # Python 3.9+, or use pytz for older versions
+import asyncio
+from email.message import EmailMessage
+import aiosmtplib
 
 import httpx
 import pytz
@@ -25,8 +28,7 @@ from src.constants import (
     total_staff_basic_plans,
     total_staff_professional_plan,
     mysql_backup_dir,
-    total_staff_doctor_professional_plan,
-    total_staff_enterprise_plan,
+    total_staff_doctor_professional_plan, total_staff_enterprise_plan
 )
 from src.database import SessionLocal
 from src.database import hostname, mysql_username, mysql_password, database
@@ -62,30 +64,61 @@ async def send_msg_on_email(
     html_message: str = None,
     Subject="SmartHeal App",
 ):
-    BREVO_API_KEY = os.getenv("BREVO_API_KEY")
-    BREVO_URL = "https://api.brevo.com/v3/smtp/email"
-    from_email = os.getenv("SMTP_USER")
-
-    # def send_email(to_email: str, subject: str, text_content: str):
-    headers = {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
-        "content-type": "application/json",
-    }
-
-    payload = {
-        "sender": {"name": "SmartHeal App", "email": from_email},
-        "to": [{"email": to_email}],
-        "subject": Subject,
-    }
+    msg = EmailMessage()
+    msg["Subject"] = Subject #"Test Email from SmartHeal Backend"
+    msg["From"] = os.getenv("SMTP_USER") #"support@smarthealapp.com"
+    msg["To"] = to_email #"recipient@example.com"
     if text_message:
-        payload["textContent"] = text_message
+        msg_content = text_message
     if html_message:
-        payload["htmlContent"] = html_message
+        msg_content = html_message
+    msg.set_content(
+        msg_content #"Hello! This email was sent using GoDaddy Workspace Webmail SMTP via aiosmtplib."
+    )
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(BREVO_URL, headers=headers, json=payload)
-        return {"status": response.status_code, "message": "Email sent successfully"}
+    # Option A: SSL via Port 465 (Recommended for Workspace Email)
+    SMTP_PASSWORD
+    await aiosmtplib.send(
+        msg,
+        hostname="smtpout.secureserver.net",
+        port=587,
+        start_tls=True,
+        # port=465,
+        # use_tls=True,
+        username= os.getenv("SMTP_USER"),  #"support@smarthealapp.com",
+        password= SMTP_PASSWORD #"YOUR_GODADDY_EMAIL_PASSWORD",
+    )
+    print("Email sent successfully!")
+
+
+# if __name__ == "__main__":
+#     asyncio.run(send_godaddy_email())
+
+    
+#     BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+#     BREVO_URL = "https://api.brevo.com/v3/smtp/email"
+#     from_email = os.getenv("SMTP_USER")
+
+#     # def send_email(to_email: str, subject: str, text_content: str):
+#     headers = {
+#         "accept": "application/json",
+#         "api-key": BREVO_API_KEY,
+#         "content-type": "application/json",
+#     }
+
+#     payload = {
+#         "sender": {"name": "SmartHeal App", "email": from_email},
+#         "to": [{"email": to_email}],
+#         "subject": Subject,
+#     }
+#     if text_message:
+#         payload["textContent"] = text_message
+#     if html_message:
+#         payload["htmlContent"] = html_message
+
+#     async with httpx.AsyncClient() as client:
+#         response = await client.post(BREVO_URL, headers=headers, json=payload)
+#         return {"status": response.status_code, "message": "Email sent successfully"}
 
 
 def validate_user_fields(values, cls):
@@ -353,9 +386,7 @@ def get_appointments_left_by_doctor(db: Session, doctor_id) -> int:
     #             active_subscription.appointment_credits - used_appointments
     #         )
     # return appointment_left
-    return (
-        -1
-    )  # as we are not using appointment credit for now, so returning -1 as unlimited appointments
+    return -1  # as we are not using appointment credit for now, so returning -1 as unlimited appointments
 
 
 def get_staff_left_count(db: Session, doctor_id) -> bool:
@@ -379,7 +410,7 @@ def get_staff_left_count(db: Session, doctor_id) -> bool:
         elif active_subscription.plan.name == "Basic":
             limit = total_staff_basic_plans
         else:
-            limit = total_staff_enterprise_plan  # None
+            limit = total_staff_enterprise_plan #None
     else:
         limit = 0
 
@@ -417,7 +448,6 @@ def get_staff_left_doctor_count(db: Session, doctor_id) -> bool:
         db.query(Staff).filter_by(doc_id=doctor_id, role="doctor").count()
     )  # Staff count for the doctor
     return limit - current_staff_doctor_count
-
 
 def backup_mysql():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
