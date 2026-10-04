@@ -25,7 +25,8 @@ from src.constants import (
     total_staff_basic_plans,
     total_staff_professional_plan,
     mysql_backup_dir,
-    total_staff_doctor_professional_plan, total_staff_enterprise_plan
+    total_staff_doctor_professional_plan,
+    total_staff_enterprise_plan,
 )
 from src.database import SessionLocal
 from src.database import hostname, mysql_username, mysql_password, database
@@ -352,7 +353,9 @@ def get_appointments_left_by_doctor(db: Session, doctor_id) -> int:
     #             active_subscription.appointment_credits - used_appointments
     #         )
     # return appointment_left
-    return -1  # as we are not using appointment credit for now, so returning -1 as unlimited appointments
+    return (
+        -1
+    )  # as we are not using appointment credit for now, so returning -1 as unlimited appointments
 
 
 def get_staff_left_count(db: Session, doctor_id) -> bool:
@@ -376,7 +379,7 @@ def get_staff_left_count(db: Session, doctor_id) -> bool:
         elif active_subscription.plan.name == "Basic":
             limit = total_staff_basic_plans
         else:
-            limit = total_staff_enterprise_plan #None
+            limit = total_staff_enterprise_plan  # None
     else:
         limit = 0
 
@@ -414,6 +417,7 @@ def get_staff_left_doctor_count(db: Session, doctor_id) -> bool:
         db.query(Staff).filter_by(doc_id=doctor_id, role="doctor").count()
     )  # Staff count for the doctor
     return limit - current_staff_doctor_count
+
 
 def backup_mysql():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

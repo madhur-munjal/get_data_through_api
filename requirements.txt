@@ -1,5 +1,6 @@
 fastapi
 sqlalchemy
+aiosmtplib
 pydantic
 mysql-connector-python
 uvicorn
