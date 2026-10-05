@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, distinct
+from sqlalchemy import func, distinct, or_
 from sqlalchemy.orm import Session
 
 from src.database import get_db
@@ -169,7 +169,7 @@ def get_billing_summary(
         db.query(Appointment)
         .filter(Appointment.doctor_id == doctor_id)
         .outerjoin(Appointment.billing)
-        .filter(Billing.is_deleted == False)
+        .filter(or_(Billing.is_deleted.is_(False), Billing.billing_id.is_(None)))
     )
     # query = db.query(Billing).join(Billing.appointment).filter(Appointment.doctor_id == doctor_id)
     if not query:
