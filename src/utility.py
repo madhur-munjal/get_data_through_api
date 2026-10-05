@@ -64,61 +64,71 @@ async def send_msg_on_email(
     html_message: str = None,
     Subject="SmartHeal App",
 ):
-    msg = EmailMessage()
-    msg["Subject"] = Subject #"Test Email from SmartHeal Backend"
-    msg["From"] = os.getenv("SMTP_USER") #"support@smarthealapp.com"
-    msg["To"] = to_email #"recipient@example.com"
-    if text_message:
-        msg_content = text_message
-    if html_message:
-        msg_content = html_message
-    msg.set_content(
-        msg_content #"Hello! This email was sent using GoDaddy Workspace Webmail SMTP via aiosmtplib."
-    )
+    # msg = EmailMessage()
+    # msg["Subject"] = Subject #"Test Email from SmartHeal Backend"
+    # msg["From"] = os.getenv("SMTP_USER") #"support@smarthealapp.com"
+    # msg["To"] = to_email #"recipient@example.com"
+    
+    # # Set plain text content first
+    # plain_text = text_message or "Please view this email in an HTML-compatible client."
+    # msg.set_content(plain_text)
 
-    # Option A: SSL via Port 465 (Recommended for Workspace Email)
-    SMTP_PASSWORD
-    await aiosmtplib.send(
-        msg,
-        hostname="smtpout.secureserver.net",
-        port=587,
-        start_tls=True,
-        # port=465,
-        # use_tls=True,
-        username= os.getenv("SMTP_USER"),  #"support@smarthealapp.com",
-        password= SMTP_PASSWORD #"YOUR_GODADDY_EMAIL_PASSWORD",
-    )
-    print("Email sent successfully!")
+    # # Attach HTML version if provided
+    # if html_message:
+    #     msg.add_alternative(html_message, subtype="html")
+
+    # # Option A: SSL via Port 465 (Recommended for Workspace Email)
+    # await aiosmtplib.send(
+    #     msg,
+    #     hostname="smtpout.secureserver.net",
+    #     port=465,
+    #     start_tls=True,
+    #     # port=465,
+    #     # use_tls=True,
+    #     username= os.getenv("SMTP_USER"),  #"support@smarthealapp.com",
+    #     password= os.getenv("SMTP_PASSWORD") #"YOUR_GODADDY_EMAIL_PASSWORD",
+    #     timeout=15.0,  # Explicit timeout prevents indefinite hanging
+    # )
+    # print("Email sent successfully!")
 
 
 # if __name__ == "__main__":
 #     asyncio.run(send_godaddy_email())
 
     
-#     BREVO_API_KEY = os.getenv("BREVO_API_KEY")
-#     BREVO_URL = "https://api.brevo.com/v3/smtp/email"
-#     from_email = os.getenv("SMTP_USER")
+    BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+    BREVO_URL = "https://api.brevo.com/v3/smtp/email"
+    from_email = os.getenv("SMTP_USER")
 
-#     # def send_email(to_email: str, subject: str, text_content: str):
-#     headers = {
-#         "accept": "application/json",
-#         "api-key": BREVO_API_KEY,
-#         "content-type": "application/json",
-#     }
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json",
+    }
 
-#     payload = {
-#         "sender": {"name": "SmartHeal App", "email": from_email},
-#         "to": [{"email": to_email}],
-#         "subject": Subject,
-#     }
-#     if text_message:
-#         payload["textContent"] = text_message
-#     if html_message:
-#         payload["htmlContent"] = html_message
+    payload = {
+        "sender": {"name": "SmartHeal App", "email": from_email},
+        "to": [{"email": to_email}],
+        "subject": Subject,
+    }
+    if text_message:
+        payload["textContent"] = text_message
+    elif html_message:
+        payload["htmlContent"] = html_message
+    else:
+        payload["textContent"] = "Hello from SmartHeal App!"
 
-#     async with httpx.AsyncClient() as client:
-#         response = await client.post(BREVO_URL, headers=headers, json=payload)
-#         return {"status": response.status_code, "message": "Email sent successfully"}
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(BREVO_URL, headers=headers, json=payload)
+        if response.status_code in (200, 201, 202):
+            print("Email sent successfully via Brevo API:", response.json())
+            return response.json()
+        else:
+            print(
+                f"Failed to send email via Brevo. Status: {response.status_code}, Body: {response.text}"
+            )
+            response.raise_for_status()
+        # return {"status": response.status_code, "message": "Email sent successfully"}
 
 
 def validate_user_fields(values, cls):
