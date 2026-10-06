@@ -171,6 +171,10 @@ def get_billing_summary(
         .outerjoin(Appointment.billing)
         .filter(or_(Billing.is_deleted.is_(False), Billing.billing_id.is_(None)))
     )
+    pending_query = db.query(Appointment).filter(
+        Appointment.doctor_id == doctor_id,
+        Appointment.payment_status == PaymentStatus.UNPAID.value,
+    )
     # query = db.query(Billing).join(Billing.appointment).filter(Appointment.doctor_id == doctor_id)
     if not query:
         raise HTTPException(status_code=404, detail="No Appointment details found.")
@@ -180,6 +184,9 @@ def get_billing_summary(
             end_dt = datetime.fromisoformat(endDate)
             end_dt = end_dt.replace(hour=23, minute=59, second=59)
             query = query.filter(Billing.created_at.between(start_dt, end_dt))
+            pending_query = pending_query.filter(
+                Appointment.scheduled_date.between(start_dt.date(), end_dt.date())
+            )
         except ValueError:
             return APIResponse(
                 status_code=200,
@@ -196,13 +203,9 @@ def get_billing_summary(
             Appointment.payment_status == PaymentStatus.PAID.value
         ).with_entities(distinct(Appointment.id))
         completed_payment = completed_payment_ids.count()
-        pending_payment = (
-            query.filter(
-                Appointment.payment_status == PaymentStatus.UNPAID.value,
-            )
-            .with_entities(distinct(Appointment.id))
-            .count()
-        )
+        pending_payment = pending_query.with_entities(
+            distinct(Appointment.id)
+        ).count()
         payment_details = (
             query.with_entities(
                 Billing.type, func.coalesce(func.sum(Billing.amount), 0).label("total")
