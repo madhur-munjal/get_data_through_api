@@ -117,6 +117,7 @@ def get_subscriptions_details_particular_doctor(
 
 
 @router.put("/users")
+@router.put("/users/", include_in_schema=False)
 def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == payload.user_id).first()
     if not user:
@@ -133,6 +134,7 @@ def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_
         user.country = payload.country
     if payload.mobile is not None:
         user.mobile = payload.mobile
+    user.staff_limit = payload.staff_left_doctor
     db.add(user)
 
     subscription = (
