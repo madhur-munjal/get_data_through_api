@@ -25,10 +25,8 @@ from sqlalchemy.orm import Session
 from src.constants import (
     total_appointments_basic_plan,
     total_appointments_professional_plan,
-    total_staff_basic_plans,
-    total_staff_professional_plan,
     mysql_backup_dir,
-    total_staff_doctor_professional_plan, total_staff_enterprise_plan
+    total_staff_doctor_professional_plan,
 )
 from src.database import SessionLocal
 from src.database import hostname, mysql_username, mysql_password, database
@@ -399,7 +397,7 @@ def get_appointments_left_by_doctor(db: Session, doctor_id) -> int:
     return -1  # as we are not using appointment credit for now, so returning -1 as unlimited appointments
 
 
-def get_staff_left_count(db: Session, doctor_id) -> bool:
+def get_staff_left_count(db: Session, doctor_id) -> int:
     # plan_name: str, current_staff_count: int
 
     today = date.today()
@@ -415,12 +413,8 @@ def get_staff_left_count(db: Session, doctor_id) -> bool:
         .first()
     )
     if active_subscription:
-        if active_subscription.plan.name == "Professional":
-            limit = total_staff_professional_plan
-        elif active_subscription.plan.name == "Basic":
-            limit = total_staff_basic_plans
-        else:
-            limit = total_staff_enterprise_plan #None
+        user = db.query(User).filter(User.id == doctor_id).one()
+        limit = user.staff_limit
     else:
         limit = 0
 
