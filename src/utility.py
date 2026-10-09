@@ -424,34 +424,34 @@ def get_staff_left_count(db: Session, doctor_id) -> int:
     return limit - current_staff_count
 
 
-def get_staff_left_doctor_count(db: Session, doctor_id) -> bool:
-    # plan_name: str, current_staff_count: int
-    today = date.today()
-    active_subscription = (
-        db.query(Subscription)
-        .filter(
-            Subscription.user_id == doctor_id,
-            Subscription.start_date <= today,
-            Subscription.end_date >= today,
-            Subscription.is_active == True,
-        )
-        .order_by(Subscription.start_date.desc())
-        .first()
-    )
-    if active_subscription:
-        if active_subscription.plan.name == "Professional":
-            limit = total_staff_doctor_professional_plan
-        else:
-            # return 0
-            limit = 0
-    else:
-        # return 0
-        limit = 0
+# def get_staff_left_doctor_count(db: Session, doctor_id) -> bool:
+#     # plan_name: str, current_staff_count: int
+#     today = date.today()
+#     active_subscription = (
+#         db.query(Subscription)
+#         .filter(
+#             Subscription.user_id == doctor_id,
+#             Subscription.start_date <= today,
+#             Subscription.end_date >= today,
+#             Subscription.is_active == True,
+#         )
+#         .order_by(Subscription.start_date.desc())
+#         .first()
+#     )
+#     if active_subscription:
+#         if active_subscription.plan.name == "Professional":
+#             limit = total_staff_doctor_professional_plan
+#         else:
+#             # return 0
+#             limit = 0
+#     else:
+#         # return 0
+#         limit = 0
 
-    current_staff_doctor_count = (
-        db.query(Staff).filter_by(doc_id=doctor_id, role="doctor").count()
-    )  # Staff count for the doctor
-    return limit - current_staff_doctor_count
+#     current_staff_doctor_count = (
+#         db.query(Staff).filter_by(doc_id=doctor_id, role="doctor").count()
+#     )  # Staff count for the doctor
+#     return limit - current_staff_doctor_count
 
 def backup_mysql():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

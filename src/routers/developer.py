@@ -134,7 +134,7 @@ def update_user_details(payload: DeveloperUserUpdate, db: Session = Depends(get_
         user.country = payload.country
     if payload.mobile is not None:
         user.mobile = payload.mobile
-    user.staff_limit = payload.staff_left_doctor
+    user.staff_limit = payload.staff_left
     db.add(user)
 
     subscription = (

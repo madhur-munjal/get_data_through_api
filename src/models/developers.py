@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from pydantic import constr
 from pydantic import model_validator
 
-from src.utility import get_appointments_left_by_doctor, get_staff_left_count, get_staff_left_doctor_count
+from src.utility import get_appointments_left_by_doctor, get_staff_left_count
 from src.utility import validate_user_fields
 
 
@@ -25,8 +25,7 @@ class DevelopersTabOut(BaseModel):
     subscription_endDate: datetime.datetime  # '2026-12-30',
     isActive: bool  # true,
     appointment_left: int  # 110 - actual,
-    staff_left_nondoctor: int  # 0
-    staff_left_doctor: int  # 0
+    staff_left: int  # 0
 
     model_config = {"from_attributes": True}
 
@@ -46,9 +45,8 @@ class DevelopersTabOut(BaseModel):
             subscription_endDate=subscription.end_date,
             isActive=subscription.is_active,
             appointment_left=get_appointments_left_by_doctor(db, user.id),
-            staff_left_nondoctor=get_staff_left_count(db, user.id),
-            staff_left_doctor=get_staff_left_doctor_count(db, user.id),
-        )
+            staff_left=get_staff_left_count(db, user.id)
+            )
 
 
 class SubscriptionUpdate(BaseModel):
@@ -65,8 +63,7 @@ class DeveloperUserUpdate(BaseModel):
     email: Optional[str]
     country: Optional[str] = None
     mobile: Optional[constr(min_length=5)] = None
-    staff_left_nondoctor: int  # 0
-    staff_left_doctor: int  # 0
+    staff_left: int  # 0
     subscription: Optional[SubscriptionUpdate] = None
 
     model_config = {"from_attributes": True}
@@ -120,8 +117,7 @@ class UserWithAllSubscription(BaseModel):
     username: constr(min_length=5, max_length=18)
     role: str
     appointment_left: int  # 110 - actual,
-    staff_left_nondoctor: int  # 0
-    staff_left_doctor: int  # 0
+    staff_left: int  # 0
     subscription: list[SubscriptionWithPlan] = []
 
     model_config = {"from_attributes": True}
@@ -138,8 +134,7 @@ class UserWithAllSubscription(BaseModel):
             username=user_row.username,
             role=user_row.role,
             appointment_left=get_appointments_left_by_doctor(db, user_row.id),
-            staff_left_nondoctor=get_staff_left_count(db, user_row.id),
-            staff_left_doctor=get_staff_left_doctor_count(db, user_row.id),
+            staff_left=get_staff_left_count(db, user_row.id),
             subscription=[
                 SubscriptionWithPlan.from_orm(sub) for sub in user_row.subscription
             ],
